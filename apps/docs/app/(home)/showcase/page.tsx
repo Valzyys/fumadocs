@@ -19,7 +19,7 @@ import nayrakuen from './nayrakuen-logo.jpg';
 import Link from 'fumadocs-core/link';
 import MixSpace from '@/public/showcases/mix-space.png';
 import TurboStarter from '@/public/showcases/turbostarter.png';
-import cava from './Cava#2.jpg';
+import cava from './Cava#3.jpg';
 
 export const metadata = createMetadata({
   title: 'Showcase',
