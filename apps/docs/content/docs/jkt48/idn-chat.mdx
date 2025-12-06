@@ -1,0 +1,714 @@
+---
+title: Chat Stream
+description: Get JKT48 live chat data from IDN streams using JKT48Connect API
+icon: MessageCircle
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+## Introduction
+
+The JKT48Connect Chat Stream API provides access to **real-time chat messages** from JKT48 member live streams on IDN. Use this endpoint to fetch live chat data using username and slug obtained from the live data API.
+
+<Cards>
+<Card icon={<MessageCircle className="text-blue-400" />} title='Real-time Chat'>
+Access live chat messages from ongoing streams.
+</Card>
+
+<Card icon={<Users className="text-green-400" />} title='User Interactions'>
+Track viewer engagement and member responses.
+</Card>
+
+<Card icon={<Zap className="text-purple-400" />} title='Live Updates'>
+Stream chat data in real-time for interactive applications.
+</Card>
+</Cards>
+
+## Quick Start
+
+<Steps>
+<Step>
+### Get Live Stream Data
+First, fetch live data to get username and slug parameters.
+```javascript
+const liveData = await getJKT48Live();
+const { username, slug } = liveData.live_streams[0]; // Get from live stream
+```
+</Step>
+
+<Step>
+### Fetch Chat Stream
+```bash
+curl "https://v2.jkt48connect.my.id/api/jkt48/chat-stream/{username}/{slug}?apikey=YOUR_API_KEY"
+```
+</Step>
+
+<Step>
+### Process Chat Messages
+Handle real-time chat data and user interactions.
+</Step>
+</Steps>
+
+## Endpoint Details
+
+<Tabs items={['Overview', 'Request', 'Response']}>
+
+<Tab value="Overview">
+**Base URL:** `https://v2.jkt48connect.my.id`  
+**Endpoint:** `/api/jkt48/chat-stream/{username}/{slug}`  
+**Method:** `GET`  
+**Authentication:** API Key required
+</Tab>
+
+<Tab value="Request">
+**Path Parameters:**
+- `username` (required): Member username from live data
+- `slug` (required): Stream slug from live data
+
+**Query Parameters:**
+- `apikey` (required): Your API authentication key
+- `limit` (optional): Number of messages to fetch (default: 50)
+- `since` (optional): Timestamp to fetch messages since
+
+**Example:**
+```http
+GET /api/jkt48/chat-stream/freya.jkt48/weekend-chat-session?apikey=YOUR_API_KEY HTTP/1.1
+Host: v2.jkt48connect.my.id
+```
+</Tab>
+
+<Tab value="Response">
+Returns live chat messages and metadata:
+
+```json
+{
+  "stream_info": {
+    "username": "freya.jkt48",
+    "slug": "weekend-chat-session",
+    "title": "Weekend Chat with Freya",
+    "status": "live",
+    "viewers": 1850,
+    "duration": "01:45:30"
+  },
+  "chat_messages": [
+    {
+      "id": "msg_001",
+      "user": {
+        "username": "fan_jkt48",
+        "display_name": "JKT48 Fan",
+        "avatar": "https://cdn.idntimes.com/avatar/fan_jkt48.jpg",
+        "badge": "subscriber"
+      },
+      "message": "Halo Freya! Semangat live nya!",
+      "timestamp": "2025-06-29T14:30:15.000Z",
+      "type": "chat",
+      "reactions": 5,
+      "is_pinned": false
+    },
+    {
+      "id": "msg_002",
+      "user": {
+        "username": "freya.jkt48",
+        "display_name": "Freya Jayawardana",
+        "avatar": "https://cdn.idntimes.com/avatar/freya.jpg",
+        "badge": "streamer"
+      },
+      "message": "Terima kasih semuanya! 💙",
+      "timestamp": "2025-06-29T14:31:00.000Z",
+      "type": "streamer_reply",
+      "reactions": 25,
+      "is_pinned": true
+    }
+  ],
+  "stats": {
+    "total_messages": 1247,
+    "unique_users": 456,
+    "messages_per_minute": 15.3,
+    "top_emojis": ["💙", "😍", "👏", "🔥", "😂"]
+  }
+}
+```
+</Tab>
+
+</Tabs>
+
+## Implementation Examples
+
+<Tabs items={['JavaScript', 'Python', 'Go']}>
+
+<Tab value="JavaScript">
+```javascript
+const API_KEY = 'YOUR_API_KEY';
+const BASE_URL = 'https://v2.jkt48connect.my.id';
+
+async function getChatStream(username, slug, options = {}) {
+  const params = new URLSearchParams({
+    apikey: API_KEY,
+    ...options
+  });
+  
+  try {
+    const response = await fetch(
+      `${BASE_URL}/api/jkt48/chat-stream/${username}/${slug}?${params}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to fetch chat stream:', error);
+    throw error;
+  }
+}
+
+// Get recent chat messages
+async function getRecentMessages(username, slug, limit = 20) {
+  return await getChatStream(username, slug, { limit });
+}
+
+// Poll for new messages
+async function pollChatMessages(username, slug, callback) {
+  let lastTimestamp = new Date().toISOString();
+  
+  const poll = async () => {
+    try {
+      const data = await getChatStream(username, slug, { 
+        since: lastTimestamp,
+        limit: 10 
+      });
+      
+      if (data.chat_messages.length > 0) {
+        callback(data.chat_messages);
+        lastTimestamp = data.chat_messages[0].timestamp;
+      }
+    } catch (error) {
+      console.error('Polling error:', error);
+    }
+  };
+  
+  // Poll every 2 seconds
+  setInterval(poll, 2000);
+  poll(); // Initial call
+}
+
+// Format chat message
+function formatChatMessage(message) {
+  const time = new Date(message.timestamp).toLocaleTimeString('id-ID');
+  const badge = message.user.badge === 'streamer' ? '👑' : 
+                message.user.badge === 'subscriber' ? '⭐' : '';
+  
+  return {
+    id: message.id,
+    time: time,
+    user: `${badge} ${message.user.display_name}`,
+    text: message.message,
+    reactions: message.reactions,
+    isPinned: message.is_pinned,
+    isStreamer: message.type === 'streamer_reply'
+  };
+}
+
+// Display live chat
+async function displayLiveChat(username, slug) {
+  try {
+    const data = await getChatStream(username, slug);
+    
+    console.log(`=== LIVE CHAT: ${data.stream_info.title} ===`);
+    console.log(`Viewers: ${data.stream_info.viewers} | Duration: ${data.stream_info.duration}`);
+    console.log(`Messages/min: ${data.stats.messages_per_minute}`);
+    console.log('Top emojis:', data.stats.top_emojis.join(' '));
+    console.log('\n--- RECENT MESSAGES ---');
+    
+    data.chat_messages.forEach(msg => {
+      const formatted = formatChatMessage(msg);
+      const pin = formatted.isPinned ? '📌 ' : '';
+      console.log(`${pin}[${formatted.time}] ${formatted.user}: ${formatted.text}`);
+      if (formatted.reactions > 0) {
+        console.log(`  ❤️ ${formatted.reactions} reactions`);
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error displaying chat:', error);
+  }
+}
+
+// Chat analytics
+function analyzeChatData(chatData) {
+  const messages = chatData.chat_messages;
+  
+  return {
+    totalMessages: messages.length,
+    uniqueUsers: new Set(messages.map(m => m.user.username)).size,
+    streamerMessages: messages.filter(m => m.type === 'streamer_reply').length,
+    averageReactions: messages.reduce((sum, m) => sum + m.reactions, 0) / messages.length,
+    mostActiveUser: getMostActiveUser(messages),
+    commonWords: getCommonWords(messages.map(m => m.message))
+  };
+}
+
+// Real-time chat monitor
+class ChatMonitor {
+  constructor(username, slug) {
+    this.username = username;
+    this.slug = slug;
+    this.isMonitoring = false;
+  }
+  
+  start(onMessage) {
+    if (this.isMonitoring) return;
+    this.isMonitoring = true;
+    
+    pollChatMessages(this.username, this.slug, (messages) => {
+      messages.forEach(msg => {
+        const formatted = formatChatMessage(msg);
+        onMessage(formatted);
+      });
+    });
+  }
+  
+  stop() {
+    this.isMonitoring = false;
+  }
+}
+```
+</Tab>
+
+<Tab value="Python">
+```python
+import requests
+import time
+from datetime import datetime
+from collections import Counter
+
+API_KEY = 'YOUR_API_KEY'
+BASE_URL = 'https://v2.jkt48connect.my.id'
+
+def get_chat_stream(username, slug, **options):
+    """Fetch chat stream data"""
+    params = {'apikey': API_KEY, **options}
+    url = f"{BASE_URL}/api/jkt48/chat-stream/{username}/{slug}"
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching chat stream: {e}")
+        raise
+
+def get_recent_messages(username, slug, limit=20):
+    """Get recent chat messages"""
+    return get_chat_stream(username, slug, limit=limit)
+
+def format_chat_message(message):
+    """Format chat message for display"""
+    time_str = datetime.fromisoformat(message['timestamp'].replace('Z', '+00:00')).strftime('%H:%M:%S')
+    badge = '👑' if message['user']['badge'] == 'streamer' else '⭐' if message['user']['badge'] == 'subscriber' else ''
+    
+    return {
+        'id': message['id'],
+        'time': time_str,
+        'user': f"{badge} {message['user']['display_name']}",
+        'text': message['message'],
+        'reactions': message['reactions'],
+        'is_pinned': message['is_pinned'],
+        'is_streamer': message['type'] == 'streamer_reply'
+    }
+
+def display_live_chat(username, slug):
+    """Display live chat messages"""
+    try:
+        data = get_chat_stream(username, slug)
+        
+        print(f"=== LIVE CHAT: {data['stream_info']['title']} ===")
+        print(f"Viewers: {data['stream_info']['viewers']} | Duration: {data['stream_info']['duration']}")
+        print(f"Messages/min: {data['stats']['messages_per_minute']}")
+        print(f"Top emojis: {' '.join(data['stats']['top_emojis'])}")
+        print("\n--- RECENT MESSAGES ---")
+        
+        for msg in data['chat_messages']:
+            formatted = format_chat_message(msg)
+            pin = '📌 ' if formatted['is_pinned'] else ''
+            print(f"{pin}[{formatted['time']}] {formatted['user']}: {formatted['text']}")
+            if formatted['reactions'] > 0:
+                print(f"  ❤️ {formatted['reactions']} reactions")
+                
+    except Exception as e:
+        print(f"Error displaying chat: {e}")
+
+def monitor_chat(username, slug, duration=60):
+    """Monitor chat for specified duration"""
+    start_time = time.time()
+    last_timestamp = datetime.now().isoformat()
+    
+    print(f"Monitoring chat for {duration} seconds...")
+    
+    while time.time() - start_time < duration:
+        try:
+            data = get_chat_stream(username, slug, since=last_timestamp, limit=5)
+            
+            if data['chat_messages']:
+                for msg in data['chat_messages']:
+                    formatted = format_chat_message(msg)
+                    print(f"🔴 [{formatted['time']}] {formatted['user']}: {formatted['text']}")
+                
+                last_timestamp = data['chat_messages'][0]['timestamp']
+            
+            time.sleep(3)  # Wait 3 seconds
+            
+        except Exception as e:
+            print(f"Monitoring error: {e}")
+            time.sleep(5)
+
+def analyze_chat_data(chat_data):
+    """Analyze chat statistics"""
+    messages = chat_data['chat_messages']
+    
+    usernames = [msg['user']['username'] for msg in messages]
+    reactions = [msg['reactions'] for msg in messages]
+    
+    return {
+        'total_messages': len(messages),
+        'unique_users': len(set(usernames)),
+        'streamer_messages': len([m for m in messages if m['type'] == 'streamer_reply']),
+        'average_reactions': sum(reactions) / len(reactions) if reactions else 0,
+        'most_active_user': Counter(usernames).most_common(1)[0] if usernames else None
+    }
+
+# Usage example
+if __name__ == "__main__":
+    # Example: Display chat for a live stream
+    display_live_chat("freya.jkt48", "weekend-chat-session")
+```
+</Tab>
+
+<Tab value="Go">
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "net/url"
+    "time"
+)
+
+const (
+    APIKey  = "YOUR_API_KEY"
+    BaseURL = "https://v2.jkt48connect.my.id"
+)
+
+type ChatStreamData struct {
+    StreamInfo   StreamInfo    `json:"stream_info"`
+    ChatMessages []ChatMessage `json:"chat_messages"`
+    Stats        ChatStats     `json:"stats"`
+}
+
+type StreamInfo struct {
+    Username string `json:"username"`
+    Slug     string `json:"slug"`
+    Title    string `json:"title"`
+    Status   string `json:"status"`
+    Viewers  int    `json:"viewers"`
+    Duration string `json:"duration"`
+}
+
+type ChatMessage struct {
+    ID        string    `json:"id"`
+    User      ChatUser  `json:"user"`
+    Message   string    `json:"message"`
+    Timestamp string    `json:"timestamp"`
+    Type      string    `json:"type"`
+    Reactions int       `json:"reactions"`
+    IsPinned  bool      `json:"is_pinned"`
+}
+
+type ChatUser struct {
+    Username    string `json:"username"`
+    DisplayName string `json:"display_name"`
+    Avatar      string `json:"avatar"`
+    Badge       string `json:"badge"`
+}
+
+type ChatStats struct {
+    TotalMessages      int      `json:"total_messages"`
+    UniqueUsers        int      `json:"unique_users"`
+    MessagesPerMinute  float64  `json:"messages_per_minute"`
+    TopEmojis         []string `json:"top_emojis"`
+}
+
+func getChatStream(username, slug string, options map[string]string) (*ChatStreamData, error) {
+    params := url.Values{}
+    params.Add("apikey", APIKey)
+    
+    for key, value := range options {
+        params.Add(key, value)
+    }
+    
+    url := fmt.Sprintf("%s/api/jkt48/chat-stream/%s/%s?%s", BaseURL, username, slug, params.Encode())
+    
+    client := &http.Client{Timeout: 30 * time.Second}
+    resp, err := client.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+    }
+    
+    var data ChatStreamData
+    err = json.NewDecoder(resp.Body).Decode(&data)
+    return &data, err
+}
+
+func formatChatMessage(message ChatMessage) map[string]interface{} {
+    timestamp, _ := time.Parse(time.RFC3339, message.Timestamp)
+    timeStr := timestamp.Format("15:04:05")
+    
+    badge := ""
+    switch message.User.Badge {
+    case "streamer":
+        badge = "👑"
+    case "subscriber":
+        badge = "⭐"
+    }
+    
+    return map[string]interface{}{
+        "id":          message.ID,
+        "time":        timeStr,
+        "user":        fmt.Sprintf("%s %s", badge, message.User.DisplayName),
+        "text":        message.Message,
+        "reactions":   message.Reactions,
+        "is_pinned":   message.IsPinned,
+        "is_streamer": message.Type == "streamer_reply",
+    }
+}
+
+func displayLiveChat(username, slug string) {
+    data, err := getChatStream(username, slug, nil)
+    if err != nil {
+        fmt.Printf("Error fetching chat stream: %v\n", err)
+        return
+    }
+    
+    fmt.Printf("=== LIVE CHAT: %s ===\n", data.StreamInfo.Title)
+    fmt.Printf("Viewers: %d | Duration: %s\n", data.StreamInfo.Viewers, data.StreamInfo.Duration)
+    fmt.Printf("Messages/min: %.1f\n", data.Stats.MessagesPerMinute)
+    fmt.Printf("Top emojis: %v\n", data.Stats.TopEmojis)
+    fmt.Println("\n--- RECENT MESSAGES ---")
+    
+    for _, msg := range data.ChatMessages {
+        formatted := formatChatMessage(msg)
+        pin := ""
+        if formatted["is_pinned"].(bool) {
+            pin = "📌 "
+        }
+        
+        fmt.Printf("%s[%s] %s: %s\n", 
+            pin, 
+            formatted["time"], 
+            formatted["user"], 
+            formatted["text"])
+        
+        if formatted["reactions"].(int) > 0 {
+            fmt.Printf("  ❤️ %d reactions\n", formatted["reactions"])
+        }
+    }
+}
+
+func monitorChat(username, slug string, duration time.Duration) {
+    fmt.Printf("Monitoring chat for %v...\n", duration)
+    
+    start := time.Now()
+    lastTimestamp := time.Now().Format(time.RFC3339)
+    
+    for time.Since(start) < duration {
+        options := map[string]string{
+            "since": lastTimestamp,
+            "limit": "5",
+        }
+        
+        data, err := getChatStream(username, slug, options)
+        if err != nil {
+            fmt.Printf("Monitoring error: %v\n", err)
+            time.Sleep(5 * time.Second)
+            continue
+        }
+        
+        if len(data.ChatMessages) > 0 {
+            for _, msg := range data.ChatMessages {
+                formatted := formatChatMessage(msg)
+                fmt.Printf("🔴 [%s] %s: %s\n", 
+                    formatted["time"], 
+                    formatted["user"], 
+                    formatted["text"])
+            }
+            lastTimestamp = data.ChatMessages[0].Timestamp
+        }
+        
+        time.Sleep(3 * time.Second)
+    }
+}
+
+func main() {
+    // Example: Display chat for a live stream
+    displayLiveChat("freya.jkt48", "weekend-chat-session")
+}
+```
+</Tab>
+
+</Tabs>
+
+## Real-time Integration
+
+<Tabs items={['Polling', 'Chat Monitor', 'Analytics']}>
+
+<Tab value="Polling">
+```javascript
+// Simple polling for new messages
+async function startChatPolling(username, slug) {
+  let lastCheck = new Date().toISOString();
+  
+  setInterval(async () => {
+    try {
+      const data = await getChatStream(username, slug, { 
+        since: lastCheck, 
+        limit: 10 
+      });
+      
+      if (data.chat_messages.length > 0) {
+        console.log(`📨 ${data.chat_messages.length} new messages`);
+        data.chat_messages.forEach(msg => {
+          console.log(`💬 ${msg.user.display_name}: ${msg.message}`);
+        });
+        lastCheck = data.chat_messages[0].timestamp;
+      }
+    } catch (error) {
+      console.error('Polling failed:', error);
+    }
+  }, 3000);
+}
+```
+</Tab>
+
+<Tab value="Chat Monitor">
+```javascript
+// Advanced chat monitoring
+class LiveChatMonitor {
+  constructor(username, slug) {
+    this.username = username;
+    this.slug = slug;
+    this.subscribers = [];
+  }
+  
+  subscribe(callback) {
+    this.subscribers.push(callback);
+  }
+  
+  async start() {
+    const data = await getChatStream(this.username, this.slug);
+    
+    // Notify subscribers of initial data
+    this.subscribers.forEach(callback => {
+      callback('init', data);
+    });
+    
+    // Start polling for updates
+    this.poll();
+  }
+  
+  async poll() {
+    // Implementation for continuous polling
+  }
+}
+```
+</Tab>
+
+<Tab value="Analytics">
+```javascript
+// Chat analytics and insights
+function generateChatAnalytics(chatData) {
+  const messages = chatData.chat_messages;
+  
+  return {
+    engagement: {
+      messagesPerMinute: chatData.stats.messages_per_minute,
+      averageReactions: messages.reduce((sum, m) => sum + m.reactions, 0) / messages.length,
+      pinnedMessages: messages.filter(m => m.is_pinned).length
+    },
+    users: {
+      total: chatData.stats.unique_users,
+      subscribers: messages.filter(m => m.user.badge === 'subscriber').length,
+      activeUsers: getActiveUsers(messages)
+    },
+    content: {
+      topEmojis: chatData.stats.top_emojis,
+      streamerInteraction: messages.filter(m => m.type === 'streamer_reply').length,
+      sentiment: analyzeSentiment(messages.map(m => m.message))
+    }
+  };
+}
+```
+</Tab>
+
+</Tabs>
+
+## Error Handling
+
+```javascript
+async function safeChatStream(username, slug, options = {}) {
+  try {
+    const data = await getChatStream(username, slug, options);
+    
+    // Validate response
+    if (!data.chat_messages || !Array.isArray(data.chat_messages)) {
+      throw new Error('Invalid chat data structure');
+    }
+    
+    return data;
+    
+  } catch (error) {
+    console.error(`Chat stream error for ${username}/${slug}:`, error);
+    return {
+      stream_info: { username, slug, status: 'error' },
+      chat_messages: [],
+      stats: { total_messages: 0, unique_users: 0 },
+      error: error.message
+    };
+  }
+}
+```
+
+---
+
+### Integration Example
+
+Combine live data and chat stream for complete experience:
+
+```javascript
+// Get live streams and their chat
+async function getLiveStreamsWithChat() {
+  const liveData = await getJKT48Live();
+  
+  const streamsWithChat = await Promise.all(
+    liveData.live_streams.map(async (stream) => {
+      const chatData = await getChatStream(stream.username, stream.slug, { limit: 10 });
+      return {
+        ...stream,
+        recentChat: chatData.chat_messages,
+        chatStats: chatData.stats
+      };
+    })
+  );
+  
+  return streamsWithChat;
+}
+```
+
+Get your API key from [JKT48Connect](https://www.jkt48connect.my.id/buyapi) and start building live chat applications!

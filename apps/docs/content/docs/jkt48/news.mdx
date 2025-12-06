@@ -1,0 +1,738 @@
+---
+title: News
+description: Get JKT48 News and Announcements via JKT48Connect API
+icon: Newspaper
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+## Introduction
+
+The JKT48Connect News API provides access to **JKT48 official news and announcements**. Perfect for creating news feeds, notification systems, and keeping fans updated with the latest JKT48 information.
+
+<Cards>
+<Card icon={<Newspaper className="text-blue-400" />} title='Latest News'>
+Get official JKT48 announcements and updates.
+</Card>
+
+<Card icon={<Bell className="text-green-400" />} title='Categorized Content'>
+Filter news by categories like events, member updates, and concerts.
+</Card>
+
+<Card icon={<Clock className="text-purple-400" />} title='Real-time Updates'>
+Stay updated with chronologically sorted news feed.
+</Card>
+</Cards>
+
+## Quick Start
+
+<Steps>
+<Step>
+### Get Your API Key
+Obtain your API key from [JKT48Connect](https://www.jkt48connect.my.id/buyapi).
+</Step>
+
+<Step>
+### Make API Request
+```bash
+curl "https://v2.jkt48connect.my.id/api/jkt48/news?apikey=YOUR_API_KEY"
+```
+</Step>
+
+<Step>
+### Process Response
+Handle the JSON object containing news articles with pagination.
+</Step>
+</Steps>
+
+## Endpoint Details
+
+<Tabs items={['Overview', 'Request', 'Response']}>
+
+<Tab value="Overview">
+**Base URL:** `https://v2.jkt48connect.my.id`  
+**Endpoint:** `/api/jkt48/news`  
+**Method:** `GET`  
+**Authentication:** API Key required
+</Tab>
+
+<Tab value="Request">
+**Query Parameters:**
+- `apikey` (required): Your API authentication key
+- `page` (optional): Page number for pagination (default: 1)
+- `perpage` (optional): Items per page (default: 10)
+
+**Example:**
+```http
+GET /api/jkt48/news?apikey=YOUR_API_KEY&page=1&perpage=10 HTTP/1.1
+Host: v2.jkt48connect.my.id
+```
+</Tab>
+
+<Tab value="Response">
+Returns JSON object with news articles and pagination info:
+
+```json
+{
+  "author": "JKT48ConnectCORP - Valzyy",
+  "news": [
+    {
+      "_id": "685e7adedc1fff4e792c3d0a",
+      "id": "1926",
+      "date": "2025-06-26T17:00:00.000Z",
+      "label": "/images/icon.cat2.png",
+      "title": "Pengumuman Mengenai Stage Activity dan Mini-Live Performance di JKT48 \"ALL IN TOUR\" 2025"
+    },
+    {
+      "_id": "685efad6dc1fff4e792c3d72",
+      "id": "1927",
+      "date": "2025-06-26T17:00:00.000Z",
+      "label": "/images/icon.cat8.png",
+      "title": "Pengumuman Mengenai Hiatus Feni Fitriyanti dari JKT48"
+    }
+  ],
+  "page": 1,
+  "perpage": 10,
+  "total_count": 1720
+}
+```
+</Tab>
+
+</Tabs>
+
+## Implementation Examples
+
+<Tabs items={['JavaScript', 'Python', 'Go']}>
+
+<Tab value="JavaScript">
+```javascript
+const API_KEY = 'YOUR_API_KEY';
+const BASE_URL = 'https://v2.jkt48connect.my.id';
+
+async function getJKT48News(page = 1, perpage = 10) {
+  try {
+    const response = await fetch(
+      `${BASE_URL}/api/jkt48/news?apikey=${API_KEY}&page=${page}&perpage=${perpage}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch JKT48 news:', error);
+    throw error;
+  }
+}
+
+// Categorize news by icon labels
+function categorizeNews(news) {
+  const categories = {
+    'cat1': 'Member Updates',
+    'cat2': 'Events & Concerts', 
+    'cat3': 'General Announcements',
+    'cat4': 'Merchandise',
+    'cat5': 'Special Events',
+    'cat8': 'Member Status'
+  };
+  
+  return news.map(article => {
+    const iconMatch = article.label.match(/icon\.cat(\d+)\.png/);
+    const categoryKey = iconMatch ? `cat${iconMatch[1]}` : 'cat3';
+    
+    return {
+      ...article,
+      category: categories[categoryKey] || 'General',
+      categoryIcon: article.label,
+      isRecent: isRecentNews(article.date)
+    };
+  });
+}
+
+// Check if news is recent (within last 7 days)
+function isRecentNews(dateStr) {
+  const newsDate = new Date(dateStr);
+  const now = new Date();
+  const diffTime = Math.abs(now - newsDate);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return diffDays <= 7;
+}
+
+// Format news for display
+function formatNewsArticle(article) {
+  const newsDate = new Date(article.date);
+  
+  return {
+    id: article.id,
+    title: article.title,
+    category: getCategoryFromLabel(article.label),
+    publishDate: newsDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }),
+    isRecent: isRecentNews(article.date),
+    categoryIcon: article.label,
+    summary: generateSummary(article.title)
+  };
+}
+
+function getCategoryFromLabel(label) {
+  const categories = {
+    'cat1': 'Member Updates',
+    'cat2': 'Events & Concerts',
+    'cat3': 'General',
+    'cat4': 'Merchandise', 
+    'cat5': 'Special Events',
+    'cat8': 'Member Status'
+  };
+  
+  const match = label.match(/cat(\d+)/);
+  return match ? categories[`cat${match[1]}`] || 'General' : 'General';
+}
+
+function generateSummary(title) {
+  if (title.includes('Pengumuman')) {
+    return title.replace('Pengumuman Mengenai ', '').substring(0, 60) + '...';
+  }
+  return title.substring(0, 60) + '...';
+}
+
+// Usage example
+async function displayNewsUpdate() {
+  try {
+    const data = await getJKT48News();
+    const { news, page, total_count } = data;
+    
+    console.log(`=== JKT48 NEWS UPDATE (Page ${page}) ===`);
+    console.log(`Total articles: ${total_count}`);
+    
+    const categorizedNews = categorizeNews(news);
+    const recentNews = categorizedNews.filter(article => article.isRecent);
+    
+    if (recentNews.length > 0) {
+      console.log('\n🔥 RECENT NEWS (Last 7 days):');
+      recentNews.forEach(article => {
+        const formatted = formatNewsArticle(article);
+        console.log(`📰 ${formatted.title}`);
+        console.log(`   Category: ${formatted.category} | ${formatted.publishDate}`);
+      });
+    }
+    
+    console.log('\n📋 ALL NEWS:');
+    categorizedNews.forEach(article => {
+      const formatted = formatNewsArticle(article);
+      const recentBadge = formatted.isRecent ? ' 🆕' : '';
+      console.log(`${formatted.category}: ${formatted.summary}${recentBadge}`);
+    });
+    
+  } catch (error) {
+    console.error('Error displaying news:', error);
+  }
+}
+
+// Get news by category
+function getNewsByCategory(news, category) {
+  return news.filter(article => 
+    getCategoryFromLabel(article.label) === category
+  );
+}
+```
+</Tab>
+
+<Tab value="Python">
+```python
+import requests
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional
+
+API_KEY = 'YOUR_API_KEY'
+BASE_URL = 'https://v2.jkt48connect.my.id'
+
+def get_jkt48_news(page: int = 1, perpage: int = 10) -> Dict:
+    """Fetch JKT48 news articles"""
+    url = f"{BASE_URL}/api/jkt48/news"
+    params = {
+        'apikey': API_KEY,
+        'page': page,
+        'perpage': perpage
+    }
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching JKT48 news: {e}")
+        raise
+
+def categorize_news(news: List[Dict]) -> List[Dict]:
+    """Categorize news articles by their icon labels"""
+    categories = {
+        'cat1': 'Member Updates',
+        'cat2': 'Events & Concerts',
+        'cat3': 'General Announcements',
+        'cat4': 'Merchandise',
+        'cat5': 'Special Events',
+        'cat8': 'Member Status'
+    }
+    
+    categorized = []
+    for article in news:
+        # Extract category from icon path
+        icon_path = article['label']
+        category_key = 'cat3'  # default
+        
+        for key in categories.keys():
+            if key in icon_path:
+                category_key = key
+                break
+        
+        categorized.append({
+            **article,
+            'category': categories[category_key],
+            'category_icon': icon_path,
+            'is_recent': is_recent_news(article['date'])
+        })
+    
+    return categorized
+
+def is_recent_news(date_str: str) -> bool:
+    """Check if news is recent (within last 7 days)"""
+    news_date = datetime.fromisoformat(date_str.replace('Z', '+00:00'))
+    now = datetime.now(news_date.tzinfo)
+    return (now - news_date).days <= 7
+
+def format_news_article(article: Dict) -> Dict:
+    """Format news article for display"""
+    news_date = datetime.fromisoformat(article['date'].replace('Z', '+00:00'))
+    
+    return {
+        'id': article['id'],
+        'title': article['title'],
+        'category': get_category_from_label(article['label']),
+        'publish_date': news_date.strftime('%B %d, %Y'),
+        'is_recent': is_recent_news(article['date']),
+        'category_icon': article['label'],
+        'summary': generate_summary(article['title'])
+    }
+
+def get_category_from_label(label: str) -> str:
+    """Extract category from icon label"""
+    categories = {
+        'cat1': 'Member Updates',
+        'cat2': 'Events & Concerts', 
+        'cat3': 'General',
+        'cat4': 'Merchandise',
+        'cat5': 'Special Events',
+        'cat8': 'Member Status'
+    }
+    
+    for key, category in categories.items():
+        if key in label:
+            return category
+    return 'General'
+
+def generate_summary(title: str) -> str:
+    """Generate news summary from title"""
+    if 'Pengumuman' in title:
+        summary = title.replace('Pengumuman Mengenai ', '')
+        return summary[:60] + '...' if len(summary) > 60 else summary
+    return title[:60] + '...' if len(title) > 60 else title
+
+def display_news_update():
+    """Display formatted JKT48 news update"""
+    try:
+        data = get_jkt48_news()
+        news = data['news']
+        page = data['page']
+        total_count = data['total_count']
+        
+        print(f"=== JKT48 NEWS UPDATE (Page {page}) ===")
+        print(f"Total articles: {total_count}")
+        
+        categorized_news = categorize_news(news)
+        recent_news = [article for article in categorized_news if article['is_recent']]
+        
+        if recent_news:
+            print("\n🔥 RECENT NEWS (Last 7 days):")
+            for article in recent_news:
+                formatted = format_news_article(article)
+                print(f"📰 {formatted['title']}")
+                print(f"   Category: {formatted['category']} | {formatted['publish_date']}")
+        
+        print("\n📋 ALL NEWS:")
+        for article in categorized_news:
+            formatted = format_news_article(article)
+            recent_badge = ' 🆕' if formatted['is_recent'] else ''
+            print(f"{formatted['category']}: {formatted['summary']}{recent_badge}")
+            
+    except Exception as e:
+        print(f"Error: {e}")
+
+def get_news_by_category(news: List[Dict], category: str) -> List[Dict]:
+    """Filter news by category"""
+    return [
+        article for article in news 
+        if get_category_from_label(article['label']) == category
+    ]
+
+# Usage example
+if __name__ == "__main__":
+    display_news_update()
+```
+</Tab>
+
+<Tab value="Go">
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "regexp"
+    "strings"
+    "time"
+)
+
+const (
+    APIKey  = "YOUR_API_KEY"
+    BaseURL = "https://v2.jkt48connect.my.id"
+)
+
+type NewsArticle struct {
+    ID    string `json:"_id"`
+    NewsID string `json:"id"`
+    Date   string `json:"date"`
+    Label  string `json:"label"`
+    Title  string `json:"title"`
+}
+
+type NewsResponse struct {
+    Author     string        `json:"author"`
+    News       []NewsArticle `json:"news"`
+    Page       int           `json:"page"`
+    PerPage    int           `json:"perpage"`
+    TotalCount int           `json:"total_count"`
+}
+
+type CategorizedNews struct {
+    NewsArticle
+    Category     string
+    CategoryIcon string
+    IsRecent     bool
+}
+
+func getJKT48News(page, perpage int) (*NewsResponse, error) {
+    url := fmt.Sprintf("%s/api/jkt48/news?apikey=%s&page=%d&perpage=%d", 
+        BaseURL, APIKey, page, perpage)
+    
+    client := &http.Client{Timeout: 30 * time.Second}
+    resp, err := client.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+    }
+    
+    var newsResp NewsResponse
+    err = json.NewDecoder(resp.Body).Decode(&newsResp)
+    return &newsResp, err
+}
+
+func getCategoryFromLabel(label string) string {
+    categories := map[string]string{
+        "cat1": "Member Updates",
+        "cat2": "Events & Concerts",
+        "cat3": "General",
+        "cat4": "Merchandise",
+        "cat5": "Special Events",
+        "cat8": "Member Status",
+    }
+    
+    re := regexp.MustCompile(`cat(\d+)`)
+    match := re.FindStringSubmatch(label)
+    if len(match) > 1 {
+        if category, exists := categories["cat"+match[1]]; exists {
+            return category
+        }
+    }
+    return "General"
+}
+
+func isRecentNews(dateStr string) bool {
+    newsDate, err := time.Parse(time.RFC3339, dateStr)
+    if err != nil {
+        return false
+    }
+    
+    now := time.Now()
+    diff := now.Sub(newsDate)
+    return diff.Hours() <= 7*24 // 7 days
+}
+
+func categorizeNews(news []NewsArticle) []CategorizedNews {
+    var categorized []CategorizedNews
+    
+    for _, article := range news {
+        categorized = append(categorized, CategorizedNews{
+            NewsArticle:  article,
+            Category:     getCategoryFromLabel(article.Label),
+            CategoryIcon: article.Label,
+            IsRecent:     isRecentNews(article.Date),
+        })
+    }
+    
+    return categorized
+}
+
+func generateSummary(title string) string {
+    if strings.Contains(title, "Pengumuman") {
+        summary := strings.Replace(title, "Pengumuman Mengenai ", "", 1)
+        if len(summary) > 60 {
+            return summary[:60] + "..."
+        }
+        return summary
+    }
+    
+    if len(title) > 60 {
+        return title[:60] + "..."
+    }
+    return title
+}
+
+func displayNewsUpdate() {
+    data, err := getJKT48News(1, 10)
+    if err != nil {
+        fmt.Printf("Error fetching JKT48 news: %v\n", err)
+        return
+    }
+    
+    fmt.Printf("=== JKT48 NEWS UPDATE (Page %d) ===\n", data.Page)
+    fmt.Printf("Total articles: %d\n", data.TotalCount)
+    
+    categorizedNews := categorizeNews(data.News)
+    
+    // Filter recent news
+    var recentNews []CategorizedNews
+    for _, article := range categorizedNews {
+        if article.IsRecent {
+            recentNews = append(recentNews, article)
+        }
+    }
+    
+    if len(recentNews) > 0 {
+        fmt.Println("\n🔥 RECENT NEWS (Last 7 days):")
+        for _, article := range recentNews {
+            newsDate, _ := time.Parse(time.RFC3339, article.Date)
+            fmt.Printf("📰 %s\n", article.Title)
+            fmt.Printf("   Category: %s | %s\n", 
+                article.Category, 
+                newsDate.Format("January 2, 2006"))
+        }
+    }
+    
+    fmt.Println("\n📋 ALL NEWS:")
+    for _, article := range categorizedNews {
+        summary := generateSummary(article.Title)
+        recentBadge := ""
+        if article.IsRecent {
+            recentBadge = " 🆕"
+        }
+        fmt.Printf("%s: %s%s\n", article.Category, summary, recentBadge)
+    }
+}
+
+func getNewsByCategory(news []NewsArticle, category string) []NewsArticle {
+    var filtered []NewsArticle
+    for _, article := range news {
+        if getCategoryFromLabel(article.Label) == category {
+            filtered = append(filtered, article)
+        }
+    }
+    return filtered
+}
+
+func main() {
+    displayNewsUpdate()
+}
+```
+</Tab>
+
+</Tabs>
+
+## Data Structure
+
+<Callout type="info">
+The news API returns paginated articles with category labels and timestamps for easy categorization and filtering.
+</Callout>
+
+**News Article Object:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `_id` | string | Database identifier |
+| `id` | string | News article ID |
+| `date` | string | ISO 8601 formatted publication date |
+| `label` | string | Category icon path (e.g., `/images/icon.cat2.png`) |
+| `title` | string | News article title/headline |
+
+**Category Labels:**
+
+| Icon | Category | Description |
+|------|----------|-------------|
+| `cat1` | Member Updates | Individual member announcements |
+| `cat2` | Events & Concerts | Live performances and events |
+| `cat3` | General | General announcements |
+| `cat4` | Merchandise | Product and merchandise news |
+| `cat5` | Special Events | Special occasions and celebrations |
+| `cat8` | Member Status | Hiatus, graduation, and status updates |
+
+## Common Use Cases
+
+<Tabs items={['News Feed', 'Notifications', 'Category Filter']}>
+
+<Tab value="News Feed">
+```javascript
+// Create chronological news feed
+function createNewsFeed(news) {
+  return news
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .map(article => ({
+      id: article.id,
+      title: article.title,
+      category: getCategoryFromLabel(article.label),
+      publishedAt: new Date(article.date),
+      isBreaking: isRecentNews(article.date),
+      priority: getPriority(article.label)
+    }));
+}
+
+function getPriority(label) {
+  const priorities = {
+    'cat8': 3, // Member Status (highest)
+    'cat2': 2, // Events
+    'cat1': 2, // Member Updates
+    'cat5': 1, // Special Events
+    'cat4': 0, // Merchandise
+    'cat3': 0  // General
+  };
+  
+  const match = label.match(/cat(\d+)/);
+  return match ? priorities[`cat${match[1]}`] || 0 : 0;
+}
+```
+</Tab>
+
+<Tab value="Notifications">
+```javascript
+// News notification system
+function checkForNewAnnouncements(lastChecked) {
+  return getJKT48News().then(data => {
+    const newArticles = data.news.filter(article => 
+      new Date(article.date) > new Date(lastChecked)
+    );
+    
+    return newArticles.map(article => ({
+      type: 'news',
+      title: 'New JKT48 Announcement',
+      message: generateSummary(article.title),
+      category: getCategoryFromLabel(article.label),
+      priority: getPriority(article.label),
+      timestamp: article.date,
+      data: { newsId: article.id }
+    }));
+  });
+}
+
+// Priority-based notifications
+function getHighPriorityNews(news) {
+  return news.filter(article => {
+    const category = getCategoryFromLabel(article.label);
+    return ['Member Status', 'Events & Concerts'].includes(category);
+  });
+}
+```
+</Tab>
+
+<Tab value="Category Filter">
+```javascript
+// Advanced category filtering
+function filterNewsByCategories(news, categories) {
+  return news.filter(article => {
+    const articleCategory = getCategoryFromLabel(article.label);
+    return categories.includes(articleCategory);
+  });
+}
+
+// Get category statistics
+function getNewsStatistics(news) {
+  const stats = {};
+  
+  news.forEach(article => {
+    const category = getCategoryFromLabel(article.label);
+    stats[category] = (stats[category] || 0) + 1;
+  });
+  
+  return {
+    totalArticles: news.length,
+    categoryCounts: stats,
+    recentCount: news.filter(a => isRecentNews(a.date)).length,
+    oldestArticle: Math.min(...news.map(a => new Date(a.date))),
+    newestArticle: Math.max(...news.map(a => new Date(a.date)))
+  };
+}
+```
+</Tab>
+
+</Tabs>
+
+## Error Handling
+
+```javascript
+async function getJKT48NewsSafely(page = 1, perpage = 10) {
+  try {
+    const data = await getJKT48News(page, perpage);
+    
+    // Validate response structure
+    if (!data.news || !Array.isArray(data.news)) {
+      throw new Error('Invalid response format: missing news array');
+    }
+    
+    // Filter out invalid articles
+    const validNews = data.news.filter(article => 
+      article.id && 
+      article.title && 
+      article.date &&
+      article.label &&
+      !isNaN(Date.parse(article.date))
+    );
+    
+    return {
+      ...data,
+      news: validNews
+    };
+    
+  } catch (error) {
+    console.error('Failed to fetch JKT48 news:', error);
+    return {
+      news: [],
+      page: 1,
+      perpage: 10,
+      total_count: 0
+    };
+  }
+}
+```
+
+---
+
+### Get Started
+
+Ready to build JKT48 news applications? [Get your API key](https://www.jkt48connect.my.id/buyapi) and start creating news feeds and notification systems!

@@ -1,0 +1,134 @@
+---
+title: Quick Start
+description: Getting Started with JKT48Connect API
+icon: Album
+---
+
+## Introduction
+
+JKT48Connect API <span className='text-fd-muted-foreground text-sm'>(JKT48 Connect API)</span> is a **REST API** providing data related to JKT48. It's designed for quick and easy integration into your applications.
+
+JKT48Connect API offers:
+
+<Cards>
+
+<Card icon={<CpuIcon className="text-purple-300" />} title='API Endpoints'>
+
+Access various JKT48 data through well-defined REST endpoints.
+
+</Card>
+
+<Card icon={<PanelsTopLeft className="text-blue-300" />} title='Structured Responses'>
+
+Receive consistent JSON responses for easy parsing and usage.
+
+</Card>
+
+<Card icon={<Database />} title='Up-to-Date Data'>
+
+Continuously updated data, ensuring you get the latest information.
+
+</Card>
+
+<Card icon={<Terminal />} title='No Modules Required'>
+
+Integrate directly using standard HTTP requests from any programming language.
+
+</Card>
+
+</Cards>
+
+<Callout title="Want to learn more?">
+  Explore our in-depth [API Reference](/docs/api-reference) for all endpoints.
+</Callout>
+
+### Terminology
+
+**REST API:** A set of architectural principles for designing networked applications. JKT48Connect API follows these principles.
+
+Basic knowledge of HTTP requests and JSON data structures is useful.
+
+## Getting Started
+
+The base URL for all JKT48Connect API requests is `https://v2.jkt48connect.my.id`.
+
+### Examples
+
+Here are some common endpoints:
+
+- **Members Data:**
+  `GET /api/jkt48/members`
+
+- **Live Schedule:**
+  `GET /api/jkt48/live`
+
+- **Theater Schedule:**
+  `GET /api/jkt48/theater`
+
+### Enjoy!
+
+Start sending requests to the API and integrate JKT48 data into your projects!
+
+## FAQ
+
+Some common questions you may encounter.
+
+<Accordions>
+    <Accordion id='base-url' title="What is the base URL for the API?">
+
+The base URL for all JKT48Connect API requests is: `https://v2.jkt48connect.my.id`.
+
+    </Accordion>
+    <Accordion id='data-format' title="What data format does the API return?">
+
+All API responses are returned in **JSON** format.
+
+    </Accordion>
+    <Accordion id='authentication' title='Does the API require authentication?'>
+
+Currently, the JKT48Connect API requires authentication in the form of an apikey to access the features and the apikey can be obtained on the [official website.](https://www.jkt48connect.my.id/buyapi)
+
+    </Accordion>
+
+    <Accordion id='rate-limits' title="Are there any rate limits?">
+        Currently, no strict rate limits are enforced. Please use the API responsibly to ensure service availability for all users.
+    </Accordion>
+
+</Accordions>
+
+## Learn More
+
+New to here? Don't worry, we welcome your questions.
+
+If you find anything confusing, please give your feedback on [WhatsApp](https://wa.me/6285701479245)!
+
+### Using the API
+
+For consuming the API, make sure to read:
+
+<Cards>
+  <Card href="/docs/api-reference" title="API Reference">
+    Comprehensive list of all available endpoints and their usage.
+  </Card>
+  <Card href="/docs/guides/http-requests" title="Making Requests">
+    Learn how to send HTTP requests to the API.
+  </Card>
+  <Card href="/docs/guides/json-parsing" title="Handling Responses">
+    Understand how to parse and use JSON responses.
+  </Card>
+</Cards>
+
+### Contributions & Support
+
+<Cards>
+  <Card
+    href="/docs/contributing"
+    title="Contributing"
+    description="Learn how to contribute to the JKT48Connect project."
+  />
+  <Card
+    href="/docs/support"
+    title="Support"
+    description="Find out how to get help and support for the API."
+  />
+</Cards>

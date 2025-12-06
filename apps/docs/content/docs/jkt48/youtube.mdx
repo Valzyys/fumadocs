@@ -1,0 +1,544 @@
+---
+title: YouTube Live
+description: Getting JKT48V Live Data from YouTube Platform via JKT48Connect API
+icon: Video
+---
+
+## Introduction
+
+JKT48Connect YouTube Live API <span className='text-fd-muted-foreground text-sm'>(JKT48 Connect YouTube Live API)</span> is a **REST API** that provides **real-time data** on JKT48 members currently live on **YouTube platform**. It's designed for quick and easy integration into applications needing comprehensive live status updates from YouTube.
+
+JKT48Connect YouTube Live API offers:
+
+<Cards>
+
+<Card icon={<Video className="text-red-300" />} title='YouTube Live Coverage'>
+
+Monitor JKT48V members live specifically on YouTube platform.
+
+</Card>
+
+<Card icon={<Clock className="text-green-300" />} title='Real-Time Updates'>
+
+Get instant live status updates from YouTube platform.
+
+</Card>
+
+<Card icon={<Database />} title='Unified Data Format'>
+
+Consistent JSON responses for YouTube streaming data.
+
+</Card>
+
+<Card icon={<Zap />} title='Simple Integration'>
+
+Easy to implement with standard HTTP requests and API key authentication.
+
+</Card>
+
+</Cards>
+
+<Callout title="YouTube Platform Focus">
+  This API specifically focuses on live data from YouTube platform, providing detailed information about JKT48 member activities on the world's largest video streaming service.
+</Callout>
+
+### Terminology
+
+**API Key:** A unique key required for authenticating your requests.  
+**Live Stream:** Active broadcast by JKT48 members on YouTube platform.  
+**YouTube:** Global video streaming platform where JKT48 members broadcast.
+
+## Getting Started
+
+The base URL for all JKT48Connect API requests is `https://v2.jkt48connect.my.id`.
+
+### Endpoint
+
+To retrieve live JKT48 member data from YouTube platform, use:
+
+`GET /api/jkt48/live/youtube`
+
+### Authentication
+
+This endpoint requires an **API Key** for access. Append `?apikey=YOUR_API_KEY` to your request URL. You can obtain your API key from the [official JKT48Connect website](https://www.jkt48connect.my.id/buyapi).
+
+**Example Request:**
+```
+GET https://v2.jkt48connect.my.id/api/jkt48/live/youtube?apikey=YOUR_API_KEY
+```
+
+Remember to replace `YOUR_API_KEY` with your actual API key.
+
+### Response Format
+
+A successful request returns a JSON array of objects, each representing a live member on YouTube. The exact structure of the response may vary depending on the YouTube streaming data available.
+
+## Code Implementations
+
+Here's how to fetch live data from YouTube platform using different programming languages. Replace `YOUR_API_KEY` with your actual API key.
+
+<Tabs items={['JavaScript', 'Python', 'PHP', 'Go', 'Java', 'C#']}>
+
+<Tab value="JavaScript">
+```javascript
+// Using Fetch API
+const API_KEY = 'YOUR_API_KEY'; // Get your API key from https://www.jkt48connect.my.id/buyapi
+const BASE_URL = 'https://v2.jkt48connect.my.id';
+const ENDPOINT = '/api/jkt48/live/youtube';
+
+async function getYouTubeLiveMembers() {
+  try {
+    const response = await fetch(`${BASE_URL}${ENDPOINT}?apikey=${API_KEY}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Live members on YouTube platform:', data);
+    
+    // Display member information
+    data.forEach(member => {
+      console.log(`${member.name || 'Unknown'} is live on YouTube`);
+      if (member.started_at) {
+        console.log(`Started: ${new Date(member.started_at).toLocaleTimeString()}`);
+      }
+    });
+    
+    return data;
+  } catch (error) {
+    console.error('Error fetching YouTube live members:', error);
+  }
+}
+
+// Usage
+getYouTubeLiveMembers();
+```
+</Tab>
+
+<Tab value="Python">
+```python
+import requests
+import json
+from datetime import datetime
+
+API_KEY = 'YOUR_API_KEY'  # Get your API key from https://www.jkt48connect.my.id/buyapi
+BASE_URL = 'https://v2.jkt48connect.my.id'
+ENDPOINT = '/api/jkt48/live/youtube'
+
+def get_youtube_live_members():
+    try:
+        response = requests.get(f"{BASE_URL}{ENDPOINT}?apikey={API_KEY}")
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        
+        data = response.json()
+        print(f"Found {len(data)} live members on YouTube platform")
+        
+        # Display member information
+        for member in data:
+            name = member.get('name', 'Unknown')
+            print(f"- {name}")
+            
+            if 'started_at' in member:
+                try:
+                    started_time = datetime.fromisoformat(member['started_at'].replace('Z', '+00:00'))
+                    print(f"  Started: {started_time.strftime('%H:%M:%S')}")
+                except:
+                    print(f"  Started: {member['started_at']}")
+            
+            # Display other available fields
+            for key, value in member.items():
+                if key not in ['name', 'started_at']:
+                    print(f"  {key}: {value}")
+            print()
+        
+        return data
+        
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching YouTube live members: {e}")
+        return None
+
+if __name__ == "__main__":
+    get_youtube_live_members()
+```
+</Tab>
+
+<Tab value="PHP">
+```php
+<?php
+$apiKey = 'YOUR_API_KEY'; // Get your API key from https://www.jkt48connect.my.id/buyapi
+$baseUrl = 'https://v2.jkt48connect.my.id';
+$endpoint = '/api/jkt48/live/youtube';
+$url = "{$baseUrl}{$endpoint}?apikey={$apiKey}";
+
+function getYouTubeLiveMembers($url) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    
+    $response = curl_exec($ch);
+    
+    if (curl_errno($ch)) {
+        echo 'Error fetching YouTube live members: ' . curl_error($ch);
+        curl_close($ch);
+        return false;
+    }
+    
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode !== 200) {
+        echo "HTTP Error: {$httpCode}";
+        return false;
+    }
+    
+    $data = json_decode($response, true);
+    
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        echo 'JSON Error: ' . json_last_error_msg();
+        return false;
+    }
+    
+    // Display results
+    echo "Live members on YouTube platform:\n";
+    echo "Found " . count($data) . " members\n\n";
+    
+    foreach ($data as $member) {
+        $name = $member['name'] ?? 'Unknown';
+        echo "- {$name}\n";
+        
+        if (isset($member['started_at'])) {
+            $startedTime = date('H:i:s', strtotime($member['started_at']));
+            echo "  Started: {$startedTime}\n";
+        }
+        
+        // Display other available fields
+        foreach ($member as $key => $value) {
+            if (!in_array($key, ['name', 'started_at'])) {
+                echo "  {$key}: {$value}\n";
+            }
+        }
+        echo "\n";
+    }
+    
+    return $data;
+}
+
+getYouTubeLiveMembers($url);
+?>
+```
+</Tab>
+
+<Tab value="Go">
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "io/ioutil"
+    "net/http"
+    "time"
+)
+
+const (
+    apiKey  = "YOUR_API_KEY" // Get your API key from https://www.jkt48connect.my.id/buyapi
+    baseURL = "https://v2.jkt48connect.my.id"
+    endpoint = "/api/jkt48/live/youtube"
+)
+
+// Generic structure for YouTube live member data
+type LiveMember map[string]interface{}
+
+func getYouTubeLiveMembers() ([]LiveMember, error) {
+    url := fmt.Sprintf("%s%s?apikey=%s", baseURL, endpoint, apiKey)
+    
+    client := &http.Client{Timeout: 30 * time.Second}
+    resp, err := client.Get(url)
+    if err != nil {
+        return nil, fmt.Errorf("error making request: %v", err)
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("HTTP error: %d %s", resp.StatusCode, resp.Status)
+    }
+    
+    body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        return nil, fmt.Errorf("error reading response: %v", err)
+    }
+    
+    var liveMembers []LiveMember
+    err = json.Unmarshal(body, &liveMembers)
+    if err != nil {
+        return nil, fmt.Errorf("error parsing JSON: %v", err)
+    }
+    
+    return liveMembers, nil
+}
+
+func main() {
+    members, err := getYouTubeLiveMembers()
+    if err != nil {
+        fmt.Printf("Error: %v\n", err)
+        return
+    }
+    
+    fmt.Printf("Found %d live members on YouTube platform:\n\n", len(members))
+    
+    for _, member := range members {
+        if name, ok := member["name"].(string); ok {
+            fmt.Printf("- %s\n", name)
+        } else {
+            fmt.Printf("- Unknown\n")
+        }
+        
+        if startedAt, ok := member["started_at"].(string); ok {
+            if parsedTime, err := time.Parse(time.RFC3339, startedAt); err == nil {
+                fmt.Printf("  Started: %s\n", parsedTime.Format("15:04:05"))
+            } else {
+                fmt.Printf("  Started: %s\n", startedAt)
+            }
+        }
+        
+        // Display other available fields
+        for key, value := range member {
+            if key != "name" && key != "started_at" {
+                fmt.Printf("  %s: %v\n", key, value)
+            }
+        }
+        fmt.Println()
+    }
+}
+```
+</Tab>
+
+<Tab value="Java">
+```java
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+public class JKT48YouTubeLiveAPI {
+    private static final String API_KEY = "YOUR_API_KEY"; // Get your API key from https://www.jkt48connect.my.id/buyapi
+    private static final String BASE_URL = "https://v2.jkt48connect.my.id";
+    private static final String ENDPOINT = "/api/jkt48/live/youtube";
+    
+    public static void main(String[] args) {
+        try {
+            List<Map<String, Object>> members = getYouTubeLiveMembers();
+            
+            System.out.println("Found " + members.size() + " live members on YouTube platform:\n");
+            
+            for (Map<String, Object> member : members) {
+                String name = (String) member.getOrDefault("name", "Unknown");
+                System.out.println("- " + name);
+                
+                if (member.containsKey("started_at")) {
+                    String startedAt = (String) member.get("started_at");
+                    try {
+                        Instant startedTime = Instant.parse(startedAt);
+                        String formattedTime = DateTimeFormatter.ofPattern("HH:mm:ss")
+                            .withZone(ZoneId.systemDefault())
+                            .format(startedTime);
+                        System.out.println("  Started: " + formattedTime);
+                    } catch (Exception e) {
+                        System.out.println("  Started: " + startedAt);
+                    }
+                }
+                
+                // Display other available fields
+                for (Map.Entry<String, Object> entry : member.entrySet()) {
+                    if (!"name".equals(entry.getKey()) && !"started_at".equals(entry.getKey())) {
+                        System.out.println("  " + entry.getKey() + ": " + entry.getValue());
+                    }
+                }
+                System.out.println();
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+        }
+    }
+    
+    private static List<Map<String, Object>> getYouTubeLiveMembers() throws IOException, InterruptedException {
+        String url = BASE_URL + ENDPOINT + "?apikey=" + API_KEY;
+        
+        HttpClient client = HttpClient.newBuilder()
+            .timeout(Duration.ofSeconds(30))
+            .build();
+            
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .GET()
+            .build();
+            
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        
+        if (response.statusCode() != 200) {
+            throw new IOException("HTTP error: " + response.statusCode());
+        }
+        
+        ObjectMapper mapper = new ObjectMapper();
+        TypeReference<List<Map<String, Object>>> typeRef = new TypeReference<List<Map<String, Object>>>() {};
+        List<Map<String, Object>> members = mapper.readValue(response.body(), typeRef);
+        
+        return members;
+    }
+}
+```
+</Tab>
+
+<Tab value="C#">
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+public class JKT48YouTubeLiveAPI
+{
+    private const string ApiKey = "YOUR_API_KEY"; // Get your API key from https://www.jkt48connect.my.id/buyapi
+    private const string BaseUrl = "https://v2.jkt48connect.my.id";
+    private const string Endpoint = "/api/jkt48/live/youtube";
+    
+    private static readonly HttpClient httpClient = new HttpClient();
+    
+    public static async Task Main(string[] args)
+    {
+        try
+        {
+            var members = await GetYouTubeLiveMembersAsync();
+            
+            Console.WriteLine($"Found {members.Count} live members on YouTube platform:\n");
+            
+            foreach (var member in members)
+            {
+                string name = member.TryGetValue("name", out var nameValue) ? nameValue.ToString() : "Unknown";
+                Console.WriteLine($"- {name}");
+                
+                if (member.TryGetValue("started_at", out var startedAtValue))
+                {
+                    string startedAtStr = startedAtValue.ToString();
+                    if (DateTime.TryParse(startedAtStr, out DateTime startedTime))
+                    {
+                        Console.WriteLine($"  Started: {startedTime:HH:mm:ss}");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"  Started: {startedAtStr}");
+                    }
+                }
+                
+                // Display other available fields
+                foreach (var kvp in member)
+                {
+                    if (kvp.Key != "name" && kvp.Key != "started_at")
+                    {
+                        Console.WriteLine($"  {kvp.Key}: {kvp.Value}");
+                    }
+                }
+                Console.WriteLine();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+    
+    private static async Task<List<Dictionary<string, object>>> GetYouTubeLiveMembersAsync()
+    {
+        string url = $"{BaseUrl}{Endpoint}?apikey={ApiKey}";
+        
+        try
+        {
+            HttpResponseMessage response = await httpClient.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+            
+            string responseBody = await response.Content.ReadAsStringAsync();
+            
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            
+            var members = JsonSerializer.Deserialize<List<Dictionary<string, object>>>(responseBody, options);
+            return members ?? new List<Dictionary<string, object>>();
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new Exception($"HTTP request failed: {ex.Message}");
+        }
+        catch (JsonException ex)
+        {
+            throw new Exception($"JSON parsing failed: {ex.Message}");
+        }
+    }
+}
+```
+</Tab>
+
+</Tabs>
+
+## Platform Coverage
+
+The YouTube Live API specifically focuses on:
+
+- **YouTube** - Global video streaming platform where JKT48 members broadcast
+
+The response structure may vary depending on the YouTube streaming data available, but will typically include information about live streams, premieres, and other YouTube-specific broadcasting features.
+
+## FAQ
+
+Common questions about the YouTube Live API:
+
+<Accordions>
+    <Accordion id='platform-focus' title="Does this only cover YouTube?">
+        Yes, this endpoint specifically focuses on **YouTube platform** only. For other platforms or combined data, check other available endpoints.
+    </Accordion>
+    
+    <Accordion id='update-frequency' title="How often is the live data updated?">
+        The live data is updated in **real-time** to ensure you get the most current information about which members are currently streaming on YouTube.
+    </Accordion>
+    
+    <Accordion id='authentication' title="Do I need an API key?">
+        Yes, this endpoint requires an **API key** for authentication. You can obtain your API key from the [official website](https://www.jkt48connect.my.id/buyapi).
+    </Accordion>
+    
+    <Accordion id='response-format' title="What format is the response?">
+        All responses are returned in **JSON** format. The exact structure may vary depending on the YouTube streaming data available.
+    </Accordion>
+
+    <Accordion id='data-structure' title="What data is included in the response?">
+        The response includes information about live YouTube streams, which may include member names, streaming timestamps, and other YouTube-specific metadata. The exact fields depend on the current live streaming data.
+    </Accordion>
+
+</Accordions>
+
+### Need Help?
+
+If you have questions or need assistance:
+
+<Cards>
+  <Card
+    href="https://wa.me/6285701479245"
+    title="WhatsApp Support"
+    description="Get direct support via WhatsApp for quick assistance."
+  />
+  </Cards>

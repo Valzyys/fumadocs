@@ -1,0 +1,253 @@
+---
+title: Recent Live
+description: Get JKT48 Members' Recently Ended Live Streams via JKT48Connect API
+icon: History
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+## Introduction
+
+JKT48Connect Recent Live API provides historical data of **recently ended live streams** from JKT48 members across multiple platforms. Perfect for tracking member activity, analyzing streaming patterns, and building comprehensive dashboards.
+
+<Cards>
+<Card icon={<History className="text-purple-400" />} title='Recent Live History'>
+Access recently ended streams from all supported platforms.
+</Card>
+
+<Card icon={<BarChart3 className="text-amber-400" />} title='Stream Analytics'>
+Get detailed metrics including duration, viewers, and gift data.
+</Card>
+
+<Card icon={<Users className="text-emerald-400" />} title='Member Insights'>
+Complete member information with stream performance data.
+</Card>
+</Cards>
+
+## Quick Start
+
+<Steps>
+<Step>
+### Get Your API Key
+Obtain your API key from [JKT48Connect](https://www.jkt48connect.my.id/buyapi).
+</Step>
+
+<Step>
+### Make API Request
+```bash
+curl "https://v2.jkt48connect.my.id/api/jkt48/recent?apikey=YOUR_API_KEY"
+```
+</Step>
+
+<Step>
+### Process Response
+Handle the JSON array containing recent live stream data.
+</Step>
+</Steps>
+
+## Endpoint Details
+
+<Tabs items={['Overview', 'Request', 'Response']}>
+
+<Tab value="Overview">
+**Base URL:** `https://v2.jkt48connect.my.id`  
+**Endpoint:** `/api/jkt48/recent`  
+**Method:** `GET`  
+**Authentication:** API Key required
+</Tab>
+
+<Tab value="Request">
+**Parameters:**
+- `apikey` (required): Your API authentication key
+
+**Example:**
+```http
+GET /api/jkt48/recent?apikey=YOUR_API_KEY HTTP/1.1
+Host: v2.jkt48connect.my.id
+```
+</Tab>
+
+<Tab value="Response">
+Returns JSON array with recent live stream objects:
+
+```json
+[
+  {
+    "_id": "68601c3d3075ab57c938e0b8",
+    "data_id": "125100001751127046",
+    "idn": {
+      "id": "b0e628c8-0b0a-40c7-aa6a-a1c7660c25ce",
+      "username": "jkt48_erine",
+      "title": "Ayo ngobrol bareng!"
+    },
+    "member": {
+      "name": "Erine / エリン（JKT48）",
+      "nickname": "Erine",
+      "url": "erine"
+    },
+    "live_info": {
+      "duration": 2098635,
+      "viewers": { "num": 9253 },
+      "date": {
+        "start": "2025-06-28T16:10:46.240Z",
+        "end": "2025-06-28T16:45:44.875Z"
+      }
+    },
+    "type": "idn",
+    "total_gift": "Rp 2.785.000"
+  }
+]
+```
+</Tab>
+
+</Tabs>
+
+## Implementation Examples
+
+<Tabs items={['JavaScript', 'Python', 'Go']}>
+
+<Tab value="JavaScript">
+```javascript
+const API_KEY = 'YOUR_API_KEY';
+const BASE_URL = 'https://v2.jkt48connect.my.id';
+
+async function getRecentLiveStreams() {
+  const response = await fetch(`${BASE_URL}/api/jkt48/recent?apikey=${API_KEY}`);
+  const streams = await response.json();
+  
+  streams.forEach(stream => {
+    const { member, live_info, total_gift } = stream;
+    console.log(`${member.nickname}: ${formatDuration(live_info.duration)}`);
+    console.log(`Viewers: ${live_info.viewers.num.toLocaleString()}`);
+    if (total_gift) console.log(`Gifts: ${total_gift}`);
+  });
+}
+
+function formatDuration(ms) {
+  const hours = Math.floor(ms / 3600000);
+  const minutes = Math.floor((ms % 3600000) / 60000);
+  return `${hours}h ${minutes}m`;
+}
+```
+</Tab>
+
+<Tab value="Python">
+```python
+import requests
+from datetime import datetime
+
+API_KEY = 'YOUR_API_KEY'
+BASE_URL = 'https://v2.jkt48connect.my.id'
+
+def get_recent_live_streams():
+    response = requests.get(f"{BASE_URL}/api/jkt48/recent?apikey={API_KEY}")
+    streams = response.json()
+    
+    for stream in streams:
+        member = stream['member']
+        live_info = stream['live_info']
+        
+        duration = format_duration(live_info['duration'])
+        viewers = f"{live_info['viewers']['num']:,}"
+        
+        print(f"{member['nickname']}: {duration}")
+        print(f"Viewers: {viewers}")
+        
+        if 'total_gift' in stream:
+            print(f"Gifts: {stream['total_gift']}")
+        print()
+
+def format_duration(ms):
+    hours = ms // 3600000
+    minutes = (ms % 3600000) // 60000
+    return f"{hours}h {minutes}m"
+```
+</Tab>
+
+<Tab value="Go">
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "time"
+)
+
+type RecentStream struct {
+    Member struct {
+        Name     string `json:"name"`
+        Nickname string `json:"nickname"`
+    } `json:"member"`
+    LiveInfo struct {
+        Duration int64 `json:"duration"`
+        Viewers  struct {
+            Num int `json:"num"`
+        } `json:"viewers"`
+    } `json:"live_info"`
+    TotalGift string `json:"total_gift"`
+}
+
+func getRecentStreams() ([]RecentStream, error) {
+    resp, err := http.Get("https://v2.jkt48connect.my.id/api/jkt48/recent?apikey=YOUR_API_KEY")
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    var streams []RecentStream
+    return streams, json.NewDecoder(resp.Body).Decode(&streams)
+}
+
+func formatDuration(ms int64) string {
+    duration := time.Duration(ms) * time.Millisecond
+    hours := int(duration.Hours())
+    minutes := int(duration.Minutes()) % 60
+    return fmt.Sprintf("%dh %dm", hours, minutes)
+}
+```
+</Tab>
+
+</Tabs>
+
+## Data Structure
+
+<Callout type="info">
+Response contains comprehensive data from multiple streaming platforms including IDN, Showroom, and others.
+</Callout>
+
+**Key Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `member.nickname` | string | Member's display name |
+| `live_info.duration` | number | Stream duration in milliseconds |
+| `live_info.viewers.num` | number | Peak viewer count |
+| `live_info.date` | object | Start and end timestamps |
+| `total_gift` | string | Formatted gift amount |
+| `type` | string | Platform type (idn, showroom, etc.) |
+
+## Error Handling
+
+<Callout type="warn">
+Always implement proper error handling for network requests and API responses.
+</Callout>
+
+```javascript
+try {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+  const data = await response.json();
+} catch (error) {
+  console.error('API request failed:', error.message);
+}
+```
+
+---
+
+### Get Started
+
+Ready to integrate recent live data? [Get your API key](https://www.jkt48connect.my.id/buyapi) and start building!

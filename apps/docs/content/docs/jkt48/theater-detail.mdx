@@ -1,0 +1,570 @@
+---
+title: Theater Detail
+description: Get detailed JKT48 Theater Show information via JKT48Connect API
+icon: Info
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+## Introduction
+
+The JKT48Connect Theater Detail API provides **comprehensive information about specific JKT48 theater shows**, including member lineups, setlist details, seitansai celebrations, and ticket information.
+
+<Cards>
+<Card icon={<Info className="text-blue-400" />} title='Show Details'>
+Get complete information about specific theater performances.
+</Card>
+
+<Card icon={<Music className="text-green-400" />} title='Setlist Info'>
+Access setlist descriptions, songs, and visual assets.
+</Card>
+
+<Card icon={<Users2 className="text-purple-400" />} title='Member Lineup'>
+View participating members with photos and profiles.
+</Card>
+</Cards>
+
+## Quick Start
+
+<Steps>
+<Step>
+### Get Show ID
+First obtain a show ID from the /api/jkt48/theater endpoint.
+</Step>
+
+<Step>
+### Make Detail Request
+```bash
+curl "https://v2.jkt48connect.my.id/api/jkt48/theater/2963?apikey=YOUR_API_KEY"
+```
+</Step>
+
+<Step>
+### Process Detailed Response
+Handle the comprehensive JSON object with show details.
+</Step>
+</Steps>
+
+## Endpoint Details
+
+<Tabs items={['Overview', 'Request', 'Response']}>
+
+<Tab value="Overview">
+**Base URL:** `https://v2.jkt48connect.my.id`  
+**Endpoint:** `/api/jkt48/theater/[id]`  
+**Method:** `GET`  
+**Authentication:** API Key required
+</Tab>
+
+<Tab value="Request">
+**Path Parameters:**
+- `id` (required): Show ID from theater list endpoint
+
+**Query Parameters:**
+- `apikey` (required): Your API authentication key
+
+**Example:**
+```http
+GET /api/jkt48/theater/2963?apikey=YOUR_API_KEY HTTP/1.1
+Host: v2.jkt48connect.my.id
+```
+</Tab>
+
+<Tab value="Response">
+Returns detailed JSON object with complete show information:
+
+```json
+{
+  "author": "JKT48ConnectCORP - Valzyy",
+  "shows": [
+    {
+      "id": "2963",
+      "title": "Cara Meminum Ramune",
+      "url": "https://jkt48.com/theater/schedule/id/2963?lang=id",
+      "setlist": {
+        "id": "carameminumramune",
+        "title": "Cara Meminum Ramune",
+        "description": "Pernahkah kamu meminum Ramune? Meskipun tidak bisa diminum sekaligus, tapi Ramune tetap dapat kita rasakan kesegarannya dalam setiap tetesnya...",
+        "poster": "https://res.cloudinary.com/haymzm4wp/image/upload/v1702404446/nixg3rixpjpom3xa0ivf.jpg",
+        "banner": "https://res.cloudinary.com/haymzm4wp/image/upload/v1709811568/hm6aztwojrngb6ryrdn9.png"
+      },
+      "members": [
+        {
+          "id": "204",
+          "name": "Christy",
+          "img": "https://res.cloudinary.com/haymzm4wp/image/upload/v1730447251/assets/kabesha/oktober_2024/angelina_christy.jpg",
+          "url_key": "christy"
+        }
+      ],
+      "seitansai": [
+        {
+          "id": "190",
+          "name": "Gita",
+          "img": "https://res.cloudinary.com/haymzm4wp/image/upload/v1730447266/assets/kabesha/oktober_2024/gita_sekar_andarini.jpg",
+          "url_key": "gita"
+        }
+      ],
+      "graduation": [],
+      "date": "2025-07-03T12:00:00.000Z",
+      "team": {
+        "id": "team7",
+        "img": "/images/icon.team7.png"
+      },
+      "idnTheater": {
+        "image": "https://cdn.idntimes.com/content-images/post/20250622/50a27780-93e7-4e40-8474-60f6e0cca6da-250622213334.jpg",
+        "price": 20,
+        "slug": "cara-meminum-ramune-3-7-2025-250622213334",
+        "title": "Cara Meminum Ramune - 3/7/2025",
+        "uuid": "50a27780-93e7-4e40-8474-60f6e0cca6da"
+      }
+    }
+  ],
+  "date": "2025-07-03T12:00:00.000Z"
+}
+```
+</Tab>
+
+</Tabs>
+
+## Implementation Examples
+
+<Tabs items={['JavaScript', 'Python', 'Go']}>
+
+<Tab value="JavaScript">
+```javascript
+const API_KEY = 'YOUR_API_KEY';
+const BASE_URL = 'https://v2.jkt48connect.my.id';
+
+async function getTheaterDetail(showId) {
+  try {
+    const response = await fetch(
+      `${BASE_URL}/api/jkt48/theater/${showId}?apikey=${API_KEY}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch theater detail:', error);
+    throw error;
+  }
+}
+
+// Format show detail for display
+function formatShowDetail(showData) {
+  const show = showData.shows[0];
+  
+  return {
+    id: show.id,
+    title: show.title,
+    setlist: {
+      name: show.setlist.title,
+      description: show.setlist.description,
+      poster: show.setlist.poster,
+      banner: show.setlist.banner
+    },
+    members: show.members.map(member => ({
+      name: member.name,
+      image: member.img,
+      profileUrl: member.url_key
+    })),
+    seitansai: show.seitansai.map(member => ({
+      name: member.name,
+      image: member.img
+    })),
+    graduations: show.graduation,
+    showDate: new Date(show.date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }),
+    team: show.team,
+    ticketInfo: show.idnTheater ? {
+      price: show.idnTheater.price,
+      image: show.idnTheater.image,
+      slug: show.idnTheater.slug
+    } : null,
+    officialUrl: show.url
+  };
+}
+
+// Usage example
+async function displayShowDetail(showId) {
+  try {
+    const data = await getTheaterDetail(showId);
+    const detail = formatShowDetail(data);
+    
+    console.log(`=== ${detail.title.toUpperCase()} ===`);
+    console.log(`Date: ${detail.showDate}`);
+    console.log(`Members: ${detail.members.length}`);
+    
+    if (detail.seitansai.length > 0) {
+      console.log('🎂 Birthday Celebration:');
+      detail.seitansai.forEach(member => {
+        console.log(`  🎉 ${member.name}`);
+      });
+    }
+    
+    if (detail.ticketInfo) {
+      console.log(`💰 Ticket Price: ${detail.ticketInfo.price}`);
+    }
+    
+    return detail;
+  } catch (error) {
+    console.error('Error displaying show detail:', error);
+  }
+}
+```
+</Tab>
+
+<Tab value="Python">
+```python
+import requests
+from datetime import datetime
+from typing import Dict, List, Optional
+
+API_KEY = 'YOUR_API_KEY'
+BASE_URL = 'https://v2.jkt48connect.my.id'
+
+def get_theater_detail(show_id: str) -> Dict:
+    """Fetch detailed JKT48 theater show information"""
+    url = f"{BASE_URL}/api/jkt48/theater/{show_id}"
+    params = {'apikey': API_KEY}
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching theater detail: {e}")
+        raise
+
+def format_show_detail(show_data: Dict) -> Dict:
+    """Format show detail for easy processing"""
+    show = show_data['shows'][0]
+    
+    show_date = datetime.fromisoformat(show['date'].replace('Z', '+00:00'))
+    
+    return {
+        'id': show['id'],
+        'title': show['title'],
+        'setlist': {
+            'name': show['setlist']['title'],
+            'description': show['setlist']['description'],
+            'poster': show['setlist']['poster'],
+            'banner': show['setlist']['banner']
+        },
+        'members': [
+            {
+                'name': member['name'],
+                'image': member['img'],
+                'profile_url': member['url_key']
+            }
+            for member in show['members']
+        ],
+        'seitansai': [
+            {
+                'name': member['name'],
+                'image': member['img']
+            }
+            for member in show['seitansai']
+        ],
+        'graduations': show['graduation'],
+        'show_date': show_date.strftime('%B %d, %Y at %I:%M %p'),
+        'team': show['team'],
+        'ticket_info': {
+            'price': show['idnTheater']['price'],
+            'image': show['idnTheater']['image'],
+            'slug': show['idnTheater']['slug']
+        } if show.get('idnTheater') else None,
+        'official_url': show['url']
+    }
+
+def display_show_detail(show_id: str):
+    """Display formatted theater show detail"""
+    try:
+        data = get_theater_detail(show_id)
+        detail = format_show_detail(data)
+        
+        print(f"=== {detail['title'].upper()} ===")
+        print(f"Date: {detail['show_date']}")
+        print(f"Members: {len(detail['members'])}")
+        
+        if detail['seitansai']:
+            print("🎂 Birthday Celebration:")
+            for member in detail['seitansai']:
+                print(f"  🎉 {member['name']}")
+        
+        if detail['ticket_info']:
+            print(f"💰 Ticket Price: {detail['ticket_info']['price']}")
+        
+        print(f"\nSetlist: {detail['setlist']['name']}")
+        print(f"Description: {detail['setlist']['description'][:100]}...")
+        
+        return detail
+        
+    except Exception as e:
+        print(f"Error: {e}")
+
+# Usage example
+if __name__ == "__main__":
+    show_detail = display_show_detail("2963")
+```
+</Tab>
+
+<Tab value="Go">
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "time"
+)
+
+const (
+    APIKey  = "YOUR_API_KEY"
+    BaseURL = "https://v2.jkt48connect.my.id"
+)
+
+type SetlistInfo struct {
+    ID          string `json:"id"`
+    Title       string `json:"title"`
+    Description string `json:"description"`
+    Poster      string `json:"poster"`
+    Banner      string `json:"banner"`
+}
+
+type Member struct {
+    ID     string `json:"id"`
+    Name   string `json:"name"`
+    Image  string `json:"img"`
+    URLKey string `json:"url_key"`
+}
+
+type Team struct {
+    ID    string `json:"id"`
+    Image string `json:"img"`
+}
+
+type IDNTheater struct {
+    Image   string `json:"image"`
+    Price   int    `json:"price"`
+    Slug    string `json:"slug"`
+    Title   string `json:"title"`
+    UUID    string `json:"uuid"`
+}
+
+type TheaterShowDetail struct {
+    ID         string      `json:"id"`
+    Title      string      `json:"title"`
+    URL        string      `json:"url"`
+    Setlist    SetlistInfo `json:"setlist"`
+    Members    []Member    `json:"members"`
+    Seitansai  []Member    `json:"seitansai"`
+    Graduation []Member    `json:"graduation"`
+    Date       string      `json:"date"`
+    Team       Team        `json:"team"`
+    IDNTheater *IDNTheater `json:"idnTheater,omitempty"`
+}
+
+type TheaterDetailResponse struct {
+    Author string              `json:"author"`
+    Shows  []TheaterShowDetail `json:"shows"`
+    Date   string              `json:"date"`
+}
+
+func getTheaterDetail(showID string) (*TheaterDetailResponse, error) {
+    url := fmt.Sprintf("%s/api/jkt48/theater/%s?apikey=%s", BaseURL, showID, APIKey)
+    
+    client := &http.Client{Timeout: 30 * time.Second}
+    resp, err := client.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+    }
+    
+    var detailResp TheaterDetailResponse
+    err = json.NewDecoder(resp.Body).Decode(&detailResp)
+    return &detailResp, err
+}
+
+func displayShowDetail(showID string) {
+    data, err := getTheaterDetail(showID)
+    if err != nil {
+        fmt.Printf("Error fetching theater detail: %v\n", err)
+        return
+    }
+    
+    if len(data.Shows) == 0 {
+        fmt.Println("No show data found")
+        return
+    }
+    
+    show := data.Shows[0]
+    showDate, _ := time.Parse(time.RFC3339, show.Date)
+    
+    fmt.Printf("=== %s ===\n", show.Title)
+    fmt.Printf("Date: %s\n", showDate.Format("January 2, 2006 at 3:04 PM"))
+    fmt.Printf("Members: %d\n", len(show.Members))
+    
+    if len(show.Seitansai) > 0 {
+        fmt.Println("🎂 Birthday Celebration:")
+        for _, member := range show.Seitansai {
+            fmt.Printf("  🎉 %s\n", member.Name)
+        }
+    }
+    
+    if show.IDNTheater != nil {
+        fmt.Printf("💰 Ticket Price: %d\n", show.IDNTheater.Price)
+    }
+    
+    fmt.Printf("\nSetlist: %s\n", show.Setlist.Title)
+    if len(show.Setlist.Description) > 0 {
+        desc := show.Setlist.Description
+        if len(desc) > 100 {
+            desc = desc[:100] + "..."
+        }
+        fmt.Printf("Description: %s\n", desc)
+    }
+}
+
+func main() {
+    displayShowDetail("2963")
+}
+```
+</Tab>
+
+</Tabs>
+
+## Data Structure
+
+<Callout type="info">
+The theater detail API returns comprehensive show information including setlist, member lineup, and ticket details.
+</Callout>
+
+**Show Detail Object:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique show identifier |
+| `title` | string | Show title |
+| `url` | string | Official JKT48 show URL |
+| `setlist` | object | Setlist information and description |
+| `members` | array | Performing member lineup |
+| `seitansai` | array | Members celebrating birthday |
+| `graduation` | array | Graduating members (if any) |
+| `date` | string | ISO 8601 formatted show date |
+| `team` | object | Team information |
+| `idnTheater` | object | IDN ticket information (optional) |
+
+## Common Use Cases
+
+<Tabs items={['Member Tracking', 'Ticket Integration', 'Show Analytics']}>
+
+<Tab value="Member Tracking">
+```javascript
+// Track member participation
+function analyzeMembers(showDetail) {
+  const show = showDetail.shows[0];
+  
+  return {
+    totalMembers: show.members.length,
+    hasSeitansai: show.seitansai.length > 0,
+    hasGraduations: show.graduation.length > 0,
+    memberList: show.members.map(m => m.name),
+    celebrants: show.seitansai.map(m => m.name),
+    graduates: show.graduation.map(m => m.name),
+    team: show.team.id
+  };
+}
+```
+</Tab>
+
+<Tab value="Ticket Integration">
+```javascript
+// Handle ticket information
+function getTicketInfo(showDetail) {
+  const show = showDetail.shows[0];
+  
+  if (!show.idnTheater) {
+    return { available: false };
+  }
+  
+  return {
+    available: true,
+    price: show.idnTheater.price,
+    title: show.idnTheater.title,
+    image: show.idnTheater.image,
+    slug: show.idnTheater.slug,
+    ticketUrl: `https://www.idntimes.com/events/${show.idnTheater.slug}`
+  };
+}
+```
+</Tab>
+
+<Tab value="Show Analytics">
+```javascript
+// Analyze show patterns
+function analyzeShow(showDetail) {
+  const show = showDetail.shows[0];
+  const showDate = new Date(show.date);
+  
+  return {
+    showId: show.id,
+    setlistId: show.setlist.id,
+    isSpecialShow: show.seitansai.length > 0 || show.graduation.length > 0,
+    dayOfWeek: showDate.toLocaleDateString('en-US', { weekday: 'long' }),
+    timeSlot: showDate.getHours() >= 18 ? 'evening' : 'afternoon',
+    memberCount: show.members.length,
+    teamId: show.team.id
+  };
+}
+```
+</Tab>
+
+</Tabs>
+
+## Error Handling
+
+```javascript
+async function getTheaterDetailSafely(showId) {
+  try {
+    const data = await getTheaterDetail(showId);
+    
+    // Validate response structure
+    if (!data.shows || !Array.isArray(data.shows) || data.shows.length === 0) {
+      throw new Error('Invalid response: no show data found');
+    }
+    
+    const show = data.shows[0];
+    
+    // Validate required fields
+    if (!show.id || !show.title || !show.date) {
+      throw new Error('Invalid show data: missing required fields');
+    }
+    
+    return data;
+    
+  } catch (error) {
+    console.error(`Failed to fetch theater detail for show ${showId}:`, error);
+    return null;
+  }
+}
+```
+
+---
+
+### Get Started
+
+Ready to access detailed theater information? [Get your API key](https://www.jkt48connect.my.id/buyapi) and start building comprehensive theater applications!

@@ -1,0 +1,1650 @@
+---
+title: Video Call Schedule
+description: Get JKT48 video call schedule data with real-time status updates using JKT48Connect API
+icon: Video
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+## Introduction
+
+The JKT48Connect Video Call Schedule API provides access to **real-time video call schedule data** for JKT48 members. Track upcoming video call sessions, monitor ongoing sessions, and get detailed information about member schedules with live status updates.
+
+<Cards>
+<Card icon={<Video className="text-blue-400" />} title='Live Schedule'>
+Access real-time video call schedules with session status tracking.
+</Card>
+
+<Card icon={<Clock className="text-green-400" />} title='Session Status'>
+Monitor preparation, ongoing, upcoming, and finished sessions.
+</Card>
+
+<Card icon={<Users className="text-purple-400" />} title='Member Filter'>
+Filter schedules by specific JKT48 members and sessions.
+</Card>
+</Cards>
+
+## Quick Start
+
+<Steps>
+<Step>
+### Get All Video Call Schedules
+Fetch complete video call schedule data for the current month.
+```javascript
+const scheduleData = await getVideoCallSchedule();
+console.log(scheduleData.statistics.total_sessions);
+```
+</Step>
+
+<Step>
+### Filter by Date or Session
+```bash
+curl "https://v2.jkt48connect.my.id/api/jkt48/videocall?date=18&apikey=YOUR_API_KEY"
+```
+</Step>
+
+<Step>
+### Get Today's Schedule
+Fetch video call schedule specifically for today with real-time status.
+```bash
+curl "https://v2.jkt48connect.my.id/api/jkt48/videocall/today?apikey=YOUR_API_KEY"
+```
+</Step>
+</Steps>
+
+## Endpoint Details
+
+<Tabs items={['Main Endpoint', 'Today Endpoint', 'Parameters']}>
+
+<Tab value="Main Endpoint">
+**Base URL:** `https://v2.jkt48connect.my.id`  
+**Endpoint:** `/api/jkt48/videocall`  
+**Method:** `GET`  
+**Authentication:** API Key required
+
+**Query Parameters:**
+- `sesi`: Filter by session number (1, 2, 3, etc.)
+- `date`: Filter by date (13, 14, 15, etc.)
+- `member`: Filter by member name (partial match)
+</Tab>
+
+<Tab value="Today Endpoint">
+**Base URL:** `https://v2.jkt48connect.my.id`  
+**Endpoint:** `/api/jkt48/videocall/today`  
+**Method:** `GET`  
+**Authentication:** API Key required
+
+Shows video call schedule specifically for today with real-time session status updates.
+</Tab>
+
+<Tab value="Parameters">
+**Available Filters:**
+- **Session Filter**: `?sesi=1` - Get all session 1 schedules
+- **Date Filter**: `?date=16` - Get schedules for the 16th
+- **Member Filter**: `?member=Adeline` - Get schedules with Adeline
+- **Combined**: `?date=18&sesi=2&member=Freya` - Multiple filters
+
+**Session Status Types:**
+- `upcoming`: Session will start
+- `preparation`: Currently in preparation phase
+- `ongoing`: Session is currently live
+- `finished`: Session has ended
+</Tab>
+
+</Tabs>
+
+## API Response Examples
+
+<Tabs items={['All Schedules', 'Filtered by Date', 'Member Filter', 'Today Only']}>
+
+<Tab value="All Schedules">
+**Request:** `GET /api/jkt48/videocall`
+
+```json
+{
+  "success": true,
+  "author": "JKT48ConnectCORP - Valzyy",
+  "current_time": "2025-08-17T09:50:08.117Z",
+  "timezone": "GMT+7 (Indonesia)",
+  "data_month": "Agustus",
+  "data_year": "2025",
+  "is_data_outdated": false,
+  "statistics": {
+    "total_sessions": 15,
+    "ongoing_sessions": 0,
+    "finished_sessions": 3,
+    "upcoming_sessions": 12,
+    "preparation_sessions": 0
+  },
+  "filters": {
+    "date": null,
+    "session": null,
+    "member": null
+  },
+  "available_dates": [
+    {
+      "date": "2025-08-18",
+      "day": "Senin",
+      "total_sessions": 3
+    },
+    {
+      "date": "2025-08-19",
+      "day": "Selasa", 
+      "total_sessions": 3
+    }
+  ],
+  "data": [
+    {
+      "date": "2025-08-18",
+      "day": "Senin",
+      "sessions": [
+        {
+          "session": 1,
+          "preparation": "16:15 - 16:30 WIB",
+          "waktu": "16:30 - 17:30 WIB",
+          "members": [
+            "Aulia Riza",
+            "Bong Aprilla",
+            "Hagia Sopia",
+            "Astrella Virgiananda",
+            "Humaira Ramadhani",
+            "Shabilqis Naila",
+            "Abigail Rachel",
+            "Nina Tutachia",
+            "Jazzlyn Trisha"
+          ],
+          "session_status": {
+            "status": "upcoming",
+            "message": "Sesi akan dimulai",
+            "is_ongoing": false,
+            "is_finished": false,
+            "is_preparation": false
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+</Tab>
+
+<Tab value="Filtered by Date">
+**Request:** `GET /api/jkt48/videocall?date=18`
+
+```json
+{
+  "success": true,
+  "author": "JKT48ConnectCORP - Valzyy",
+  "current_time": "2025-08-17T09:50:08.117Z",
+  "timezone": "GMT+7 (Indonesia)",
+  "data_month": "Agustus",
+  "data_year": "2025",
+  "is_data_outdated": false,
+  "statistics": {
+    "total_sessions": 3,
+    "ongoing_sessions": 0,
+    "finished_sessions": 0,
+    "upcoming_sessions": 3,
+    "preparation_sessions": 0
+  },
+  "filters": {
+    "date": "18",
+    "session": null,
+    "member": null
+  },
+  "available_dates": [
+    {
+      "date": "2025-08-18",
+      "day": "Senin",
+      "total_sessions": 3
+    }
+  ],
+  "data": [
+    {
+      "date": "2025-08-18",
+      "day": "Senin",
+      "sessions": [
+        {
+          "session": 1,
+          "preparation": "16:15 - 16:30 WIB",
+          "waktu": "16:30 - 17:30 WIB",
+          "members": [
+            "Aulia Riza",
+            "Bong Aprilla",
+            "Hagia Sopia"
+          ],
+          "session_status": {
+            "status": "upcoming",
+            "message": "Sesi akan dimulai",
+            "is_ongoing": false,
+            "is_finished": false,
+            "is_preparation": false
+          }
+        },
+        {
+          "session": 2,
+          "preparation": "17:45 - 18:00 WIB",
+          "waktu": "18:00 - 19:00 WIB",
+          "members": [
+            "Aulia Riza",
+            "Bong Aprilla",
+            "Hagia Sopia"
+          ],
+          "session_status": {
+            "status": "upcoming",
+            "message": "Sesi akan dimulai",
+            "is_ongoing": false,
+            "is_finished": false,
+            "is_preparation": false
+          }
+        }
+      ]
+    }
+  ]
+}
+```
+</Tab>
+
+<Tab value="Member Filter">
+**Request:** `GET /api/jkt48/videocall?member=Adeline`
+
+```json
+{
+  "success": true,
+  "author": "JKT48ConnectCORP - Valzyy",
+  "member_name": "Adeline",
+  "total_sessions": 6,
+  "data_month": "Agustus",
+  "data_year": "2025",
+  "is_data_outdated": false,
+  "schedule": [
+    {
+      "date": "2025-08-18",
+      "day": "Senin",
+      "session": 1,
+      "preparation": "16:15 - 16:30 WIB",
+      "waktu": "16:30 - 17:30 WIB",
+      "session_status": {
+        "status": "upcoming",
+        "message": "Sesi akan dimulai",
+        "is_ongoing": false,
+        "is_finished": false,
+        "is_preparation": false
+      },
+      "other_members": [
+        "Aulia Riza",
+        "Bong Aprilla",
+        "Hagia Sopia"
+      ]
+    },
+    {
+      "date": "2025-08-19",
+      "day": "Selasa",
+      "session": 2,
+      "preparation": "17:45 - 18:00 WIB",
+      "waktu": "18:00 - 19:00 WIB",
+      "session_status": {
+        "status": "upcoming",
+        "message": "Sesi akan dimulai",
+        "is_ongoing": false,
+        "is_finished": false,
+        "is_preparation": false
+      },
+      "other_members": [
+        "Freya Jayawardana",
+        "Shania Gracia"
+      ]
+    }
+  ],
+  "raw_data": [...]
+}
+```
+</Tab>
+
+<Tab value="Today Only">
+**Request:** `GET /api/jkt48/videocall/today`
+
+```json
+{
+  "success": true,
+  "author": "JKT48ConnectCORP - Valzyy",
+  "current_time": "2025-08-17T14:25:00.000Z",
+  "timezone": "GMT+7 (Indonesia)",
+  "data_month": "Agustus",
+  "data_year": "2025",
+  "is_data_outdated": false,
+  "date": "2025-08-17",
+  "day": "Sabtu",
+  "total_sessions": 2,
+  "sessions": [
+    {
+      "session": 1,
+      "preparation": "16:15 - 16:30 WIB",
+      "waktu": "16:30 - 17:30 WIB",
+      "members": [
+        "Freya Jayawardana",
+        "Shania Gracia",
+        "Adeline Wijaya"
+      ],
+      "session_status": {
+        "status": "preparation",
+        "message": "Sedang masa persiapan",
+        "is_ongoing": false,
+        "is_finished": false,
+        "is_preparation": true,
+        "time_until_session": 5
+      }
+    },
+    {
+      "session": 2,
+      "preparation": "19:15 - 19:30 WIB",
+      "waktu": "19:30 - 20:30 WIB",
+      "members": [
+        "Christy Lyn",
+        "Fiony Alveria",
+        "Greesel Anastasia"
+      ],
+      "session_status": {
+        "status": "upcoming",
+        "message": "Sesi akan dimulai",
+        "is_ongoing": false,
+        "is_finished": false,
+        "is_preparation": false,
+        "time_until_start": 290
+      }
+    }
+  ]
+}
+```
+</Tab>
+
+</Tabs>
+
+## Implementation Examples
+
+<Tabs items={['JavaScript', 'Python', 'Go']}>
+
+<Tab value="JavaScript">
+```javascript
+const API_KEY = 'YOUR_API_KEY';
+const BASE_URL = 'https://v2.jkt48connect.my.id';
+
+async function getVideoCallSchedule(options = {}) {
+  const params = new URLSearchParams({
+    apikey: API_KEY,
+    ...options
+  });
+  
+  try {
+    const response = await fetch(
+      `${BASE_URL}/api/jkt48/videocall?${params}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to fetch video call schedule:', error);
+    throw error;
+  }
+}
+
+async function getTodayVideoCallSchedule() {
+  const params = new URLSearchParams({ apikey: API_KEY });
+  
+  try {
+    const response = await fetch(
+      `${BASE_URL}/api/jkt48/videocall/today?${params}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to fetch today video call schedule:', error);
+    throw error;
+  }
+}
+
+// Get video call schedule by date
+async function getVideoCallByDate(date) {
+  return await getVideoCallSchedule({ date });
+}
+
+// Get video call schedule by session
+async function getVideoCallBySession(sessionNumber) {
+  return await getVideoCallSchedule({ sesi: sessionNumber });
+}
+
+// Get video call schedule by member
+async function getVideoCallByMember(memberName) {
+  return await getVideoCallSchedule({ member: memberName });
+}
+
+// Format session status for display
+function formatSessionStatus(session) {
+  const status = session.session_status;
+  const icons = {
+    upcoming: '⏰',
+    preparation: '🔄',
+    ongoing: '🔴',
+    finished: '✅'
+  };
+  
+  return `${icons[status.status]} ${status.message}`;
+}
+
+// Display video call schedule
+async function displayVideoCallSchedule(options = {}) {
+  try {
+    const data = await getVideoCallSchedule(options);
+    
+    if (!data.success) {
+      console.log('❌ Failed to get video call schedule');
+      return;
+    }
+    
+    console.log(`📅 VIDEO CALL SCHEDULE - ${data.data_month} ${data.data_year}`);
+    console.log(`📊 Statistics: ${data.statistics.total_sessions} total, ${data.statistics.ongoing_sessions} ongoing, ${data.statistics.upcoming_sessions} upcoming`);
+    
+    if (data.is_data_outdated) {
+      console.log(`⚠️  ${data.message}`);
+      return;
+    }
+    
+    console.log('\n--- SCHEDULE DETAILS ---');
+    
+    data.data.forEach(day => {
+      console.log(`\n📆 ${day.day}, ${day.date}`);
+      
+      day.sessions.forEach(session => {
+        console.log(`  📱 Session ${session.session}`);
+        console.log(`     ⏱️  Preparation: ${session.preparation}`);
+        console.log(`     🎥 Video Call: ${session.waktu}`);
+        console.log(`     👥 Members: ${session.members.join(', ')}`);
+        console.log(`     ${formatSessionStatus(session)}`);
+      });
+    });
+    
+  } catch (error) {
+    console.error('Error displaying video call schedule:', error);
+  }
+}
+
+// Display today's video call schedule
+async function displayTodayVideoCallSchedule() {
+  try {
+    const data = await getTodayVideoCallSchedule();
+    
+    if (!data.success || !data.sessions) {
+      console.log('📅 No video call sessions today');
+      return;
+    }
+    
+    console.log(`📅 TODAY'S VIDEO CALL SCHEDULE - ${data.day}, ${data.date}`);
+    console.log(`📊 Total Sessions: ${data.total_sessions}`);
+    console.log('');
+    
+    data.sessions.forEach(session => {
+      console.log(`📱 Session ${session.session}`);
+      console.log(`   ⏱️  Preparation: ${session.preparation}`);
+      console.log(`   🎥 Video Call: ${session.waktu}`);
+      console.log(`   👥 Members: ${session.members.join(', ')}`);
+      console.log(`   ${formatSessionStatus(session)}`);
+      
+      // Show countdown for upcoming sessions
+      if (session.session_status.time_until_start) {
+        const minutes = session.session_status.time_until_start;
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        console.log(`   ⏰ Starts in: ${hours}h ${mins}m`);
+      }
+      
+      if (session.session_status.time_remaining) {
+        const minutes = session.session_status.time_remaining;
+        console.log(`   ⏱️  Ends in: ${minutes} minutes`);
+      }
+      
+      console.log('');
+    });
+    
+  } catch (error) {
+    console.error('Error displaying today video call schedule:', error);
+  }
+}
+
+// Monitor live video call sessions
+async function monitorVideoCallSessions() {
+  console.log('🔄 Starting video call session monitor...');
+  
+  setInterval(async () => {
+    try {
+      const data = await getTodayVideoCallSchedule();
+      
+      if (data.success && data.sessions) {
+        const ongoingSessions = data.sessions.filter(s => s.session_status.is_ongoing);
+        const preparationSessions = data.sessions.filter(s => s.session_status.is_preparation);
+        
+        if (ongoingSessions.length > 0) {
+          console.log(`🔴 LIVE NOW: ${ongoingSessions.length} video call session(s)`);
+          ongoingSessions.forEach(session => {
+            console.log(`   📱 Session ${session.session} with ${session.members.join(', ')}`);
+          });
+        }
+        
+        if (preparationSessions.length > 0) {
+          console.log(`🔄 PREPARING: ${preparationSessions.length} session(s) in preparation`);
+          preparationSessions.forEach(session => {
+            console.log(`   📱 Session ${session.session} starting soon`);
+          });
+        }
+      }
+      
+    } catch (error) {
+      console.error('Monitor error:', error);
+    }
+  }, 60000); // Check every minute
+}
+
+// Get member schedule analysis
+async function getMemberScheduleAnalysis(memberName) {
+  try {
+    const data = await getVideoCallByMember(memberName);
+    
+    if (!data.success || data.total_sessions === 0) {
+      console.log(`❌ No video call sessions found for ${memberName}`);
+      return;
+    }
+    
+    console.log(`📊 ${memberName.toUpperCase()} VIDEO CALL ANALYSIS`);
+    console.log(`📅 Total Sessions: ${data.total_sessions}`);
+    console.log(`📆 Month: ${data.data_month} ${data.data_year}`);
+    console.log('');
+    
+    // Group by date
+    const sessionsByDate = {};
+    data.schedule.forEach(session => {
+      if (!sessionsByDate[session.date]) {
+        sessionsByDate[session.date] = [];
+      }
+      sessionsByDate[session.date].push(session);
+    });
+    
+    Object.entries(sessionsByDate).forEach(([date, sessions]) => {
+      console.log(`📆 ${sessions[0].day}, ${date}`);
+      sessions.forEach(session => {
+        console.log(`   📱 Session ${session.session}: ${session.waktu}`);
+        console.log(`   👥 With: ${session.other_members.join(', ')}`);
+        console.log(`   ${formatSessionStatus(session)}`);
+      });
+      console.log('');
+    });
+    
+  } catch (error) {
+    console.error('Error analyzing member schedule:', error);
+  }
+}
+
+// Schedule reminder system
+class VideoCallReminder {
+  constructor() {
+    this.reminders = new Map();
+  }
+  
+  async setReminders() {
+    try {
+      const data = await getTodayVideoCallSchedule();
+      
+      if (data.success && data.sessions) {
+        data.sessions.forEach(session => {
+          if (session.session_status.status === 'upcoming') {
+            const timeUntilStart = session.session_status.time_until_start;
+            
+            // Set reminder 10 minutes before
+            if (timeUntilStart > 10) {
+              const reminderTime = (timeUntilStart - 10) * 60 * 1000;
+              const timerId = setTimeout(() => {
+                console.log(`🔔 REMINDER: Session ${session.session} starts in 10 minutes!`);
+                console.log(`👥 Members: ${session.members.join(', ')}`);
+              }, reminderTime);
+              
+              this.reminders.set(`session_${session.session}`, timerId);
+            }
+          }
+        });
+      }
+      
+    } catch (error) {
+      console.error('Error setting reminders:', error);
+    }
+  }
+  
+  clearReminders() {
+    this.reminders.forEach(timerId => clearTimeout(timerId));
+    this.reminders.clear();
+  }
+}
+
+// Usage examples
+async function examples() {
+  // Display all video call schedules
+  await displayVideoCallSchedule();
+  
+  // Display today's schedule
+  await displayTodayVideoCallSchedule();
+  
+  // Get specific date schedule
+  await displayVideoCallSchedule({ date: '18' });
+  
+  // Get specific session
+  await displayVideoCallSchedule({ sesi: '2' });
+  
+  // Get member specific schedule
+  await getMemberScheduleAnalysis('Adeline');
+  
+  // Start monitoring
+  monitorVideoCallSessions();
+  
+  // Set up reminders
+  const reminder = new VideoCallReminder();
+  await reminder.setReminders();
+}
+```
+</Tab>
+
+<Tab value="Python">
+```python
+import requests
+import time
+from datetime import datetime, timedelta
+from typing import Optional, Dict, List, Any
+
+API_KEY = 'YOUR_API_KEY'
+BASE_URL = 'https://v2.jkt48connect.my.id'
+
+def get_video_call_schedule(**options) -> Dict[str, Any]:
+    """Fetch video call schedule data"""
+    params = {'apikey': API_KEY, **options}
+    url = f"{BASE_URL}/api/jkt48/videocall"
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching video call schedule: {e}")
+        raise
+
+def get_today_video_call_schedule() -> Dict[str, Any]:
+    """Fetch today's video call schedule"""
+    params = {'apikey': API_KEY}
+    url = f"{BASE_URL}/api/jkt48/videocall/today"
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching today's video call schedule: {e}")
+        raise
+
+def get_video_call_by_date(date: str) -> Dict[str, Any]:
+    """Get video call schedule by date"""
+    return get_video_call_schedule(date=date)
+
+def get_video_call_by_session(session: int) -> Dict[str, Any]:
+    """Get video call schedule by session number"""
+    return get_video_call_schedule(sesi=str(session))
+
+def get_video_call_by_member(member_name: str) -> Dict[str, Any]:
+    """Get video call schedule by member name"""
+    return get_video_call_schedule(member=member_name)
+
+def format_session_status(session: Dict[str, Any]) -> str:
+    """Format session status for display"""
+    status = session['session_status']
+    icons = {
+        'upcoming': '⏰',
+        'preparation': '🔄',
+        'ongoing': '🔴',
+        'finished': '✅'
+    }
+    return f"{icons.get(status['status'], '❓')} {status['message']}"
+
+def display_video_call_schedule(**options):
+    """Display video call schedule"""
+    try:
+        data = get_video_call_schedule(**options)
+        
+        if not data['success']:
+            print('❌ Failed to get video call schedule')
+            return
+        
+        print(f"📅 VIDEO CALL SCHEDULE - {data['data_month']} {data['data_year']}")
+        stats = data['statistics']
+        print(f"📊 Statistics: {stats['total_sessions']} total, {stats['ongoing_sessions']} ongoing, {stats['upcoming_sessions']} upcoming")
+        
+        if data['is_data_outdated']:
+            print(f"⚠️  {data['message']}")
+            return
+        
+        print('\n--- SCHEDULE DETAILS ---')
+        
+        for day in data['data']:
+            print(f"\n📆 {day['day']}, {day['date']}")
+            
+            for session in day['sessions']:
+                print(f"  📱 Session {session['session']}")
+                print(f"     ⏱️  Preparation: {session['preparation']}")
+                print(f"     🎥 Video Call: {session['waktu']}")
+                print(f"     👥 Members: {', '.join(session['members'])}")
+                print(f"     {format_session_status(session)}")
+                
+    except Exception as e:
+        print(f"Error displaying video call schedule: {e}")
+
+def display_today_video_call_schedule():
+    """Display today's video call schedule"""
+    try:
+        data = get_today_video_call_schedule()
+        
+        if not data['success'] or not data.get('sessions'):
+            print('📅 No video call sessions today')
+            return
+        
+        print(f"📅 TODAY'S VIDEO CALL SCHEDULE - {data['day']}, {data['date']}")
+        print(f"📊 Total Sessions: {data['total_sessions']}")
+        print()
+        
+        for session in data['sessions']:
+            print(f"📱 Session {session['session']}")
+            print(f"   ⏱️  Preparation: {session['preparation']}")
+            print(f"   🎥 Video Call: {session['waktu']}")
+            print(f"   👥 Members: {', '.join(session['members'])}")
+            print(f"   {format_session_status(session)}")
+            
+            # Show countdown for upcoming sessions
+            if 'time_until_start' in session['session_status']:
+                minutes = session['session_status']['time_until_start']
+                hours = minutes // 60
+                mins = minutes % 60
+                print(f"   ⏰ Starts in: {hours}h {mins}m")
+            
+            if 'time_remaining' in session['session_status']:
+                minutes = session['session_status']['time_remaining']
+                print(f"   ⏱️  Ends in: {minutes} minutes")
+            
+            print()
+            
+    except Exception as e:
+        print(f"Error displaying today's video call schedule: {e}")
+
+def monitor_video_call_sessions(duration_minutes: int = 60):
+    """Monitor live video call sessions"""
+    print('🔄 Starting video call session monitor...')
+    
+    start_time = time.time()
+    
+    while time.time() - start_time < duration_minutes * 60:
+        try:
+            data = get_today_video_call_schedule()
+            
+            if data['success'] and data.get('sessions'):
+                ongoing_sessions = [s for s in data['sessions'] if s['session_status']['is_ongoing']]
+                prep_sessions = [s for s in data['sessions'] if s['session_status']['is_preparation']]
+                
+                if ongoing_sessions:
+                    print(f"🔴 LIVE NOW: {len(ongoing_sessions)} video call session(s)")
+                    for session in ongoing_sessions:
+                        print(f"   📱 Session {session['session']} with {', '.join(session['members'])}")
+                
+                if prep_sessions:
+                    print(f"🔄 PREPARING: {len(prep_sessions)} session(s) in preparation")
+                    for session in prep_sessions:
+                        print(f"   📱 Session {session['session']} starting soon")
+            
+            time.sleep(60)  # Check every minute
+            
+        except Exception as e:
+            print(f"Monitor error: {e}")
+            time.sleep(60)
+
+def get_member_schedule_analysis(member_name: str):
+    """Get member schedule analysis"""
+    try:
+        data = get_video_call_by_member(member_name)
+        
+        if not data['success'] or data.get('total_sessions', 0) == 0:
+            print(f"❌ No video call sessions found for {member_name}")
+            return
+        
+        print(f"📊 {member_name.upper()} VIDEO CALL ANALYSIS")
+        print(f"📅 Total Sessions: {data['total_sessions']}")
+        print(f"📆 Month: {data['data_month']} {data['data_year']}")
+        print()
+        
+        # Group by date
+        sessions_by_date = {}
+        for session in data['schedule']:
+            date = session['date']
+            if date not in sessions_by_date:
+                sessions_by_date[date] = []
+            sessions_by_date[date].append(session)
+        
+        for date, sessions in sessions_by_date.items():
+            print(f"📆 {sessions[0]['day']}, {date}")
+            for session in sessions:
+                print(f"   📱 Session {session['session']}: {session['waktu']}")
+                print(f"   👥 With: {', '.join(session['other_members'])}")
+                print(f"   {format_session_status(session)}")
+            print()
+            
+    except Exception as e:
+        print(f"Error analyzing member schedule: {e}")
+
+# Schedule reminder system
+class VideoCallReminder:
+    def __init__(self):
+        self.reminders = []
+    
+    def set_reminders(self):
+        """Set reminders for upcoming sessions"""
+        try:
+            data = get_today_video_call_schedule()
+            
+            if data['success'] and data.get('sessions'):
+                for session in data['sessions']:
+                    if session['session_status']['status'] == 'upcoming':
+                        time_until_start = session['session_status'].get('time_until_start', 0)
+                        
+                        # Set reminder 10 minutes before
+                        if time_until_start > 10:
+                            reminder_time = (time_until_start - 10) * 60
+                            print(f"🔔 Reminder set for Session {session['session']} in {reminder_time//60} minutes")
+                            
+        except Exception as e:
+            print(f"Error setting reminders: {e}")
+
+# Usage examples
+if __name__ == "__main__":
+    # Display all video call schedules
+    display_video_call_schedule()
+    
+    # Display today's schedule
+    display_today_video_call_schedule()
+    
+    # Get specific date schedule
+    display_video_call_schedule(date='18')
+    
+    # Get specific session
+    display_video_call_schedule(sesi='2')
+    
+    # Get member specific schedule
+    get_member_schedule_analysis('Adeline')
+    
+    # Start monitoring for 30 minutes
+    # monitor_video_call_sessions(30)
+```
+</Tab>
+
+<Tab value="Go">
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "net/url"
+    "strconv"
+    "strings"
+    "time"
+)
+
+const (
+    APIKey  = "YOUR_API_KEY"
+    BaseURL = "https://v2.jkt48connect.my.id"
+)
+
+type VideoCallScheduleData struct {
+    Success        bool                `json:"success"`
+    Author         string              `json:"author"`
+    CurrentTime    string              `json:"current_time"`
+    Timezone       string              `json:"timezone"`
+    DataMonth      string              `json:"data_month"`
+    DataYear       string              `json:"data_year"`
+    IsDataOutdated bool                `json:"is_data_outdated"`
+    Statistics     VideoCallStats      `json:"statistics"`
+    Filters        map[string]*string  `json:"filters"`
+    AvailableDates []AvailableDate     `json:"available_dates"`
+    Data           []VideoCallDay      `json:"data"`
+    Message        string              `json:"message,omitempty"`
+}
+
+type TodayVideoCallData struct {
+    Success        bool                `json:"success"`
+    Author         string              `json:"author"`
+    CurrentTime    string              `json:"current_time"`
+    Timezone       string              `json:"timezone"`
+    DataMonth      string              `json:"data_month"`
+    DataYear       string              `json:"data_year"`
+    IsDataOutdated bool                `json:"is_data_outdated"`
+    Date           string              `json:"date"`
+    Day            string              `json:"day"`
+    TotalSessions  int                 `json:"total_sessions"`
+    Sessions       []VideoCallSession  `json:"sessions"`
+}
+
+type MemberVideoCallData struct {
+    Success      bool                    `json:"success"`
+    Author       string                  `json:"author"`
+    MemberName   string                  `json:"member_name"`
+    TotalSessions int                    `json:"total_sessions"`
+    DataMonth    string                  `json:"data_month"`
+    DataYear     string                  `json:"data_year"`
+    Schedule     []MemberScheduleItem    `json:"schedule"`
+    RawData      []VideoCallDay          `json:"raw_data"`
+}
+
+type VideoCallStats struct {
+    TotalSessions       int `json:"total_sessions"`
+    OngoingSessions     int `json:"ongoing_sessions"`
+    FinishedSessions    int `json:"finished_sessions"`
+    UpcomingSessions    int `json:"upcoming_sessions"`
+    PreparationSessions int `json:"preparation_sessions"`
+}
+
+type AvailableDate struct {
+    Date          string `json:"date"`
+    Day           string `json:"day"`
+    TotalSessions int    `json:"total_sessions"`
+}
+
+type VideoCallDay struct {
+    Date     string              `json:"date"`
+    Day      string              `json:"day"`
+    Sessions []VideoCallSession  `json:"sessions"`
+}
+
+type VideoCallSession struct {
+    Session       int             `json:"session"`
+    Preparation   string          `json:"preparation"`
+    Waktu         string          `json:"waktu"`
+    Members       []string        `json:"members"`
+    SessionStatus SessionStatus   `json:"session_status"`
+}
+
+type SessionStatus struct {
+    Status         string `json:"status"`
+    Message        string `json:"message"`
+    IsOngoing      bool   `json:"is_ongoing"`
+    IsFinished     bool   `json:"is_finished"`
+    IsPreparation  bool   `json:"is_preparation"`
+    TimeUntilStart *int   `json:"time_until_start,omitempty"`
+    TimeRemaining  *int   `json:"time_remaining,omitempty"`
+}
+
+type MemberScheduleItem struct {
+    Date          string        `json:"date"`
+    Day           string        `json:"day"`
+    Session       int           `json:"session"`
+    Preparation   string        `json:"preparation"`
+    Waktu         string        `json:"waktu"`
+    SessionStatus SessionStatus `json:"session_status"`
+    OtherMembers  []string      `json:"other_members"`
+}
+
+func getVideoCallSchedule(options map[string]string) (*VideoCallScheduleData, error) {
+    params := url.Values{}
+    params.Add("apikey", APIKey)
+    
+    for key, value := range options {
+        params.Add(key, value)
+    }
+    
+    url := fmt.Sprintf("%s/api/jkt48/videocall?%s", BaseURL, params.Encode())
+    
+    client := &http.Client{Timeout: 30 * time.Second}
+    resp, err := client.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+    }
+    
+    var data VideoCallScheduleData
+    err = json.NewDecoder(resp.Body).Decode(&data)
+    return &data, err
+}
+
+func getTodayVideoCallSchedule() (*TodayVideoCallData, error) {
+    params := url.Values{}
+    params.Add("apikey", APIKey)
+    
+    url := fmt.Sprintf("%s/api/jkt48/videocall/today?%s", BaseURL, params.Encode())
+    
+    client := &http.Client{Timeout: 30 * time.Second}
+    resp, err := client.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+    }
+    
+    var data TodayVideoCallData
+    err = json.NewDecoder(resp.Body).Decode(&data)
+    return &data, err
+}
+
+func getVideoCallByDate(date string) (*VideoCallScheduleData, error) {
+    return getVideoCallSchedule(map[string]string{"date": date})
+}
+
+func getVideoCallBySession(session int) (*VideoCallScheduleData, error) {
+    return getVideoCallSchedule(map[string]string{"sesi": strconv.Itoa(session)})
+}
+
+func getVideoCallByMember(member string) (*MemberVideoCallData, error) {
+    params := url.Values{}
+    params.Add("apikey", APIKey)
+    params.Add("member", member)
+    
+    url := fmt.Sprintf("%s/api/jkt48/videocall?%s", BaseURL, params.Encode())
+    
+    client := &http.Client{Timeout: 30 * time.Second}
+    resp, err := client.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+    }
+    
+    var data MemberVideoCallData
+    err = json.NewDecoder(resp.Body).Decode(&data)
+    return &data, err
+}
+
+func formatSessionStatus(status SessionStatus) string {
+    icons := map[string]string{
+        "upcoming":    "⏰",
+        "preparation": "🔄",
+        "ongoing":     "🔴",
+        "finished":    "✅",
+    }
+    
+    icon, exists := icons[status.Status]
+    if !exists {
+        icon = "❓"
+    }
+    
+    return fmt.Sprintf("%s %s", icon, status.Message)
+}
+
+func displayVideoCallSchedule(options map[string]string) {
+    data, err := getVideoCallSchedule(options)
+    if err != nil {
+        fmt.Printf("Error fetching video call schedule: %v\n", err)
+        return
+    }
+    
+    if !data.Success {
+        fmt.Println("❌ Failed to get video call schedule")
+        return
+    }
+    
+    fmt.Printf("📅 VIDEO CALL SCHEDULE - %s %s\n", data.DataMonth, data.DataYear)
+    fmt.Printf("📊 Statistics: %d total, %d ongoing, %d upcoming\n", 
+        data.Statistics.TotalSessions, 
+        data.Statistics.OngoingSessions, 
+        data.Statistics.UpcomingSessions)
+    
+    if data.IsDataOutdated {
+        fmt.Printf("⚠️  %s\n", data.Message)
+        return
+    }
+    
+    fmt.Println("\n--- SCHEDULE DETAILS ---")
+    
+    for _, day := range data.Data {
+        fmt.Printf("\n📆 %s, %s\n", day.Day, day.Date)
+        
+        for _, session := range day.Sessions {
+            fmt.Printf("  📱 Session %d\n", session.Session)
+            fmt.Printf("     ⏱️  Preparation: %s\n", session.Preparation)
+            fmt.Printf("     🎥 Video Call: %s\n", session.Waktu)
+            fmt.Printf("     👥 Members: %s\n", strings.Join(session.Members, ", "))
+            fmt.Printf("     %s\n", formatSessionStatus(session.SessionStatus))
+        }
+    }
+}
+
+func displayTodayVideoCallSchedule() {
+    data, err := getTodayVideoCallSchedule()
+    if err != nil {
+        fmt.Printf("Error fetching today's video call schedule: %v\n", err)
+        return
+    }
+    
+    if !data.Success || len(data.Sessions) == 0 {
+        fmt.Println("📅 No video call sessions today")
+        return
+    }
+    
+    fmt.Printf("📅 TODAY'S VIDEO CALL SCHEDULE - %s, %s\n", data.Day, data.Date)
+    fmt.Printf("📊 Total Sessions: %d\n", data.TotalSessions)
+    fmt.Println()
+    
+    for _, session := range data.Sessions {
+        fmt.Printf("📱 Session %d\n", session.Session)
+        fmt.Printf("   ⏱️  Preparation: %s\n", session.Preparation)
+        fmt.Printf("   🎥 Video Call: %s\n", session.Waktu)
+        fmt.Printf("   👥 Members: %s\n", strings.Join(session.Members, ", "))
+        fmt.Printf("   %s\n", formatSessionStatus(session.SessionStatus))
+        
+        // Show countdown for upcoming sessions
+        if session.SessionStatus.TimeUntilStart != nil {
+            minutes := *session.SessionStatus.TimeUntilStart
+            hours := minutes / 60
+            mins := minutes % 60
+            fmt.Printf("   ⏰ Starts in: %dh %dm\n", hours, mins)
+        }
+        
+        if session.SessionStatus.TimeRemaining != nil {
+            minutes := *session.SessionStatus.TimeRemaining
+            fmt.Printf("   ⏱️  Ends in: %d minutes\n", minutes)
+        }
+        
+        fmt.Println()
+    }
+}
+
+func monitorVideoCallSessions(durationMinutes int) {
+    fmt.Println("🔄 Starting video call session monitor...")
+    
+    ticker := time.NewTicker(1 * time.Minute)
+    defer ticker.Stop()
+    
+    timeout := time.After(time.Duration(durationMinutes) * time.Minute)
+    
+    for {
+        select {
+        case <-timeout:
+            fmt.Println("🔄 Monitor stopped")
+            return
+        case <-ticker.C:
+            data, err := getTodayVideoCallSchedule()
+            if err != nil {
+                fmt.Printf("Monitor error: %v\n", err)
+                continue
+            }
+            
+            if data.Success && len(data.Sessions) > 0 {
+                ongoingSessions := []VideoCallSession{}
+                prepSessions := []VideoCallSession{}
+                
+                for _, session := range data.Sessions {
+                    if session.SessionStatus.IsOngoing {
+                        ongoingSessions = append(ongoingSessions, session)
+                    }
+                    if session.SessionStatus.IsPreparation {
+                        prepSessions = append(prepSessions, session)
+                    }
+                }
+                
+                if len(ongoingSessions) > 0 {
+                    fmt.Printf("🔴 LIVE NOW: %d video call session(s)\n", len(ongoingSessions))
+                    for _, session := range ongoingSessions {
+                        fmt.Printf("   📱 Session %d with %s\n", session.Session, strings.Join(session.Members, ", "))
+                    }
+                }
+                
+                if len(prepSessions) > 0 {
+                    fmt.Printf("🔄 PREPARING: %d session(s) in preparation\n", len(prepSessions))
+                    for _, session := range prepSessions {
+                        fmt.Printf("   📱 Session %d starting soon\n", session.Session)
+                    }
+                }
+            }
+        }
+    }
+}
+
+func getMemberScheduleAnalysis(memberName string) {
+    data, err := getVideoCallByMember(memberName)
+    if err != nil {
+        fmt.Printf("Error analyzing member schedule: %v\n", err)
+        return
+    }
+    
+    if !data.Success || data.TotalSessions == 0 {
+        fmt.Printf("❌ No video call sessions found for %s\n", memberName)
+        return
+    }
+    
+    fmt.Printf("📊 %s VIDEO CALL ANALYSIS\n", strings.ToUpper(memberName))
+    fmt.Printf("📅 Total Sessions: %d\n", data.TotalSessions)
+    fmt.Printf("📆 Month: %s %s\n", data.DataMonth, data.DataYear)
+    fmt.Println()
+    
+    // Group by date
+    sessionsByDate := make(map[string][]MemberScheduleItem)
+    for _, session := range data.Schedule {
+        date := session.Date
+        sessionsByDate[date] = append(sessionsByDate[date], session)
+    }
+    
+    for date, sessions := range sessionsByDate {
+        fmt.Printf("📆 %s, %s\n", sessions[0].Day, date)
+        for _, session := range sessions {
+            fmt.Printf("   📱 Session %d: %s\n", session.Session, session.Waktu)
+            fmt.Printf("   👥 With: %s\n", strings.Join(session.OtherMembers, ", "))
+            fmt.Printf("   %s\n", formatSessionStatus(session.SessionStatus))
+        }
+        fmt.Println()
+    }
+}
+
+func main() {
+    // Example usage
+    fmt.Println("=== JKT48 VIDEO CALL SCHEDULE API EXAMPLES ===\n")
+    
+    // Display all video call schedules
+    fmt.Println("1. All Video Call Schedules:")
+    displayVideoCallSchedule(nil)
+    fmt.Println()
+    
+    // Display today's schedule
+    fmt.Println("2. Today's Video Call Schedule:")
+    displayTodayVideoCallSchedule()
+    fmt.Println()
+    
+    // Get specific date schedule
+    fmt.Println("3. Video Call Schedule for Date 18:")
+    displayVideoCallSchedule(map[string]string{"date": "18"})
+    fmt.Println()
+    
+    // Get member specific schedule
+    fmt.Println("4. Adeline's Video Call Analysis:")
+    getMemberScheduleAnalysis("Adeline")
+    fmt.Println()
+    
+    // Uncomment to start monitoring
+    // fmt.Println("5. Starting Monitor (30 minutes):")
+    // monitorVideoCallSessions(30)
+}
+```
+</Tab>
+
+</Tabs>
+
+## Real-time Status Monitoring
+
+<Tabs items={['Status Types', 'Live Monitor', 'Reminder System']}>
+
+<Tab value="Status Types">
+```javascript
+// Session status monitoring
+function getSessionStatusInfo(session) {
+  const status = session.session_status;
+  
+  switch (status.status) {
+    case 'upcoming':
+      return {
+        icon: '⏰',
+        color: '#FFA500',
+        description: 'Session will start soon',
+        action: 'Set reminder'
+      };
+    case 'preparation':
+      return {
+        icon: '🔄',
+        color: '#FFD700',
+        description: 'Members are preparing',
+        action: 'Get ready'
+      };
+    case 'ongoing':
+      return {
+        icon: '🔴',
+        color: '#FF0000',
+        description: 'Video call is live',
+        action: 'Join now'
+      };
+    case 'finished':
+      return {
+        icon: '✅',
+        color: '#32CD32',
+        description: 'Session completed',
+        action: 'Check highlights'
+      };
+    default:
+      return {
+        icon: '❓',
+        color: '#808080',
+        description: 'Unknown status',
+        action: 'Refresh'
+      };
+  }
+}
+```
+</Tab>
+
+<Tab value="Live Monitor">
+```javascript
+// Real-time video call session monitor
+class VideoCallLiveMonitor {
+  constructor(options = {}) {
+    this.updateInterval = options.updateInterval || 60000; // 1 minute
+    this.callbacks = {
+      onSessionStart: options.onSessionStart || (() => {}),
+      onSessionEnd: options.onSessionEnd || (() => {}),
+      onPreparation: options.onPreparation || (() => {}),
+      onStatusChange: options.onStatusChange || (() => {})
+    };
+    this.previousSessions = new Map();
+    this.isMonitoring = false;
+  }
+  
+  async start() {
+    if (this.isMonitoring) return;
+    this.isMonitoring = true;
+    
+    console.log('🎥 Starting video call live monitor...');
+    
+    this.monitorLoop();
+  }
+  
+  async monitorLoop() {
+    while (this.isMonitoring) {
+      try {
+        const data = await getTodayVideoCallSchedule();
+        
+        if (data.success && data.sessions) {
+          this.checkForStatusChanges(data.sessions);
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, this.updateInterval));
+      } catch (error) {
+        console.error('Monitor error:', error);
+        await new Promise(resolve => setTimeout(resolve, 30000)); // Wait 30s on error
+      }
+    }
+  }
+  
+  checkForStatusChanges(sessions) {
+    sessions.forEach(session => {
+      const sessionKey = `session_${session.session}`;
+      const currentStatus = session.session_status.status;
+      const previousStatus = this.previousSessions.get(sessionKey);
+      
+      if (previousStatus !== currentStatus) {
+        this.callbacks.onStatusChange(session, previousStatus, currentStatus);
+        
+        if (currentStatus === 'ongoing' && previousStatus !== 'ongoing') {
+          this.callbacks.onSessionStart(session);
+        }
+        
+        if (currentStatus === 'finished' && previousStatus === 'ongoing') {
+          this.callbacks.onSessionEnd(session);
+        }
+        
+        if (currentStatus === 'preparation' && previousStatus !== 'preparation') {
+          this.callbacks.onPreparation(session);
+        }
+        
+        this.previousSessions.set(sessionKey, currentStatus);
+      }
+    });
+  }
+  
+  stop() {
+    this.isMonitoring = false;
+    console.log('🛑 Video call monitor stopped');
+  }
+}
+
+// Usage
+const monitor = new VideoCallLiveMonitor({
+  onSessionStart: (session) => {
+    console.log(`🔴 LIVE: Session ${session.session} started!`);
+    console.log(`👥 Members: ${session.members.join(', ')}`);
+  },
+  onPreparation: (session) => {
+    console.log(`🔄 PREP: Session ${session.session} in preparation`);
+  },
+  onSessionEnd: (session) => {
+    console.log(`✅ END: Session ${session.session} finished`);
+  }
+});
+
+// monitor.start();
+```
+</Tab>
+
+<Tab value="Reminder System">
+```javascript
+// Advanced reminder system
+class VideoCallReminderSystem {
+  constructor() {
+    this.activeReminders = new Map();
+    this.notificationMethods = [];
+  }
+  
+  addNotificationMethod(method) {
+    this.notificationMethods.push(method);
+  }
+  
+  async setupTodayReminders() {
+    try {
+      const data = await getTodayVideoCallSchedule();
+      
+      if (data.success && data.sessions) {
+        data.sessions.forEach(session => {
+          if (session.session_status.status === 'upcoming') {
+            this.setSessionReminders(session);
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error setting up reminders:', error);
+    }
+  }
+  
+  setSessionReminders(session) {
+    const timeUntilStart = session.session_status.time_until_start;
+    
+    if (!timeUntilStart) return;
+    
+    // Reminder intervals (in minutes before start)
+    const reminderIntervals = [30, 15, 5, 1];
+    
+    reminderIntervals.forEach(minutes => {
+      if (timeUntilStart > minutes) {
+        const delay = (timeUntilStart - minutes) * 60 * 1000;
+        const timerId = setTimeout(() => {
+          this.sendReminder(session, minutes);
+        }, delay);
+        
+        this.activeReminders.set(`session_${session.session}_${minutes}min`, timerId);
+      }
+    });
+  }
+  
+  sendReminder(session, minutesUntilStart) {
+    const reminderData = {
+      session: session.session,
+      members: session.members,
+      startTime: session.waktu,
+      minutesUntilStart,
+      message: `Video call session ${session.session} starts in ${minutesUntilStart} minute(s)!`
+    };
+    
+    this.notificationMethods.forEach(method => {
+      try {
+        method(reminderData);
+      } catch (error) {
+        console.error('Notification method error:', error);
+      }
+    });
+  }
+  
+  clearAllReminders() {
+    this.activeReminders.forEach(timerId => clearTimeout(timerId));
+    this.activeReminders.clear();
+  }
+}
+
+// Notification methods
+const consoleNotification = (data) => {
+  console.log(`🔔 REMINDER: ${data.message}`);
+  console.log(`👥 Members: ${data.members.join(', ')}`);
+  console.log(`⏰ Time: ${data.startTime}`);
+};
+
+const desktopNotification = (data) => {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    new Notification(`JKT48 Video Call Reminder`, {
+      body: data.message,
+      icon: '/jkt48-icon.png'
+    });
+  }
+};
+
+// Usage
+const reminderSystem = new VideoCallReminderSystem();
+reminderSystem.addNotificationMethod(consoleNotification);
+reminderSystem.addNotificationMethod(desktopNotification);
+// reminderSystem.setupTodayReminders();
+```
+</Tab>
+
+</Tabs>
+
+## Error Handling & Edge Cases
+
+```javascript
+// Comprehensive error handling
+async function safeGetVideoCallSchedule(options = {}) {
+  try {
+    const data = await getVideoCallSchedule(options);
+    
+    // Check for outdated data
+    if (data.is_data_outdated) {
+      return {
+        ...data,
+        warning: 'Schedule data is from a previous month',
+        isEmpty: true
+      };
+    }
+    
+    // Validate response structure
+    if (!data.data || !Array.isArray(data.data)) {
+      throw new Error('Invalid schedule data structure');
+    }
+    
+    // Check for empty results with filters
+    if (data.data.length === 0 && Object.values(data.filters).some(f => f !== null)) {
+      return {
+        ...data,
+        warning: 'No sessions found matching the specified filters',
+        isEmpty: true
+      };
+    }
+    
+    return {
+      ...data,
+      isEmpty: false
+    };
+    
+  } catch (error) {
+    console.error('Video call schedule error:', error);
+    return {
+      success: false,
+      error: error.message,
+      isEmpty: true,
+      data: [],
+      statistics: {
+        total_sessions: 0,
+        ongoing_sessions: 0,
+        finished_sessions: 0,
+        upcoming_sessions: 0
+      }
+    };
+  }
+}
+
+// Connection retry logic
+async function getVideoCallScheduleWithRetry(options = {}, maxRetries = 3) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await getVideoCallSchedule(options);
+    } catch (error) {
+      if (attempt === maxRetries) {
+        throw error;
+      }
+      
+      console.log(`Attempt ${attempt} failed, retrying in ${attempt * 1000}ms...`);
+      await new Promise(resolve => setTimeout(resolve, attempt * 1000));
+    }
+  }
+}
+```
+
+---
+
+### Usage Examples
+
+**Basic Examples:**
+```bash
+# Get all video call schedules
+curl "https://v2.jkt48connect.my.id/api/jkt48/videocall?apikey=YOUR_API_KEY"
+
+# Get schedules for date 16
+curl "https://v2.jkt48connect.my.id/api/jkt48/videocall?date=16&apikey=YOUR_API_KEY"
+
+# Get all session 1 schedules
+curl "https://v2.jkt48connect.my.id/api/jkt48/videocall?sesi=1&apikey=YOUR_API_KEY"
+
+# Get schedules with Adeline
+curl "https://v2.jkt48connect.my.id/api/jkt48/videocall?member=Adeline&apikey=YOUR_API_KEY"
+
+# Get today's schedule only
+curl "https://v2.jkt48connect.my.id/api/jkt48/videocall/today?apikey=YOUR_API_KEY"
+
+# Combined filters
+curl "https://v2.jkt48connect.my.id/api/jkt48/videocall?date=18&sesi=2&apikey=YOUR_API_KEY"
+```
+
+**Advanced Integration:**
+```javascript
+// Complete video call dashboard
+async function createVideoCallDashboard() {
+  const today = await getTodayVideoCallSchedule();
+  const all = await getVideoCallSchedule();
+  
+  return {
+    today: today.sessions || [],
+    upcoming: all.data || [],
+    statistics: all.statistics || {},
+    liveStatus: {
+      hasLiveSessions: today.sessions?.some(s => s.session_status.is_ongoing) || false,
+      preparingSessions: today.sessions?.filter(s => s.session_status.is_preparation) || [],
+      nextSession: today.sessions?.find(s => s.session_status.status === 'upcoming') || null
+    }
+  };
+}
+```
+
+Get your API key from [JKT48Connect](https://www.jkt48connect.my.id/buyapi) and start building video call schedule applications!

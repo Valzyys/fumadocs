@@ -1,0 +1,651 @@
+---
+title: Events
+description: Get JKT48 Upcoming Events via JKT48Connect API
+icon: Calendar
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+## Introduction
+
+The JKT48Connect Events API provides information about **upcoming JKT48 events and performances**. Perfect for creating event calendars, concert reminders, and fan schedule applications.
+
+<Cards>
+<Card icon={<Calendar className="text-blue-400" />} title='Upcoming Events'>
+Get all scheduled JKT48 events and performances.
+</Card>
+
+<Card icon={<MapPin className="text-green-400" />} title='Event Planning'>
+Build event tracking and attendance planning features.
+</Card>
+
+<Card icon={<Bell className="text-purple-400" />} title='Event Notifications'>
+Create automated event reminder systems.
+</Card>
+</Cards>
+
+## Quick Start
+
+<Steps>
+<Step>
+### Get Your API Key
+Obtain your API key from [JKT48Connect](https://www.jkt48connect.my.id/buyapi).
+</Step>
+
+<Step>
+### Make API Request
+```bash
+curl "https://v2.jkt48connect.my.id/api/jkt48/events?apikey=YOUR_API_KEY"
+```
+</Step>
+
+<Step>
+### Process Response
+Handle the JSON array containing upcoming events.
+</Step>
+</Steps>
+
+## Endpoint Details
+
+<Tabs items={['Overview', 'Request', 'Response']}>
+
+<Tab value="Overview">
+**Base URL:** `https://v2.jkt48connect.my.id`  
+**Endpoint:** `/api/jkt48/events`  
+**Method:** `GET`  
+**Authentication:** API Key required
+</Tab>
+
+<Tab value="Request">
+**Query Parameters:**
+- `apikey` (required): Your API authentication key
+
+**Example:**
+```http
+GET /api/jkt48/events?apikey=YOUR_API_KEY HTTP/1.1
+Host: v2.jkt48connect.my.id
+```
+</Tab>
+
+<Tab value="Response">
+Returns JSON array with upcoming JKT48 events:
+
+```json
+[
+  {
+    "id": "20250704-gelombang-cinta-fest-pekalongan",
+    "date": "2025-07-03T17:00:00.000Z",
+    "label": "https://jkt48.com/images/icon.cat2.png",
+    "title": "Gelombang Cinta Fest Pekalongan",
+    "url": "https://jkt48.com/calendar/list/y/2025/m/7/d/4?lang=id"
+  },
+  {
+    "id": "20250705-pestipalin-bandung",
+    "date": "2025-07-04T17:00:00.000Z",
+    "label": "https://jkt48.com/images/icon.cat2.png",
+    "title": "Pestipalin Bandung",
+    "url": "https://jkt48.com/calendar/list/y/2025/m/7/d/4?lang=id"
+  },
+  {
+    "id": "20250706-prambanan-jazz-festival-2025",
+    "date": "2025-07-05T17:00:00.000Z",
+    "label": "https://jkt48.com/images/icon.cat2.png",
+    "title": "Prambanan Jazz Festival 2025",
+    "url": "https://jkt48.com/calendar/list/y/2025/m/7/d/6?lang=id"
+  }
+]
+```
+</Tab>
+
+</Tabs>
+
+## Implementation Examples
+
+<Tabs items={['JavaScript', 'Python', 'Go']}>
+
+<Tab value="JavaScript">
+```javascript
+const API_KEY = 'YOUR_API_KEY';
+const BASE_URL = 'https://v2.jkt48connect.my.id';
+
+async function getUpcomingEvents() {
+  try {
+    const response = await fetch(`${BASE_URL}/api/jkt48/events?apikey=${API_KEY}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const events = await response.json();
+    return events;
+  } catch (error) {
+    console.error('Failed to fetch events:', error);
+    throw error;
+  }
+}
+
+// Calculate days until event
+function getDaysUntilEvent(eventDate) {
+  const today = new Date();
+  const event = new Date(eventDate);
+  const diffTime = event - today;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays;
+}
+
+// Format event information
+function formatEventInfo(event) {
+  const daysUntil = getDaysUntilEvent(event.date);
+  const eventDate = new Date(event.date).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  
+  return {
+    id: event.id,
+    title: event.title,
+    eventDate,
+    daysUntil,
+    isToday: daysUntil === 0,
+    isThisWeek: daysUntil <= 7,
+    label: event.label,
+    detailUrl: event.url
+  };
+}
+
+// Group events by time period
+function groupEventsByPeriod(events) {
+  const today = [];
+  const thisWeek = [];
+  const thisMonth = [];
+  const later = [];
+  
+  events.forEach(event => {
+    const days = getDaysUntilEvent(event.date);
+    
+    if (days === 0) {
+      today.push(event);
+    } else if (days <= 7) {
+      thisWeek.push(event);
+    } else if (days <= 30) {
+      thisMonth.push(event);
+    } else {
+      later.push(event);
+    }
+  });
+  
+  return { today, thisWeek, thisMonth, later };
+}
+
+// Usage example
+async function displayUpcomingEvents() {
+  try {
+    const events = await getUpcomingEvents();
+    const grouped = groupEventsByPeriod(events);
+    
+    console.log('=== TODAY\'S EVENTS ===');
+    grouped.today.forEach(event => {
+      console.log(`🎉 ${event.title} - Today!`);
+    });
+    
+    console.log('\n=== THIS WEEK ===');
+    grouped.thisWeek.forEach(event => {
+      const info = formatEventInfo(event);
+      console.log(`📅 ${event.title} - ${info.eventDate} (${info.daysUntil} days)`);
+    });
+    
+    console.log('\n=== THIS MONTH ===');
+    grouped.thisMonth.forEach(event => {
+      const info = formatEventInfo(event);
+      console.log(`🗓️ ${event.title} - ${info.eventDate} (${info.daysUntil} days)`);
+    });
+    
+  } catch (error) {
+    console.error('Error displaying events:', error);
+  }
+}
+```
+</Tab>
+
+<Tab value="Python">
+```python
+import requests
+from datetime import datetime, timedelta
+from typing import List, Dict
+
+API_KEY = 'YOUR_API_KEY'
+BASE_URL = 'https://v2.jkt48connect.my.id'
+
+def get_upcoming_events() -> List[Dict]:
+    """Fetch upcoming JKT48 events"""
+    url = f"{BASE_URL}/api/jkt48/events"
+    params = {'apikey': API_KEY}
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching events: {e}")
+        raise
+
+def get_days_until_event(event_date_str: str) -> int:
+    """Calculate days until event"""
+    event_date = datetime.fromisoformat(event_date_str.replace('Z', '+00:00'))
+    today = datetime.now()
+    
+    days_until = (event_date.date() - today.date()).days
+    return days_until
+
+def format_event_info(event: Dict) -> Dict:
+    """Format event information for display"""
+    days_until = get_days_until_event(event['date'])
+    event_date = datetime.fromisoformat(event['date'].replace('Z', '+00:00'))
+    
+    return {
+        'id': event['id'],
+        'title': event['title'],
+        'event_date': event_date.strftime('%B %d, %Y'),
+        'days_until': days_until,
+        'is_today': days_until == 0,
+        'is_this_week': days_until <= 7,
+        'label': event['label'],
+        'detail_url': event['url']
+    }
+
+def group_events_by_period(events: List[Dict]) -> Dict:
+    """Group events by time periods"""
+    today = []
+    this_week = []
+    this_month = []
+    later = []
+    
+    for event in events:
+        days = get_days_until_event(event['date'])
+        
+        if days == 0:
+            today.append(event)
+        elif days <= 7:
+            this_week.append(event)
+        elif days <= 30:
+            this_month.append(event)
+        else:
+            later.append(event)
+    
+    return {
+        'today': today,
+        'this_week': this_week,
+        'this_month': this_month,
+        'later': later
+    }
+
+def display_upcoming_events():
+    """Display formatted event information"""
+    try:
+        events = get_upcoming_events()
+        grouped = group_events_by_period(events)
+        
+        print("=== TODAY'S EVENTS ===")
+        for event in grouped['today']:
+            print(f"🎉 {event['title']} - Today!")
+        
+        print("\n=== THIS WEEK ===")
+        for event in grouped['this_week']:
+            info = format_event_info(event)
+            print(f"📅 {event['title']} - {info['event_date']} ({info['days_until']} days)")
+        
+        print("\n=== THIS MONTH ===")
+        for event in grouped['this_month']:
+            info = format_event_info(event)
+            print(f"🗓️ {event['title']} - {info['event_date']} ({info['days_until']} days)")
+            
+    except Exception as e:
+        print(f"Error: {e}")
+
+# Usage example
+if __name__ == "__main__":
+    display_upcoming_events()
+```
+</Tab>
+
+<Tab value="Go">
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "time"
+)
+
+const (
+    APIKey  = "YOUR_API_KEY"
+    BaseURL = "https://v2.jkt48connect.my.id"
+)
+
+type Event struct {
+    ID    string `json:"id"`
+    Date  string `json:"date"`
+    Label string `json:"label"`
+    Title string `json:"title"`
+    URL   string `json:"url"`
+}
+
+type EventInfo struct {
+    ID         string
+    Title      string
+    EventDate  string
+    DaysUntil  int
+    IsToday    bool
+    IsThisWeek bool
+    Label      string
+    DetailURL  string
+}
+
+func getUpcomingEvents() ([]Event, error) {
+    url := fmt.Sprintf("%s/api/jkt48/events?apikey=%s", BaseURL, APIKey)
+    
+    client := &http.Client{Timeout: 30 * time.Second}
+    resp, err := client.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+    }
+    
+    var events []Event
+    err = json.NewDecoder(resp.Body).Decode(&events)
+    return events, err
+}
+
+func getDaysUntilEvent(eventDateStr string) int {
+    eventDate, err := time.Parse(time.RFC3339, eventDateStr)
+    if err != nil {
+        return 0
+    }
+    
+    now := time.Now()
+    duration := eventDate.Sub(now)
+    days := int(duration.Hours() / 24)
+    
+    return days
+}
+
+func formatEventInfo(event Event) EventInfo {
+    daysUntil := getDaysUntilEvent(event.Date)
+    
+    eventDate, _ := time.Parse(time.RFC3339, event.Date)
+    eventDateStr := eventDate.Format("January 2, 2006")
+    
+    return EventInfo{
+        ID:         event.ID,
+        Title:      event.Title,
+        EventDate:  eventDateStr,
+        DaysUntil:  daysUntil,
+        IsToday:    daysUntil == 0,
+        IsThisWeek: daysUntil <= 7,
+        Label:      event.Label,
+        DetailURL:  event.URL,
+    }
+}
+
+func groupEventsByPeriod(events []Event) map[string][]Event {
+    groups := map[string][]Event{
+        "today":     {},
+        "thisWeek":  {},
+        "thisMonth": {},
+        "later":     {},
+    }
+    
+    for _, event := range events {
+        days := getDaysUntilEvent(event.Date)
+        
+        if days == 0 {
+            groups["today"] = append(groups["today"], event)
+        } else if days <= 7 {
+            groups["thisWeek"] = append(groups["thisWeek"], event)
+        } else if days <= 30 {
+            groups["thisMonth"] = append(groups["thisMonth"], event)
+        } else {
+            groups["later"] = append(groups["later"], event)
+        }
+    }
+    
+    return groups
+}
+
+func displayUpcomingEvents() {
+    events, err := getUpcomingEvents()
+    if err != nil {
+        fmt.Printf("Error fetching events: %v\n", err)
+        return
+    }
+    
+    grouped := groupEventsByPeriod(events)
+    
+    fmt.Println("=== TODAY'S EVENTS ===")
+    for _, event := range grouped["today"] {
+        fmt.Printf("🎉 %s - Today!\n", event.Title)
+    }
+    
+    fmt.Println("\n=== THIS WEEK ===")
+    for _, event := range grouped["thisWeek"] {
+        info := formatEventInfo(event)
+        fmt.Printf("📅 %s - %s (%d days)\n", event.Title, info.EventDate, info.DaysUntil)
+    }
+    
+    fmt.Println("\n=== THIS MONTH ===")
+    for _, event := range grouped["thisMonth"] {
+        info := formatEventInfo(event)
+        fmt.Printf("🗓️ %s - %s (%d days)\n", event.Title, info.EventDate, info.DaysUntil)
+    }
+}
+
+func main() {
+    displayUpcomingEvents()
+}
+```
+</Tab>
+
+</Tabs>
+
+## Data Structure
+
+<Callout type="info">
+Each event object contains essential information for event tracking and planning.
+</Callout>
+
+**Key Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique event identifier |
+| `date` | string | ISO 8601 formatted event date |
+| `label` | string | Event category icon URL |
+| `title` | string | Event name/title |
+| `url` | string | Official event details URL |
+
+## Common Use Cases
+
+<Tabs items={['Event Calendar', 'Reminder System', 'Event Filtering']}>
+
+<Tab value="Event Calendar">
+```javascript
+// Create event calendar widget
+function buildEventCalendar(events) {
+  const calendar = {};
+  
+  events.forEach(event => {
+    const eventDate = new Date(event.date);
+    const dateKey = eventDate.toISOString().split('T')[0];
+    
+    if (!calendar[dateKey]) calendar[dateKey] = [];
+    
+    calendar[dateKey].push({
+      id: event.id,
+      title: event.title,
+      time: eventDate.toLocaleTimeString(),
+      detailUrl: event.url,
+      category: event.label
+    });
+  });
+  
+  return calendar;
+}
+
+// Generate event countdown
+function generateEventCountdown(event) {
+  const days = getDaysUntilEvent(event.date);
+  
+  if (days === 0) return `🎉 Today! ${event.title}`;
+  if (days === 1) return `📅 Tomorrow! ${event.title}`;
+  return `🗓️ ${days} days until ${event.title}`;
+}
+```
+</Tab>
+
+<Tab value="Reminder System">
+```javascript
+// Event reminder scheduler
+class EventNotifier {
+  constructor() {
+    this.reminders = [];
+  }
+  
+  async scheduleReminders() {
+    const events = await getUpcomingEvents();
+    
+    events.forEach(event => {
+      const days = getDaysUntilEvent(event.date);
+      
+      // Schedule reminders for 7 days, 3 days, 1 day, and day of
+      [7, 3, 1, 0].forEach(daysBefore => {
+        if (days === daysBefore) {
+          this.addReminder(event, daysBefore);
+        }
+      });
+    });
+  }
+  
+  addReminder(event, daysBefore) {
+    let message;
+    
+    switch(daysBefore) {
+      case 7:
+        message = `📅 One week until ${event.title}!`;
+        break;
+      case 3:
+        message = `🎪 3 days until ${event.title}!`;
+        break;
+      case 1:
+        message = `🎉 Tomorrow: ${event.title}!`;
+        break;
+      case 0:
+        message = `🚨 Today: ${event.title}!`;
+        break;
+    }
+    
+    this.reminders.push({
+      eventId: event.id,
+      title: event.title,
+      message,
+      priority: daysBefore === 0 ? 'high' : 'normal',
+      detailUrl: event.url
+    });
+  }
+}
+```
+</Tab>
+
+<Tab value="Event Filtering">
+```javascript
+// Filter events by criteria
+function filterEvents(events, criteria) {
+  return events.filter(event => {
+    const eventDate = new Date(event.date);
+    const now = new Date();
+    
+    // Filter by time range
+    if (criteria.timeRange) {
+      const days = getDaysUntilEvent(event.date);
+      
+      switch(criteria.timeRange) {
+        case 'today':
+          if (days !== 0) return false;
+          break;
+        case 'week':
+          if (days > 7) return false;
+          break;
+        case 'month':
+          if (days > 30) return false;
+          break;
+      }
+    }
+    
+    // Filter by title keywords
+    if (criteria.keywords) {
+      const titleLower = event.title.toLowerCase();
+      const keywords = criteria.keywords.toLowerCase().split(' ');
+      
+      if (!keywords.some(keyword => titleLower.includes(keyword))) {
+        return false;
+      }
+    }
+    
+    return true;
+  });
+}
+
+// Search events
+function searchEvents(events, query) {
+  const lowercaseQuery = query.toLowerCase();
+  
+  return events.filter(event => 
+    event.title.toLowerCase().includes(lowercaseQuery) ||
+    event.id.toLowerCase().includes(lowercaseQuery)
+  );
+}
+```
+</Tab>
+
+</Tabs>
+
+## Error Handling
+
+```javascript
+async function getEventsSafely() {
+  try {
+    const events = await getUpcomingEvents();
+    
+    // Validate data structure
+    if (!Array.isArray(events)) {
+      throw new Error('Invalid response format: expected array');
+    }
+    
+    // Filter out invalid entries
+    return events.filter(event => 
+      event.id && 
+      event.title && 
+      event.date &&
+      event.url &&
+      !isNaN(Date.parse(event.date))
+    );
+    
+  } catch (error) {
+    console.error('Failed to fetch events:', error);
+    return []; // Return empty array as fallback
+  }
+}
+```
+
+---
+
+### Get Started
+
+Ready to build event tracking features? [Get your API key](https://www.jkt48connect.my.id/buyapi) and start monitoring JKT48 events!

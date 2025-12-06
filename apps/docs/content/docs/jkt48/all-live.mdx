@@ -1,0 +1,636 @@
+---
+title: All Live
+description: Getting JKT48 Live Data from All Platforms via JKT48Connect API
+icon: Video
+---
+
+## Introduction
+
+JKT48Connect All Live API <span className='text-fd-muted-foreground text-sm'>(JKT48 Connect All Live API)</span> is a **REST API** that provides **real-time data** on JKT48 members currently live across **multiple platforms** including YouTube, IDN Live, and Showroom. It's designed for quick and easy integration into applications needing comprehensive live status updates.
+
+JKT48Connect All Live API offers:
+
+<Cards>
+
+<Card icon={<Video className="text-red-300" />} title='Multi-Platform Coverage'>
+
+Monitor JKT48 members live on YouTube, IDN Live, and Showroom simultaneously.
+
+</Card>
+
+<Card icon={<Clock className="text-green-300" />} title='Real-Time Updates'>
+
+Get instant live status updates across all supported platforms.
+
+</Card>
+
+<Card icon={<Database />} title='Unified Data Format'>
+
+Consistent JSON responses regardless of the streaming platform.
+
+</Card>
+
+<Card icon={<Zap />} title='Simple Integration'>
+
+Easy to implement with standard HTTP requests and API key authentication.
+
+</Card>
+
+</Cards>
+
+<Callout title="Cross-Platform Live Monitoring">
+  This API aggregates live data from YouTube, IDN Live, and Showroom, giving you complete visibility of JKT48 member activities across all major streaming platforms.
+</Callout>
+
+### Terminology
+
+**API Key:** A unique key required for authenticating your requests.  
+**Live Stream:** Active broadcast by JKT48 members on supported platforms.  
+**Multi-Platform:** Covers YouTube, IDN Live, and Showroom streaming services.
+
+## Getting Started
+
+The base URL for all JKT48Connect API requests is `https://v2.jkt48connect.my.id`.
+
+### Endpoint
+
+To retrieve live JKT48 member data from all supported platforms, use:
+
+`GET /api/jkt48/live`
+
+### Authentication
+
+This endpoint requires an **API Key** for access. Append `?apikey=YOUR_API_KEY` to your request URL. You can obtain your API key from the [official JKT48Connect website](https://www.jkt48connect.my.id/buyapi).
+
+**Example Request:**
+```
+GET https://v2.jkt48connect.my.id/api/jkt48/live?apikey=YOUR_API_KEY
+```
+
+Remember to replace `YOUR_API_KEY` with your actual API key.
+
+### Example JSON Output
+
+A successful request returns a JSON array of objects, each representing a live member across all platforms:
+
+```json
+[
+  {
+    "name": "Fritzy",
+    "img": "https://cdn.idntimes.com/content-images/post/20250406/717109e0-a064-4f15-8187-5c4d46e56a58-250406190348.jpg",
+    "img_alt": "https://cdn.idn.media/idnaccount/avatar/500/f4d25811b1b50effd560fb480cac8ba0.webp?v=1712299807",
+    "url_key": "jkt48_fritzy",
+    "slug": "yuk-diborong-250406190348",
+    "room_id": 510011,
+    "is_graduate": false,
+    "is_group": false,
+    "chat_room_id": "arn:aws:ivschat:us-east-1:050891932989:room/dsKjuKRqfoRE",
+    "started_at": "2025-04-06T12:03:58.000Z",
+    "streaming_url_list": [
+      {
+        "label": "original",
+        "quality": 1,
+        "url": "https://4b964ca68cf1.us-east-1.playback.live-video.net/api/video/v1/us-east-1.050891932989.channel.K9fM2uTS2hX3.m3u8"
+      }
+    ],
+    "type": "idn"
+  }
+]
+```
+
+## Response Object Structure
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Name of the JKT48 member |
+| `img` | string | URL to the member's main image |
+| `img_alt` | string | Alternative URL for the member's image (avatar) |
+| `url_key` | string | Unique URL key for the member on the platform |
+| `slug` | string | Slug for the live stream session |
+| `room_id` | number | Unique room ID for the live stream |
+| `is_graduate` | boolean | Indicates if the member is a graduate |
+| `is_group` | boolean | Indicates if the stream is a group stream |
+| `chat_room_id` | string | ID for the live stream chat room |
+| `started_at` | string | Timestamp when the live stream started (ISO 8601 format) |
+| `streaming_url_list` | array | Array of streaming URLs for different qualities |
+| `type` | string | Platform type ("youtube", "idn", or "showroom") |
+
+### Streaming URL List Object
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `label` | string | Label for the streaming quality (e.g., "original") |
+| `quality` | number | Numerical indicator of streaming quality |
+| `url` | string | Actual streaming URL |
+
+## Code Implementations
+
+Here's how to fetch live data from all platforms using different programming languages. Replace `YOUR_API_KEY` with your actual API key.
+
+<Tabs items={['JavaScript', 'Python', 'PHP', 'Go', 'Java', 'C#']}>
+
+<Tab value="JavaScript">
+```javascript
+// Using Fetch API
+const API_KEY = 'YOUR_API_KEY'; // Get your API key from https://www.jkt48connect.my.id/buyapi
+const BASE_URL = 'https://v2.jkt48connect.my.id';
+const ENDPOINT = '/api/jkt48/live';
+
+async function getAllLiveMembers() {
+  try {
+    const response = await fetch(`${BASE_URL}${ENDPOINT}?apikey=${API_KEY}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    console.log('Live members across all platforms:', data);
+    
+    // Process data by platform
+    const platforms = {};
+    data.forEach(member => {
+      if (!platforms[member.type]) {
+        platforms[member.type] = [];
+      }
+      platforms[member.type].push(member);
+    });
+    
+    console.log('Members by platform:', platforms);
+    return data;
+  } catch (error) {
+    console.error('Error fetching live members:', error);
+  }
+}
+
+// Usage
+getAllLiveMembers();
+```
+</Tab>
+
+<Tab value="Python">
+```python
+import requests
+import json
+from datetime import datetime
+
+API_KEY = 'YOUR_API_KEY'  # Get your API key from https://www.jkt48connect.my.id/buyapi
+BASE_URL = 'https://v2.jkt48connect.my.id'
+ENDPOINT = '/api/jkt48/live'
+
+def get_all_live_members():
+    try:
+        response = requests.get(f"{BASE_URL}{ENDPOINT}?apikey={API_KEY}")
+        response.raise_for_status()  # Raise an exception for HTTP errors
+        
+        data = response.json()
+        print(f"Found {len(data)} live members across all platforms")
+        
+        # Group by platform
+        platforms = {}
+        for member in data:
+            platform = member['type']
+            if platform not in platforms:
+                platforms[platform] = []
+            platforms[platform].append(member)
+        
+        # Display summary
+        for platform, members in platforms.items():
+            print(f"{platform.upper()}: {len(members)} members live")
+            for member in members:
+                started_time = datetime.fromisoformat(member['started_at'].replace('Z', '+00:00'))
+                print(f"  - {member['name']} (started: {started_time.strftime('%H:%M:%S')})")
+        
+        return data
+        
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching live members: {e}")
+        return None
+
+if __name__ == "__main__":
+    get_all_live_members()
+```
+</Tab>
+
+<Tab value="PHP">
+```php
+<?php
+$apiKey = 'YOUR_API_KEY'; // Get your API key from https://www.jkt48connect.my.id/buyapi
+$baseUrl = 'https://v2.jkt48connect.my.id';
+$endpoint = '/api/jkt48/live';
+$url = "{$baseUrl}{$endpoint}?apikey={$apiKey}";
+
+function getAllLiveMembers($url) {
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+    
+    $response = curl_exec($ch);
+    
+    if (curl_errno($ch)) {
+        echo 'Error fetching live members: ' . curl_error($ch);
+        curl_close($ch);
+        return false;
+    }
+    
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    curl_close($ch);
+    
+    if ($httpCode !== 200) {
+        echo "HTTP Error: {$httpCode}";
+        return false;
+    }
+    
+    $data = json_decode($response, true);
+    
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        echo 'JSON Error: ' . json_last_error_msg();
+        return false;
+    }
+    
+    // Group by platform
+    $platforms = [];
+    foreach ($data as $member) {
+        $platform = $member['type'];
+        if (!isset($platforms[$platform])) {
+            $platforms[$platform] = [];
+        }
+        $platforms[$platform][] = $member;
+    }
+    
+    // Display results
+    echo "Live members across all platforms:\n";
+    foreach ($platforms as $platform => $members) {
+        echo strtoupper($platform) . ": " . count($members) . " members\n";
+        foreach ($members as $member) {
+            $startedTime = date('H:i:s', strtotime($member['started_at']));
+            echo "  - {$member['name']} (started: {$startedTime})\n";
+        }
+    }
+    
+    return $data;
+}
+
+getAllLiveMembers($url);
+?>
+```
+</Tab>
+
+<Tab value="Go">
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "io/ioutil"
+    "net/http"
+    "time"
+)
+
+const (
+    apiKey  = "YOUR_API_KEY" // Get your API key from https://www.jkt48connect.my.id/buyapi
+    baseURL = "https://v2.jkt48connect.my.id"
+    endpoint = "/api/jkt48/live"
+)
+
+type StreamingURL struct {
+    Label   string `json:"label"`
+    Quality int    `json:"quality"`
+    URL     string `json:"url"`
+}
+
+type LiveMember struct {
+    Name             string         `json:"name"`
+    Img              string         `json:"img"`
+    ImgAlt           string         `json:"img_alt"`
+    URLKey           string         `json:"url_key"`
+    Slug             string         `json:"slug"`
+    RoomID           int            `json:"room_id"`
+    IsGraduate       bool           `json:"is_graduate"`
+    IsGroup          bool           `json:"is_group"`
+    ChatRoomID       string         `json:"chat_room_id"`
+    StartedAt        string         `json:"started_at"`
+    StreamingURLList []StreamingURL `json:"streaming_url_list"`
+    Type             string         `json:"type"`
+}
+
+func getAllLiveMembers() ([]LiveMember, error) {
+    url := fmt.Sprintf("%s%s?apikey=%s", baseURL, endpoint, apiKey)
+    
+    client := &http.Client{Timeout: 30 * time.Second}
+    resp, err := client.Get(url)
+    if err != nil {
+        return nil, fmt.Errorf("error making request: %v", err)
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("HTTP error: %d %s", resp.StatusCode, resp.Status)
+    }
+    
+    body, err := ioutil.ReadAll(resp.Body)
+    if err != nil {
+        return nil, fmt.Errorf("error reading response: %v", err)
+    }
+    
+    var liveMembers []LiveMember
+    err = json.Unmarshal(body, &liveMembers)
+    if err != nil {
+        return nil, fmt.Errorf("error parsing JSON: %v", err)
+    }
+    
+    return liveMembers, nil
+}
+
+func main() {
+    members, err := getAllLiveMembers()
+    if err != nil {
+        fmt.Printf("Error: %v\n", err)
+        return
+    }
+    
+    // Group by platform
+    platforms := make(map[string][]LiveMember)
+    for _, member := range members {
+        platforms[member.Type] = append(platforms[member.Type], member)
+    }
+    
+    fmt.Printf("Found %d live members across all platforms:\n", len(members))
+    for platform, platformMembers := range platforms {
+        fmt.Printf("%s: %d members\n", platform, len(platformMembers))
+        for _, member := range platformMembers {
+            startedAt, _ := time.Parse(time.RFC3339, member.StartedAt)
+            fmt.Printf("  - %s (started: %s)\n", member.Name, startedAt.Format("15:04:05"))
+        }
+    }
+}
+```
+</Tab>
+
+<Tab value="Java">
+```java
+import java.io.IOException;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+
+public class JKT48LiveAPI {
+    private static final String API_KEY = "YOUR_API_KEY"; // Get your API key from https://www.jkt48connect.my.id/buyapi
+    private static final String BASE_URL = "https://v2.jkt48connect.my.id";
+    private static final String ENDPOINT = "/api/jkt48/live";
+    
+    public static class LiveMember {
+        public String name;
+        public String img;
+        public String img_alt;
+        public String url_key;
+        public String slug;
+        public int room_id;
+        public boolean is_graduate;
+        public boolean is_group;
+        public String chat_room_id;
+        public String started_at;
+        public List<StreamingURL> streaming_url_list;
+        public String type;
+    }
+    
+    public static class StreamingURL {
+        public String label;
+        public int quality;
+        public String url;
+    }
+    
+    public static void main(String[] args) {
+        try {
+            List<LiveMember> members = getAllLiveMembers();
+            
+            // Group by platform
+            Map<String, List<LiveMember>> platforms = new HashMap<>();
+            for (LiveMember member : members) {
+                platforms.computeIfAbsent(member.type, k -> new ArrayList<>()).add(member);
+            }
+            
+            System.out.println("Found " + members.size() + " live members across all platforms:");
+            for (Map.Entry<String, List<LiveMember>> entry : platforms.entrySet()) {
+                String platform = entry.getKey();
+                List<LiveMember> platformMembers = entry.getValue();
+                
+                System.out.println(platform.toUpperCase() + ": " + platformMembers.size() + " members");
+                for (LiveMember member : platformMembers) {
+                    Instant startedTime = Instant.parse(member.started_at);
+                    String formattedTime = DateTimeFormatter.ofPattern("HH:mm:ss")
+                        .withZone(ZoneId.systemDefault())
+                        .format(startedTime);
+                    System.out.println("  - " + member.name + " (started: " + formattedTime + ")");
+                }
+            }
+            
+        } catch (Exception e) {
+            System.err.println("Error: " + e.getMessage());
+        }
+    }
+    
+    private static List<LiveMember> getAllLiveMembers() throws IOException, InterruptedException {
+        String url = BASE_URL + ENDPOINT + "?apikey=" + API_KEY;
+        
+        HttpClient client = HttpClient.newBuilder()
+            .timeout(Duration.ofSeconds(30))
+            .build();
+            
+        HttpRequest request = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .GET()
+            .build();
+            
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        
+        if (response.statusCode() != 200) {
+            throw new IOException("HTTP error: " + response.statusCode());
+        }
+        
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode jsonNode = mapper.readTree(response.body());
+        
+        List<LiveMember> members = new ArrayList<>();
+        for (JsonNode node : jsonNode) {
+            LiveMember member = mapper.treeToValue(node, LiveMember.class);
+            members.add(member);
+        }
+        
+        return members;
+    }
+}
+```
+</Tab>
+
+<Tab value="C#">
+```csharp
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+public class JKT48LiveAPI
+{
+    private const string ApiKey = "YOUR_API_KEY"; // Get your API key from https://www.jkt48connect.my.id/buyapi
+    private const string BaseUrl = "https://v2.jkt48connect.my.id";
+    private const string Endpoint = "/api/jkt48/live";
+    
+    public class StreamingUrl
+    {
+        public string label { get; set; }
+        public int quality { get; set; }
+        public string url { get; set; }
+    }
+    
+    public class LiveMember
+    {
+        public string name { get; set; }
+        public string img { get; set; }
+        public string img_alt { get; set; }
+        public string url_key { get; set; }
+        public string slug { get; set; }
+        public int room_id { get; set; }
+        public bool is_graduate { get; set; }
+        public bool is_group { get; set; }
+        public string chat_room_id { get; set; }
+        public string started_at { get; set; }
+        public List<StreamingUrl> streaming_url_list { get; set; }
+        public string type { get; set; }
+    }
+    
+    private static readonly HttpClient httpClient = new HttpClient();
+    
+    public static async Task Main(string[] args)
+    {
+        try
+        {
+            var members = await GetAllLiveMembersAsync();
+            
+            // Group by platform
+            var platforms = members.GroupBy(m => m.type)
+                                 .ToDictionary(g => g.Key, g => g.ToList());
+            
+            Console.WriteLine($"Found {members.Count} live members across all platforms:");
+            
+            foreach (var platform in platforms)
+            {
+                Console.WriteLine($"{platform.Key.ToUpper()}: {platform.Value.Count} members");
+                
+                foreach (var member in platform.Value)
+                {
+                    if (DateTime.TryParse(member.started_at, out DateTime startedTime))
+                    {
+                        Console.WriteLine($"  - {member.name} (started: {startedTime:HH:mm:ss})");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"  - {member.name}");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+    }
+    
+    private static async Task<List<LiveMember>> GetAllLiveMembersAsync()
+    {
+        string url = $"{BaseUrl}{Endpoint}?apikey={ApiKey}";
+        
+        try
+        {
+            HttpResponseMessage response = await httpClient.GetAsync(url);
+            response.EnsureSuccessStatusCode();
+            
+            string responseBody = await response.Content.ReadAsStringAsync();
+            
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            
+            var members = JsonSerializer.Deserialize<List<LiveMember>>(responseBody, options);
+            return members ?? new List<LiveMember>();
+        }
+        catch (HttpRequestException ex)
+        {
+            throw new Exception($"HTTP request failed: {ex.Message}");
+        }
+        catch (JsonException ex)
+        {
+            throw new Exception($"JSON parsing failed: {ex.Message}");
+        }
+    }
+}
+```
+</Tab>
+
+</Tabs>
+
+## Platform Coverage
+
+The All Live API covers the following platforms:
+
+- **YouTube** - Live streams and premieres
+- **IDN Live** - Indonesian streaming platform
+- **Showroom** - Interactive live streaming platform
+
+Each response includes a `type` field indicating the platform ("youtube", "idn", or "showroom").
+
+## FAQ
+
+Common questions about the All Live API:
+
+<Accordions>
+    <Accordion id='platforms' title="Which platforms are supported?">
+        The All Live API currently supports **YouTube**, **IDN Live**, and **Showroom** platforms. All live streams from JKT48 members on these platforms are included in the response.
+    </Accordion>
+    
+    <Accordion id='update-frequency' title="How often is the live data updated?">
+        The live data is updated in **real-time** to ensure you get the most current information about which members are currently streaming.
+    </Accordion>
+    
+    <Accordion id='authentication' title="Do I need an API key?">
+        Yes, this endpoint requires an **API key** for authentication. You can obtain your API key from the [official website](https://www.jkt48connect.my.id/buyapi).
+    </Accordion>
+    
+    <Accordion id='response-format' title="What format is the response?">
+        All responses are returned in **JSON** format with consistent structure regardless of the streaming platform.
+    </Accordion>
+
+    <Accordion id='streaming-urls' title="Can I access the actual stream URLs?">
+        Yes, each live member object includes a `streaming_url_list` array with direct streaming URLs for different quality levels.
+    </Accordion>
+
+</Accordions>
+
+### Need Help?
+
+If you have questions or need assistance:
+
+<Cards>
+  <Card
+    href="https://wa.me/6285701479245"
+    title="WhatsApp Support"
+    description="Get direct support via WhatsApp for quick assistance."
+  />
+  </Cards>

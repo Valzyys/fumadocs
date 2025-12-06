@@ -1,0 +1,731 @@
+---
+title: News Detail
+description: Get detailed JKT48 news content using JKT48Connect API
+icon: FileText
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+## Introduction
+
+The JKT48Connect News Detail API provides access to **complete news article content** including HTML formatted text. Use this endpoint to fetch full article details using the news ID obtained from the main news API.
+
+<Cards>
+<Card icon={<FileText className="text-blue-400" />} title='Full Content'>
+Get complete news article with HTML content and formatting.
+</Card>
+
+<Card icon={<Search className="text-green-400" />} title='ID-based Retrieval'>
+Fetch specific news articles using their unique identifiers.
+</Card>
+
+<Card icon={<Code className="text-purple-400" />} title='Rich Text Support'>
+Handle HTML content with proper parsing and display.
+</Card>
+</Cards>
+
+## Quick Start
+
+<Steps>
+<Step>
+### Get News ID
+First, fetch news list to get the article ID you want to read in detail.
+```javascript
+const newsData = await getJKT48News();
+const firstArticleId = newsData.news[0].id; // e.g., "1926"
+```
+</Step>
+
+<Step>
+### Fetch News Detail
+```bash
+curl "https://v2.jkt48connect.my.id/api/jkt48/news/1926?apikey=YOUR_API_KEY"
+```
+</Step>
+
+<Step>
+### Process HTML Content
+Parse and display the rich HTML content safely in your application.
+</Step>
+</Steps>
+
+## Endpoint Details
+
+<Tabs items={['Overview', 'Request', 'Response']}>
+
+<Tab value="Overview">
+**Base URL:** `https://v2.jkt48connect.my.id`  
+**Endpoint:** `/api/jkt48/news/{id}`  
+**Method:** `GET`  
+**Authentication:** API Key required
+</Tab>
+
+<Tab value="Request">
+**Path Parameters:**
+- `id` (required): News article ID from the news list API
+
+**Query Parameters:**
+- `apikey` (required): Your API authentication key
+
+**Example:**
+```http
+GET /api/jkt48/news/1926?apikey=YOUR_API_KEY HTTP/1.1
+Host: v2.jkt48connect.my.id
+```
+</Tab>
+
+<Tab value="Response">
+Returns detailed news article with HTML content:
+
+```json
+{
+  "author": "JKT48ConnectCORP - Valzyy",
+  "_id": "685e7adedc1fff4e792c3d0a",
+  "id": "1926",
+  "content": "<p class=\"MsoNormal\" style=\"margin: 0mm; line-height: 16.8667px;\"><span lang=\"EN-GB\" style=\"line-height: 16.1px; color: #333333;\">Terima kasih atas dukungannya untuk JKT48.</span></p>\r\n<p class=\"MsoNormal\" style=\"margin: 0mm; line-height: 16.8667px;\"><span lang=\"EN-GB\" style=\"line-height: 16.1px; color: #333333;\">JKT48 ALL IN TOUR akan berkunjung ke kota Semarang, Cimahi, Yogyakarta, Solo dan Surabaya pada bulan Juli mendatang.</span></p>",
+  "date": "2025-06-26T17:00:00.000Z",
+  "label": "/images/icon.cat2.png",
+  "title": "Pengumuman Mengenai Stage Activity dan Mini-Live Performance di JKT48 \"ALL IN TOUR\" 2025"
+}
+```
+</Tab>
+
+</Tabs>
+
+## Implementation Examples
+
+<Tabs items={['JavaScript', 'Python', 'Go']}>
+
+<Tab value="JavaScript">
+```javascript
+const API_KEY = 'YOUR_API_KEY';
+const BASE_URL = 'https://v2.jkt48connect.my.id';
+
+async function getNewsDetail(newsId) {
+  try {
+    const response = await fetch(
+      `${BASE_URL}/api/jkt48/news/${newsId}?apikey=${API_KEY}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch news detail:', error);
+    throw error;
+  }
+}
+
+// Clean and format HTML content
+function cleanNewsContent(htmlContent) {
+  // Remove excessive styling and clean up HTML
+  return htmlContent
+    .replace(/style="[^"]*"/g, '') // Remove inline styles
+    .replace(/class="[^"]*"/g, '') // Remove classes
+    .replace(/lang="[^"]*"/g, '') // Remove language attributes
+    .replace(/\r\n/g, '\n') // Normalize line breaks
+    .replace(/<span[^>]*>/g, '') // Remove span tags
+    .replace(/<\/span>/g, '') // Remove closing span tags
+    .trim();
+}
+
+// Extract plain text from HTML
+function extractPlainText(htmlContent) {
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = htmlContent;
+  return tempDiv.textContent || tempDiv.innerText || '';
+}
+
+// Format news detail for display
+function formatNewsDetail(newsDetail) {
+  const publishDate = new Date(newsDetail.date);
+  const cleanContent = cleanNewsContent(newsDetail.content);
+  const plainText = extractPlainText(cleanContent);
+  
+  return {
+    id: newsDetail.id,
+    title: newsDetail.title,
+    category: getCategoryFromLabel(newsDetail.label),
+    publishDate: publishDate.toLocaleDateString('id-ID', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    }),
+    htmlContent: cleanContent,
+    plainText: plainText,
+    wordCount: plainText.split(/\s+/).length,
+    readingTime: Math.ceil(plainText.split(/\s+/).length / 200), // ~200 words per minute
+    summary: generateSummary(plainText)
+  };
+}
+
+// Generate article summary
+function generateSummary(text, maxLength = 200) {
+  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
+  let summary = '';
+  
+  for (const sentence of sentences) {
+    if (summary.length + sentence.length <= maxLength) {
+      summary += sentence.trim() + '. ';
+    } else {
+      break;
+    }
+  }
+  
+  return summary.trim() || text.substring(0, maxLength) + '...';
+}
+
+// Get full news article with formatted content
+async function getFormattedNewsArticle(newsId) {
+  try {
+    const newsDetail = await getNewsDetail(newsId);
+    const formatted = formatNewsDetail(newsDetail);
+    
+    return {
+      ...formatted,
+      meta: {
+        author: newsDetail.author,
+        publishedAt: newsDetail.date,
+        category: getCategoryFromLabel(newsDetail.label),
+        isRecent: isRecentNews(newsDetail.date)
+      }
+    };
+  } catch (error) {
+    console.error('Error formatting news article:', error);
+    return null;
+  }
+}
+
+// Display news article
+async function displayNewsArticle(newsId) {
+  try {
+    const article = await getFormattedNewsArticle(newsId);
+    if (!article) return;
+    
+    console.log('=== JKT48 NEWS DETAIL ===');
+    console.log(`Title: ${article.title}`);
+    console.log(`Category: ${article.category}`);
+    console.log(`Published: ${article.publishDate}`);
+    console.log(`Reading Time: ${article.readingTime} minutes`);
+    console.log(`Word Count: ${article.wordCount} words`);
+    console.log('\n--- SUMMARY ---');
+    console.log(article.summary);
+    console.log('\n--- FULL CONTENT ---');
+    console.log(article.plainText);
+    
+  } catch (error) {
+    console.error('Error displaying article:', error);
+  }
+}
+
+// Batch fetch multiple news details
+async function batchFetchNewsDetails(newsIds) {
+  const promises = newsIds.map(id => getNewsDetail(id));
+  const results = await Promise.allSettled(promises);
+  
+  return results.map((result, index) => ({
+    id: newsIds[index],
+    status: result.status,
+    data: result.status === 'fulfilled' ? result.value : null,
+    error: result.status === 'rejected' ? result.reason : null
+  }));
+}
+```
+</Tab>
+
+<Tab value="Python">
+```python
+import requests
+import re
+from bs4 import BeautifulSoup
+from datetime import datetime
+
+API_KEY = 'YOUR_API_KEY'
+BASE_URL = 'https://v2.jkt48connect.my.id'
+
+def get_news_detail(news_id: str) -> dict:
+    """Fetch detailed news content by ID"""
+    url = f"{BASE_URL}/api/jkt48/news/{news_id}"
+    params = {'apikey': API_KEY}
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching news detail: {e}")
+        raise
+
+def clean_html_content(html_content: str) -> str:
+    """Clean and format HTML content"""
+    # Parse HTML with BeautifulSoup
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Remove all attributes from tags
+    for tag in soup.find_all():
+        tag.attrs = {}
+    
+    # Get clean HTML
+    return str(soup)
+
+def extract_plain_text(html_content: str) -> str:
+    """Extract plain text from HTML"""
+    soup = BeautifulSoup(html_content, 'html.parser')
+    return soup.get_text(separator=' ', strip=True)
+
+def format_news_detail(news_detail: dict) -> dict:
+    """Format news detail for display"""
+    publish_date = datetime.fromisoformat(news_detail['date'].replace('Z', '+00:00'))
+    clean_content = clean_html_content(news_detail['content'])
+    plain_text = extract_plain_text(clean_content)
+    
+    return {
+        'id': news_detail['id'],
+        'title': news_detail['title'],
+        'category': get_category_from_label(news_detail['label']),
+        'publish_date': publish_date.strftime('%d %B %Y'),
+        'html_content': clean_content,
+        'plain_text': plain_text,
+        'word_count': len(plain_text.split()),
+        'reading_time': max(1, len(plain_text.split()) // 200),  # ~200 words per minute
+        'summary': generate_summary(plain_text)
+    }
+
+def generate_summary(text: str, max_length: int = 200) -> str:
+    """Generate article summary"""
+    sentences = re.split(r'[.!?]+', text)
+    sentences = [s.strip() for s in sentences if s.strip()]
+    
+    summary = ''
+    for sentence in sentences:
+        if len(summary) + len(sentence) <= max_length:
+            summary += sentence + '. '
+        else:
+            break
+    
+    return summary.strip() or text[:max_length] + '...'
+
+def get_category_from_label(label: str) -> str:
+    """Extract category from icon label"""
+    categories = {
+        'cat1': 'Member Updates',
+        'cat2': 'Events & Concerts',
+        'cat3': 'General',
+        'cat4': 'Merchandise',
+        'cat5': 'Special Events',
+        'cat8': 'Member Status'
+    }
+    
+    for key, category in categories.items():
+        if key in label:
+            return category
+    return 'General'
+
+def get_formatted_news_article(news_id: str) -> dict:
+    """Get full news article with formatted content"""
+    try:
+        news_detail = get_news_detail(news_id)
+        formatted = format_news_detail(news_detail)
+        
+        return {
+            **formatted,
+            'meta': {
+                'author': news_detail['author'],
+                'published_at': news_detail['date'],
+                'category': get_category_from_label(news_detail['label'])
+            }
+        }
+    except Exception as e:
+        print(f"Error formatting news article: {e}")
+        return None
+
+def display_news_article(news_id: str):
+    """Display formatted news article"""
+    try:
+        article = get_formatted_news_article(news_id)
+        if not article:
+            return
+        
+        print("=== JKT48 NEWS DETAIL ===")
+        print(f"Title: {article['title']}")
+        print(f"Category: {article['category']}")
+        print(f"Published: {article['publish_date']}")
+        print(f"Reading Time: {article['reading_time']} minutes")
+        print(f"Word Count: {article['word_count']} words")
+        print("\n--- SUMMARY ---")
+        print(article['summary'])
+        print("\n--- FULL CONTENT ---")
+        print(article['plain_text'])
+        
+    except Exception as e:
+        print(f"Error displaying article: {e}")
+
+# Usage example
+if __name__ == "__main__":
+    # Example: Display news article with ID "1926"
+    display_news_article("1926")
+```
+</Tab>
+
+<Tab value="Go">
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "regexp"
+    "strings"
+    "time"
+    
+    "github.com/PuerkitoBio/goquery"
+)
+
+const (
+    APIKey  = "YOUR_API_KEY"
+    BaseURL = "https://v2.jkt48connect.my.id"
+)
+
+type NewsDetail struct {
+    ID      string `json:"_id"`
+    NewsID  string `json:"id"`
+    Author  string `json:"author"`
+    Content string `json:"content"`
+    Date    string `json:"date"`
+    Label   string `json:"label"`
+    Title   string `json:"title"`
+}
+
+type FormattedNews struct {
+    ID          string `json:"id"`
+    Title       string `json:"title"`
+    Category    string `json:"category"`
+    PublishDate string `json:"publish_date"`
+    HTMLContent string `json:"html_content"`
+    PlainText   string `json:"plain_text"`
+    WordCount   int    `json:"word_count"`
+    ReadingTime int    `json:"reading_time"`
+    Summary     string `json:"summary"`
+}
+
+func getNewsDetail(newsID string) (*NewsDetail, error) {
+    url := fmt.Sprintf("%s/api/jkt48/news/%s?apikey=%s", BaseURL, newsID, APIKey)
+    
+    client := &http.Client{Timeout: 30 * time.Second}
+    resp, err := client.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+    }
+    
+    var newsDetail NewsDetail
+    err = json.NewDecoder(resp.Body).Decode(&newsDetail)
+    return &newsDetail, err
+}
+
+func cleanHTMLContent(htmlContent string) string {
+    // Remove inline styles and classes
+    re1 := regexp.MustCompile(`style="[^"]*"`)
+    re2 := regexp.MustCompile(`class="[^"]*"`)
+    re3 := regexp.MustCompile(`lang="[^"]*"`)
+    
+    content := re1.ReplaceAllString(htmlContent, "")
+    content = re2.ReplaceAllString(content, "")
+    content = re3.ReplaceAllString(content, "")
+    content = strings.ReplaceAll(content, "\r\n", "\n")
+    
+    return strings.TrimSpace(content)
+}
+
+func extractPlainText(htmlContent string) string {
+    doc, err := goquery.NewDocumentFromReader(strings.NewReader(htmlContent))
+    if err != nil {
+        return ""
+    }
+    return strings.TrimSpace(doc.Text())
+}
+
+func generateSummary(text string, maxLength int) string {
+    sentences := regexp.MustCompile(`[.!?]+`).Split(text, -1)
+    summary := ""
+    
+    for _, sentence := range sentences {
+        sentence = strings.TrimSpace(sentence)
+        if sentence == "" {
+            continue
+        }
+        
+        if len(summary)+len(sentence) <= maxLength {
+            summary += sentence + ". "
+        } else {
+            break
+        }
+    }
+    
+    result := strings.TrimSpace(summary)
+    if result == "" && len(text) > maxLength {
+        return text[:maxLength] + "..."
+    }
+    return result
+}
+
+func getCategoryFromLabel(label string) string {
+    categories := map[string]string{
+        "cat1": "Member Updates",
+        "cat2": "Events & Concerts",
+        "cat3": "General",
+        "cat4": "Merchandise",
+        "cat5": "Special Events",
+        "cat8": "Member Status",
+    }
+    
+    re := regexp.MustCompile(`cat(\d+)`)
+    match := re.FindStringSubmatch(label)
+    if len(match) > 1 {
+        if category, exists := categories["cat"+match[1]]; exists {
+            return category
+        }
+    }
+    return "General"
+}
+
+func formatNewsDetail(newsDetail *NewsDetail) *FormattedNews {
+    publishDate, _ := time.Parse(time.RFC3339, newsDetail.Date)
+    cleanContent := cleanHTMLContent(newsDetail.Content)
+    plainText := extractPlainText(cleanContent)
+    wordCount := len(strings.Fields(plainText))
+    readingTime := wordCount / 200
+    if readingTime == 0 {
+        readingTime = 1
+    }
+    
+    return &FormattedNews{
+        ID:          newsDetail.NewsID,
+        Title:       newsDetail.Title,
+        Category:    getCategoryFromLabel(newsDetail.Label),
+        PublishDate: publishDate.Format("2 January 2006"),
+        HTMLContent: cleanContent,
+        PlainText:   plainText,
+        WordCount:   wordCount,
+        ReadingTime: readingTime,
+        Summary:     generateSummary(plainText, 200),
+    }
+}
+
+func displayNewsArticle(newsID string) {
+    newsDetail, err := getNewsDetail(newsID)
+    if err != nil {
+        fmt.Printf("Error fetching news detail: %v\n", err)
+        return
+    }
+    
+    formatted := formatNewsDetail(newsDetail)
+    
+    fmt.Println("=== JKT48 NEWS DETAIL ===")
+    fmt.Printf("Title: %s\n", formatted.Title)
+    fmt.Printf("Category: %s\n", formatted.Category)
+    fmt.Printf("Published: %s\n", formatted.PublishDate)
+    fmt.Printf("Reading Time: %d minutes\n", formatted.ReadingTime)
+    fmt.Printf("Word Count: %d words\n", formatted.WordCount)
+    fmt.Println("\n--- SUMMARY ---")
+    fmt.Println(formatted.Summary)
+    fmt.Println("\n--- FULL CONTENT ---")
+    fmt.Println(formatted.PlainText)
+}
+
+func main() {
+    // Example: Display news article with ID "1926"
+    displayNewsArticle("1926")
+}
+```
+</Tab>
+
+</Tabs>
+
+## Content Processing
+
+<Callout type="info">
+The news content includes HTML formatting that needs proper handling for display in different contexts.
+</Callout>
+
+**Content Structure:**
+- **HTML Content**: Rich formatted text with paragraphs, spans, and styling
+- **Plain Text**: Extracted text content without HTML tags
+- **Metadata**: Publication date, author, and category information
+
+**Processing Steps:**
+
+| Step | Description | Purpose |
+|------|-------------|---------|
+| HTML Cleaning | Remove inline styles and attributes | Consistent formatting |
+| Text Extraction | Convert HTML to plain text | Search and analysis |
+| Summary Generation | Create article preview | Quick overview |
+| Reading Time | Calculate based on word count | User experience |
+
+## Common Use Cases
+
+<Tabs items={['Article Reader', 'Content Search', 'News Archive']}>
+
+<Tab value="Article Reader">
+```javascript
+// Create reading interface
+function createNewsReader(newsId) {
+  return getFormattedNewsArticle(newsId).then(article => {
+    return {
+      header: {
+        title: article.title,
+        category: article.category,
+        publishDate: article.publishDate,
+        readingTime: `${article.readingTime} min read`,
+        wordCount: `${article.wordCount} words`
+      },
+      content: {
+        summary: article.summary,
+        htmlContent: article.htmlContent,
+        plainText: article.plainText
+      },
+      navigation: {
+        hasNext: true,
+        hasPrevious: true
+      }
+    };
+  });
+}
+```
+</Tab>
+
+<Tab value="Content Search">
+```javascript
+// Search within news content
+function searchNewsContent(articles, query) {
+  const searchTerm = query.toLowerCase();
+  
+  return articles.filter(article => {
+    const searchableText = `${article.title} ${article.plainText}`.toLowerCase();
+    return searchableText.includes(searchTerm);
+  }).map(article => ({
+    ...article,
+    relevance: calculateRelevance(article, searchTerm),
+    highlights: extractHighlights(article.plainText, searchTerm)
+  }));
+}
+
+function extractHighlights(text, term, contextLength = 100) {
+  const index = text.toLowerCase().indexOf(term);
+  if (index === -1) return [];
+  
+  const start = Math.max(0, index - contextLength);
+  const end = Math.min(text.length, index + term.length + contextLength);
+  
+  return [text.substring(start, end)];
+}
+```
+</Tab>
+
+<Tab value="News Archive">
+```javascript
+// Archive news by date and category
+function archiveNewsByDate(newsDetails) {
+  const archive = {};
+  
+  newsDetails.forEach(article => {
+    const date = new Date(article.meta.publishedAt);
+    const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+    
+    if (!archive[yearMonth]) {
+      archive[yearMonth] = {
+        period: yearMonth,
+        articles: [],
+        categories: new Set()
+      };
+    }
+    
+    archive[yearMonth].articles.push(article);
+    archive[yearMonth].categories.add(article.category);
+  });
+  
+  return Object.values(archive).map(period => ({
+    ...period,
+    categories: Array.from(period.categories),
+    articleCount: period.articles.length
+  }));
+}
+```
+</Tab>
+
+</Tabs>
+
+## Error Handling
+
+```javascript
+async function safeGetNewsDetail(newsId) {
+  try {
+    const detail = await getNewsDetail(newsId);
+    
+    // Validate response structure
+    if (!detail.content || !detail.title) {
+      throw new Error('Invalid news detail structure');
+    }
+    
+    // Validate content is not empty
+    const plainText = extractPlainText(detail.content);
+    if (plainText.length < 10) {
+      console.warn(`News ${newsId} has very short content`);
+    }
+    
+    return detail;
+    
+  } catch (error) {
+    console.error(`Failed to fetch news detail ${newsId}:`, error);
+    return {
+      id: newsId,
+      title: 'Content Unavailable',
+      content: '<p>Unable to load news content.</p>',
+      date: new Date().toISOString(),
+      label: '/images/icon.cat3.png',
+      author: 'System'
+    };
+  }
+}
+```
+
+---
+
+### Integration Example
+
+Combine news list and detail APIs for complete news experience:
+
+```javascript
+// Complete news workflow
+async function loadNewsWithDetails(page = 1, limit = 5) {
+  // Get news list
+  const newsData = await getJKT48News(page, limit);
+  
+  // Get details for each news item
+  const newsWithDetails = await Promise.all(
+    newsData.news.map(async (newsItem) => {
+      const detail = await getNewsDetail(newsItem.id);
+      return formatNewsDetail(detail);
+    })
+  );
+  
+  return {
+    articles: newsWithDetails,
+    pagination: {
+      page: newsData.page,
+      perPage: newsData.perpage,
+      total: newsData.total_count
+    }
+  };
+}
+```
+
+Get your API key from [JKT48Connect](https://www.jkt48connect.my.id/buyapi) and start building comprehensive news applications!

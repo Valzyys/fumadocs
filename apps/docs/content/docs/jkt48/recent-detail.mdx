@@ -1,0 +1,372 @@
+---
+title: Recent Live Detail
+description: Get Detailed Information of Specific JKT48 Live Stream via JKT48Connect API
+icon: Info
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+## Introduction
+
+JKT48Connect Recent Live Detail API provides comprehensive information about **specific live streams** using the `data_id` from the Recent Live API response. This endpoint gives you access to detailed analytics, chat logs, gift information, and other granular data about individual streams.
+
+<Cards>
+<Card icon={<Info className="text-blue-400" />} title='Detailed Analytics'>
+Access comprehensive stream analytics and performance metrics.
+</Card>
+
+<Card icon={<MessageSquare className="text-green-400" />} title='Chat & Interactions'>
+Get chat messages, comments, and viewer interactions data.
+</Card>
+
+<Card icon={<Gift className="text-pink-400" />} title='Gift Details'>
+Detailed breakdown of gifts received during the stream.
+</Card>
+</Cards>
+
+## Quick Start
+
+<Steps>
+<Step>
+### Get Your API Key
+Obtain your API key from [JKT48Connect](https://www.jkt48connect.my.id/buyapi).
+</Step>
+
+<Step>
+### Get data_id from Recent API
+First, fetch recent streams to get the `data_id`:
+```bash
+curl "https://v2.jkt48connect.my.id/api/jkt48/recent?apikey=YOUR_API_KEY"
+```
+</Step>
+
+<Step>
+### Fetch Stream Details
+Use the `data_id` to get detailed information:
+```bash
+curl "https://v2.jkt48connect.my.id/api/jkt48/recent/{data_id}?apikey=YOUR_API_KEY"
+```
+</Step>
+</Steps>
+
+## Endpoint Details
+
+<Tabs items={['Overview', 'Request', 'Response']}>
+
+<Tab value="Overview">
+**Base URL:** `https://v2.jkt48connect.my.id`  
+**Endpoint:** `/api/jkt48/recent/{data_id}`  
+**Method:** `GET`  
+**Authentication:** API Key required
+</Tab>
+
+<Tab value="Request">
+**Path Parameters:**
+- `data_id` (required): The unique identifier from Recent Live API response
+
+**Query Parameters:**
+- `apikey` (required): Your API authentication key
+
+**Example:**
+```http
+GET /api/jkt48/recent/125100001751127046?apikey=YOUR_API_KEY HTTP/1.1
+Host: v2.jkt48connect.my.id
+```
+</Tab>
+
+<Tab value="Response">
+Returns detailed JSON object containing comprehensive stream information including:
+- Enhanced member information
+- Detailed viewer analytics
+- Chat messages and interactions
+- Gift breakdown and statistics
+- Stream quality metrics
+- Platform-specific data
+- Timestamp details
+- Engagement metrics
+
+*Note: Response structure varies based on streaming platform and available data.*
+</Tab>
+
+</Tabs>
+
+## Implementation Examples
+
+<Tabs items={['JavaScript', 'Python', 'Go']}>
+
+<Tab value="JavaScript">
+```javascript
+const API_KEY = 'YOUR_API_KEY';
+const BASE_URL = 'https://v2.jkt48connect.my.id';
+
+async function getStreamDetail(dataId) {
+  try {
+    const response = await fetch(
+      `${BASE_URL}/api/jkt48/recent/${dataId}?apikey=${API_KEY}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const detail = await response.json();
+    return detail;
+  } catch (error) {
+    console.error('Failed to fetch stream detail:', error);
+    throw error;
+  }
+}
+
+// Usage example
+async function displayStreamDetails() {
+  // First get recent streams
+  const recentResponse = await fetch(`${BASE_URL}/api/jkt48/recent?apikey=${API_KEY}`);
+  const recentStreams = await recentResponse.json();
+  
+  // Get detail for the first stream
+  if (recentStreams.length > 0) {
+    const dataId = recentStreams[0].data_id;
+    const detail = await getStreamDetail(dataId);
+    
+    console.log('Stream Detail:', detail);
+  }
+}
+```
+</Tab>
+
+<Tab value="Python">
+```python
+import requests
+import json
+
+API_KEY = 'YOUR_API_KEY'
+BASE_URL = 'https://v2.jkt48connect.my.id'
+
+def get_stream_detail(data_id):
+    """Get detailed information for a specific stream"""
+    url = f"{BASE_URL}/api/jkt48/recent/{data_id}"
+    params = {'apikey': API_KEY}
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching stream detail: {e}")
+        raise
+
+def get_recent_with_details():
+    """Get recent streams and their detailed information"""
+    # Get recent streams first
+    recent_response = requests.get(f"{BASE_URL}/api/jkt48/recent?apikey={API_KEY}")
+    recent_streams = recent_response.json()
+    
+    detailed_streams = []
+    for stream in recent_streams[:3]:  # Get details for first 3 streams
+        data_id = stream['data_id']
+        detail = get_stream_detail(data_id)
+        detailed_streams.append({
+            'basic_info': stream,
+            'detailed_info': detail
+        })
+    
+    return detailed_streams
+
+# Usage
+if __name__ == "__main__":
+    try:
+        streams_with_details = get_recent_with_details()
+        print(json.dumps(streams_with_details, indent=2))
+    except Exception as e:
+        print(f"Error: {e}")
+```
+</Tab>
+
+<Tab value="Go">
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "time"
+)
+
+const (
+    APIKey  = "YOUR_API_KEY"
+    BaseURL = "https://v2.jkt48connect.my.id"
+)
+
+type StreamDetail struct {
+    // Define based on actual API response structure
+    DataID string `json:"data_id"`
+    // Add other fields as needed
+}
+
+type RecentStream struct {
+    DataID string `json:"data_id"`
+    Member struct {
+        Nickname string `json:"nickname"`
+    } `json:"member"`
+}
+
+func getStreamDetail(dataID string) (*StreamDetail, error) {
+    url := fmt.Sprintf("%s/api/jkt48/recent/%s?apikey=%s", BaseURL, dataID, APIKey)
+    
+    client := &http.Client{Timeout: 10 * time.Second}
+    resp, err := client.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+    }
+    
+    var detail StreamDetail
+    err = json.NewDecoder(resp.Body).Decode(&detail)
+    return &detail, err
+}
+
+func getRecentStreams() ([]RecentStream, error) {
+    url := fmt.Sprintf("%s/api/jkt48/recent?apikey=%s", BaseURL, APIKey)
+    
+    resp, err := http.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    var streams []RecentStream
+    err = json.NewDecoder(resp.Body).Decode(&streams)
+    return streams, err
+}
+
+func main() {
+    // Get recent streams
+    streams, err := getRecentStreams()
+    if err != nil {
+        fmt.Printf("Error getting recent streams: %v\n", err)
+        return
+    }
+    
+    // Get detail for first stream
+    if len(streams) > 0 {
+        detail, err := getStreamDetail(streams[0].DataID)
+        if err != nil {
+            fmt.Printf("Error getting stream detail: %v\n", err)
+            return
+        }
+        
+        fmt.Printf("Stream detail for %s: %+v\n", streams[0].Member.Nickname, detail)
+    }
+}
+```
+</Tab>
+
+</Tabs>
+
+## Usage Workflow
+
+<Callout type="info">
+The Recent Live Detail API is designed to work in conjunction with the Recent Live API. Always fetch the `data_id` first.
+</Callout>
+
+**Typical Integration Flow:**
+
+1. **Fetch Recent Streams**: Use `/api/jkt48/recent` to get list of recent streams
+2. **Extract data_id**: Get the `data_id` from desired stream in the response
+3. **Fetch Details**: Use the `data_id` with `/api/jkt48/recent/{data_id}`
+4. **Process Data**: Handle the detailed response based on your application needs
+
+## Error Handling
+
+<Tabs items={['Common Errors', 'Best Practices']}>
+
+<Tab value="Common Errors">
+**HTTP 404 - Not Found**
+- Invalid `data_id` or stream data no longer available
+- Check that the `data_id` exists in recent streams
+
+**HTTP 400 - Bad Request**
+- Missing or invalid API key
+- Malformed `data_id` parameter
+
+**HTTP 429 - Too Many Requests**
+- Rate limit exceeded
+- Implement proper request throttling
+
+**HTTP 500 - Internal Server Error**
+- Temporary server issue
+- Implement retry logic with exponential backoff
+</Tab>
+
+<Tab value="Best Practices">
+```javascript
+async function fetchStreamDetailSafely(dataId) {
+  const maxRetries = 3;
+  let retryCount = 0;
+  
+  while (retryCount < maxRetries) {
+    try {
+      const response = await fetch(
+        `${BASE_URL}/api/jkt48/recent/${dataId}?apikey=${API_KEY}`
+      );
+      
+      if (response.status === 404) {
+        throw new Error('Stream data not found');
+      }
+      
+      if (response.status === 429) {
+        // Wait before retrying
+        await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+        retryCount++;
+        continue;
+      }
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      return await response.json();
+    } catch (error) {
+      if (retryCount === maxRetries - 1) {
+        throw error;
+      }
+      retryCount++;
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
+  }
+}
+```
+</Tab>
+
+</Tabs>
+
+## Rate Limiting
+
+<Callout type="warn">
+Be mindful of API rate limits. Implement appropriate delays between requests, especially when fetching details for multiple streams.
+</Callout>
+
+**Recommended Approach:**
+- Limit concurrent requests to 3-5 per second
+- Implement exponential backoff for retries
+- Cache responses when possible to reduce API calls
+- Use batch processing for multiple detail requests
+
+## Data Freshness
+
+**Important Notes:**
+- Stream details are available for a limited time after stream ends
+- Older streams may have reduced detail availability
+- Some platform-specific data might not be available for all streams
+- Real-time data is not available through this endpoint
+
+---
+
+### Get Started
+
+Ready to access detailed stream analytics? [Get your API key](https://www.jkt48connect.my.id/buyapi) and start exploring comprehensive stream data!

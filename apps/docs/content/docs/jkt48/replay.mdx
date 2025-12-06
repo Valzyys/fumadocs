@@ -1,0 +1,550 @@
+---
+title: Replay Theater
+description: Get JKT48 theater replay & live members data using JKT48Connect API
+icon: Video
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+## Introduction
+
+The JKT48Connect Replay Theater API provides access to **theater replay videos and live member performances** from YouTube. Use this endpoint to fetch theater show recordings and live streaming data.
+
+<Cards>
+<Card icon={<Video className="text-blue-400" />} title='Theater Replays'>
+Access recorded theater performances and shows.
+</Card>
+
+<Card icon={<Users className="text-green-400" />} title='Live Members'>
+Get live streaming data from JKT48 members.
+</Card>
+
+<Card icon={<Calendar className="text-purple-400" />} title='Performance Schedule'>
+Track theater schedules and member appearances.
+</Card>
+</Cards>
+
+## Quick Start
+
+<Steps>
+<Step>
+### Basic Request
+```bash
+curl "https://v2.jkt48connect.my.id/api/jkt48/replay?apikey=YOUR_API_KEY"
+```
+</Step>
+
+<Step>
+### Process Response
+```javascript
+const replayData = await getReplayData();
+console.log(replayData.theater_replays);
+console.log(replayData.live_members);
+```
+</Step>
+
+<Step>
+### Filter Content
+Filter by date, member, or performance type.
+</Step>
+</Steps>
+
+## Endpoint Details
+
+<Tabs items={['Overview', 'Request', 'Response']}>
+
+<Tab value="Overview">
+**Base URL:** `https://v2.jkt48connect.my.id`  
+**Endpoint:** `/api/jkt48/replay`  
+**Method:** `GET`  
+**Authentication:** API Key required
+</Tab>
+
+<Tab value="Request">
+**Query Parameters:**
+- `apikey` (required): Your API authentication key
+- `date` (optional): Filter by specific date (YYYY-MM-DD)
+- `member` (optional): Filter by member name
+- `type` (optional): Filter by content type (replay/live)
+
+**Example:**
+```http
+GET /api/jkt48/replay?apikey=YOUR_API_KEY&date=2025-06-29 HTTP/1.1
+Host: v2.jkt48connect.my.id
+```
+</Tab>
+
+<Tab value="Response">
+Returns theater replay and live member data:
+
+```json
+{
+  "theater_replays": [
+    {
+      "id": "replay_001",
+      "title": "JKT48 Theater Show - Team KIII",
+      "youtube_url": "https://youtube.com/watch?v=example",
+      "thumbnail": "https://img.youtube.com/vi/example/maxresdefault.jpg",
+      "date": "2025-06-28T19:00:00.000Z",
+      "team": "Team KIII",
+      "setlist": "Pajama Drive",
+      "duration": "02:30:15"
+    }
+  ],
+  "live_members": [
+    {
+      "member_id": "member_001",
+      "name": "Freya Jayawardana",
+      "stream_title": "Ngobrol Bareng Freya",
+      "youtube_url": "https://youtube.com/watch?v=live_example",
+      "status": "live",
+      "viewers": 1250,
+      "start_time": "2025-06-29T10:00:00.000Z"
+    }
+  ]
+}
+```
+</Tab>
+
+</Tabs>
+
+## Implementation Examples
+
+<Tabs items={['JavaScript', 'Python', 'Go']}>
+
+<Tab value="JavaScript">
+```javascript
+const API_KEY = 'YOUR_API_KEY';
+const BASE_URL = 'https://v2.jkt48connect.my.id';
+
+async function getReplayData(filters = {}) {
+  const params = new URLSearchParams({
+    apikey: API_KEY,
+    ...filters
+  });
+  
+  try {
+    const response = await fetch(`${BASE_URL}/api/jkt48/replay?${params}`);
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to fetch replay data:', error);
+    throw error;
+  }
+}
+
+// Get theater replays
+async function getTheaterReplays(date = null) {
+  const filters = date ? { date, type: 'replay' } : { type: 'replay' };
+  const data = await getReplayData(filters);
+  return data.theater_replays || [];
+}
+
+// Get live members
+async function getLiveMembers() {
+  const data = await getReplayData({ type: 'live' });
+  return data.live_members || [];
+}
+
+// Format replay data
+function formatReplayData(replay) {
+  const showDate = new Date(replay.date);
+  return {
+    id: replay.id,
+    title: replay.title,
+    team: replay.team,
+    setlist: replay.setlist,
+    date: showDate.toLocaleDateString('id-ID'),
+    time: showDate.toLocaleTimeString('id-ID'),
+    duration: replay.duration,
+    thumbnail: replay.thumbnail,
+    watchUrl: replay.youtube_url,
+    isRecent: isWithinDays(showDate, 7)
+  };
+}
+
+// Display theater schedule
+async function displayTheaterSchedule() {
+  try {
+    const replays = await getTheaterReplays();
+    const liveMembers = await getLiveMembers();
+    
+    console.log('=== JKT48 THEATER SCHEDULE ===');
+    
+    if (replays.length > 0) {
+      console.log('\n📹 Recent Theater Replays:');
+      replays.forEach(replay => {
+        const formatted = formatReplayData(replay);
+        console.log(`• ${formatted.title}`);
+        console.log(`  Team: ${formatted.team} | Date: ${formatted.date}`);
+        console.log(`  Setlist: ${formatted.setlist} | Duration: ${formatted.duration}`);
+        console.log(`  Watch: ${formatted.watchUrl}\n`);
+      });
+    }
+    
+    if (liveMembers.length > 0) {
+      console.log('🔴 Live Members:');
+      liveMembers.forEach(member => {
+        console.log(`• ${member.name} - ${member.stream_title}`);
+        console.log(`  Status: ${member.status} | Viewers: ${member.viewers}`);
+        console.log(`  Watch: ${member.youtube_url}\n`);
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error displaying schedule:', error);
+  }
+}
+
+// Get upcoming shows
+async function getUpcomingShows() {
+  const today = new Date();
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  const data = await getReplayData({
+    date: tomorrow.toISOString().split('T')[0]
+  });
+  
+  return data.theater_replays || [];
+}
+```
+</Tab>
+
+<Tab value="Python">
+```python
+import requests
+from datetime import datetime, timedelta
+
+API_KEY = 'YOUR_API_KEY'
+BASE_URL = 'https://v2.jkt48connect.my.id'
+
+def get_replay_data(filters=None):
+    """Fetch replay and live member data"""
+    params = {'apikey': API_KEY}
+    if filters:
+        params.update(filters)
+    
+    try:
+        response = requests.get(f"{BASE_URL}/api/jkt48/replay", params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching replay data: {e}")
+        raise
+
+def get_theater_replays(date=None):
+    """Get theater replay videos"""
+    filters = {'type': 'replay'}
+    if date:
+        filters['date'] = date
+    
+    data = get_replay_data(filters)
+    return data.get('theater_replays', [])
+
+def get_live_members():
+    """Get currently live members"""
+    data = get_replay_data({'type': 'live'})
+    return data.get('live_members', [])
+
+def format_replay_data(replay):
+    """Format replay data for display"""
+    show_date = datetime.fromisoformat(replay['date'].replace('Z', '+00:00'))
+    return {
+        'id': replay['id'],
+        'title': replay['title'],
+        'team': replay['team'],
+        'setlist': replay['setlist'],
+        'date': show_date.strftime('%d %B %Y'),
+        'time': show_date.strftime('%H:%M'),
+        'duration': replay['duration'],
+        'thumbnail': replay['thumbnail'],
+        'watch_url': replay['youtube_url']
+    }
+
+def display_theater_schedule():
+    """Display theater schedule and live members"""
+    try:
+        replays = get_theater_replays()
+        live_members = get_live_members()
+        
+        print("=== JKT48 THEATER SCHEDULE ===")
+        
+        if replays:
+            print("\n📹 Recent Theater Replays:")
+            for replay in replays:
+                formatted = format_replay_data(replay)
+                print(f"• {formatted['title']}")
+                print(f"  Team: {formatted['team']} | Date: {formatted['date']}")
+                print(f"  Setlist: {formatted['setlist']} | Duration: {formatted['duration']}")
+                print(f"  Watch: {formatted['watch_url']}\n")
+        
+        if live_members:
+            print("🔴 Live Members:")
+            for member in live_members:
+                print(f"• {member['name']} - {member['stream_title']}")
+                print(f"  Status: {member['status']} | Viewers: {member['viewers']}")
+                print(f"  Watch: {member['youtube_url']}\n")
+                
+    except Exception as e:
+        print(f"Error displaying schedule: {e}")
+
+def get_member_streams(member_name):
+    """Get streams for specific member"""
+    data = get_replay_data({'member': member_name})
+    return data.get('live_members', [])
+
+# Usage example
+if __name__ == "__main__":
+    display_theater_schedule()
+```
+</Tab>
+
+<Tab value="Go">
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "net/url"
+    "time"
+)
+
+const (
+    APIKey  = "YOUR_API_KEY"
+    BaseURL = "https://v2.jkt48connect.my.id"
+)
+
+type ReplayData struct {
+    TheaterReplays []TheaterReplay `json:"theater_replays"`
+    LiveMembers    []LiveMember    `json:"live_members"`
+}
+
+type TheaterReplay struct {
+    ID        string `json:"id"`
+    Title     string `json:"title"`
+    YoutubeURL string `json:"youtube_url"`
+    Thumbnail string `json:"thumbnail"`
+    Date      string `json:"date"`
+    Team      string `json:"team"`
+    Setlist   string `json:"setlist"`
+    Duration  string `json:"duration"`
+}
+
+type LiveMember struct {
+    MemberID    string `json:"member_id"`
+    Name        string `json:"name"`
+    StreamTitle string `json:"stream_title"`
+    YoutubeURL  string `json:"youtube_url"`
+    Status      string `json:"status"`
+    Viewers     int    `json:"viewers"`
+    StartTime   string `json:"start_time"`
+}
+
+func getReplayData(filters map[string]string) (*ReplayData, error) {
+    params := url.Values{}
+    params.Add("apikey", APIKey)
+    
+    for key, value := range filters {
+        params.Add(key, value)
+    }
+    
+    url := fmt.Sprintf("%s/api/jkt48/replay?%s", BaseURL, params.Encode())
+    
+    client := &http.Client{Timeout: 30 * time.Second}
+    resp, err := client.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+    }
+    
+    var data ReplayData
+    err = json.NewDecoder(resp.Body).Decode(&data)
+    return &data, err
+}
+
+func getTheaterReplays(date string) ([]TheaterReplay, error) {
+    filters := map[string]string{"type": "replay"}
+    if date != "" {
+        filters["date"] = date
+    }
+    
+    data, err := getReplayData(filters)
+    if err != nil {
+        return nil, err
+    }
+    return data.TheaterReplays, nil
+}
+
+func getLiveMembers() ([]LiveMember, error) {
+    filters := map[string]string{"type": "live"}
+    data, err := getReplayData(filters)
+    if err != nil {
+        return nil, err
+    }
+    return data.LiveMembers, nil
+}
+
+func displayTheaterSchedule() {
+    replays, err := getTheaterReplays("")
+    if err != nil {
+        fmt.Printf("Error fetching replays: %v\n", err)
+        return
+    }
+    
+    liveMembers, err := getLiveMembers()
+    if err != nil {
+        fmt.Printf("Error fetching live members: %v\n", err)
+        return
+    }
+    
+    fmt.Println("=== JKT48 THEATER SCHEDULE ===")
+    
+    if len(replays) > 0 {
+        fmt.Println("\n📹 Recent Theater Replays:")
+        for _, replay := range replays {
+            showDate, _ := time.Parse(time.RFC3339, replay.Date)
+            fmt.Printf("• %s\n", replay.Title)
+            fmt.Printf("  Team: %s | Date: %s\n", replay.Team, showDate.Format("02 January 2006"))
+            fmt.Printf("  Setlist: %s | Duration: %s\n", replay.Setlist, replay.Duration)
+            fmt.Printf("  Watch: %s\n\n", replay.YoutubeURL)
+        }
+    }
+    
+    if len(liveMembers) > 0 {
+        fmt.Println("🔴 Live Members:")
+        for _, member := range liveMembers {
+            fmt.Printf("• %s - %s\n", member.Name, member.StreamTitle)
+            fmt.Printf("  Status: %s | Viewers: %d\n", member.Status, member.Viewers)
+            fmt.Printf("  Watch: %s\n\n", member.YoutubeURL)
+        }
+    }
+}
+
+func main() {
+    displayTheaterSchedule()
+}
+```
+</Tab>
+
+</Tabs>
+
+## Filtering Options
+
+<Tabs items={['By Date', 'By Member', 'By Type']}>
+
+<Tab value="By Date">
+```javascript
+// Get today's replays
+const today = new Date().toISOString().split('T')[0];
+const todayReplays = await getReplayData({ date: today });
+
+// Get this week's replays
+const thisWeek = [];
+for (let i = 0; i < 7; i++) {
+  const date = new Date();
+  date.setDate(date.getDate() - i);
+  const dateStr = date.toISOString().split('T')[0];
+  const data = await getReplayData({ date: dateStr });
+  thisWeek.push(...(data.theater_replays || []));
+}
+```
+</Tab>
+
+<Tab value="By Member">
+```javascript
+// Get specific member's content
+const memberContent = await getReplayData({ 
+  member: "Freya Jayawardana" 
+});
+
+// Check if member is currently live
+const isLive = memberContent.live_members?.some(
+  member => member.status === 'live'
+);
+```
+</Tab>
+
+<Tab value="By Type">
+```javascript
+// Only theater replays
+const replaysOnly = await getReplayData({ type: 'replay' });
+
+// Only live streams
+const liveOnly = await getReplayData({ type: 'live' });
+
+// Combined data
+const allContent = await getReplayData();
+```
+</Tab>
+
+</Tabs>
+
+## Common Use Cases
+
+```javascript
+// Theater schedule widget
+async function createTheaterWidget() {
+  const data = await getReplayData();
+  
+  return {
+    upcoming: data.theater_replays?.filter(r => 
+      new Date(r.date) > new Date()
+    ) || [],
+    recent: data.theater_replays?.filter(r => 
+      new Date(r.date) <= new Date()
+    ) || [],
+    live: data.live_members?.filter(m => 
+      m.status === 'live'
+    ) || []
+  };
+}
+
+// Notification system
+async function checkForLiveStreams() {
+  const liveMembers = await getLiveMembers();
+  
+  liveMembers.forEach(member => {
+    if (member.status === 'live') {
+      console.log(`🔴 ${member.name} is live: ${member.stream_title}`);
+    }
+  });
+}
+```
+
+## Error Handling
+
+```javascript
+async function safeGetReplayData(filters = {}) {
+  try {
+    const data = await getReplayData(filters);
+    
+    return {
+      theater_replays: data.theater_replays || [],
+      live_members: data.live_members || [],
+      timestamp: new Date().toISOString()
+    };
+    
+  } catch (error) {
+    console.error('Failed to fetch replay data:', error);
+    return {
+      theater_replays: [],
+      live_members: [],
+      error: error.message,
+      timestamp: new Date().toISOString()
+    };
+  }
+}
+```
+
+---
+
+Get your API key from [JKT48Connect](https://www.jkt48connect.my.id/buyapi) and start building theater replay applications!

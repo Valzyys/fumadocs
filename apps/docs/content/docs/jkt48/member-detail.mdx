@@ -1,0 +1,574 @@
+---
+title: Member Detail
+description: Get Detailed Information for Individual JKT48 Members via JKT48Connect API
+icon: User
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+## Introduction
+
+The JKT48Connect Member Detail API provides comprehensive information about **individual JKT48 members** including statistics, streaming data, theater schedules, and detailed profile information. Perfect for building member profile pages, fan dashboards, and analytics applications.
+
+<Cards>
+<Card icon={<User className="text-blue-400" />} title='Complete Member Profile'>
+Access detailed member information including personal details and statistics.
+</Card>
+
+<Card icon={<BarChart className="text-green-400" />} title='Live Streaming Stats'>
+Get comprehensive streaming statistics from SHOWROOM and IDN platforms.
+</Card>
+
+<Card icon={<Calendar className="text-purple-400" />} title='Theater Schedule'>
+Recent and upcoming theater performances with show details.
+</Card>
+</Cards>
+
+## Quick Start
+
+<Steps>
+<Step>
+### Get Your API Key
+Obtain your API key from [JKT48Connect](https://www.jkt48connect.my.id/buyapi).
+</Step>
+
+<Step>
+### Make API Request
+```bash
+curl "https://v2.jkt48connect.my.id/api/jkt48/member/Adeline%20Wijaya?apikey=YOUR_API_KEY"
+```
+</Step>
+
+<Step>
+### Process Response
+Handle the JSON object containing detailed member data.
+</Step>
+</Steps>
+
+## Endpoint Details
+
+<Tabs items={['Overview', 'Request', 'Response']}>
+
+<Tab value="Overview">
+**Base URL:** `https://v2.jkt48connect.my.id`  
+**Endpoint:** `/api/jkt48/member/{name}`  
+**Method:** `GET`  
+**Authentication:** API Key required
+</Tab>
+
+<Tab value="Request">
+**Path Parameters:**
+- `name` (required): Member's full name (URL encoded)
+
+**Query Parameters:**
+- `apikey` (required): Your API authentication key
+
+**Example:**
+```http
+GET /api/jkt48/member/Adeline%20Wijaya?apikey=YOUR_API_KEY HTTP/1.1
+Host: v2.jkt48connect.my.id
+```
+</Tab>
+
+<Tab value="Response">
+Returns JSON object with detailed member information:
+
+```json
+{
+  "name": "Adeline Wijaya",
+  "nickname": "Delynn",
+  "fullname": "Adeline Wijaya",
+  "img": "https://static.showroom-live.com/image/room/cover/2ad9a198ac8cc653476c6c5c3b29d8089e621299ab2cb6fa97159e92eb733d7d_m.jpeg?v=1712494974",
+  "img_alt": "https://res.cloudinary.com/haymzm4wp/image/upload/v1730447279/assets/kabesha/oktober_2024/adeline_wijaya.jpg",
+  "description": "Name: Adeline Wijaya\r\nBirthday: 1 September 2007\r\nBlood type: B\r\nZodiac signs: Virgo",
+  "group": "jkt48",
+  "generation": "gen12-jkt48",
+  "birthdate": "2007-08-31T17:00:00.000Z",
+  "bloodType": "B",
+  "height": "167cm",
+  "is_graduate": false,
+  "url": "delynn",
+  "stats": {
+    "missing": {
+      "showroom": 0,
+      "idn": 0
+    },
+    "total_live": {
+      "showroom": 38,
+      "idn": 162
+    },
+    "most_gift": {
+      "id": "125099921735056014",
+      "gift": 163197500
+    },
+    "longest_live": {
+      "id": "1713267371509992",
+      "duration": 7838845
+    },
+    "last_live": {
+      "id": "125099921751118993",
+      "date": {
+        "start": "2025-06-28T13:56:33.747Z",
+        "end": "2025-06-28T14:33:39.799Z"
+      }
+    }
+  },
+  "socials": [
+    {
+      "title": "X",
+      "url": "https://twitter.com/Delynn_JKT48"
+    },
+    {
+      "title": "Instagram",
+      "url": "https://www.instagram.com/jkt48.delynn/"
+    }
+  ],
+  "recentTheater": [
+    {
+      "id": "2956",
+      "name": "Pajama Drive",
+      "date": "2025-06-21T07:00:00.000Z",
+      "url": "https://jkt48.com/theater/schedule/id/2956?lang=id",
+      "poster": "https://res.cloudinary.com/haymzm4wp/image/upload/v1717174034/xspjxcs9wwm9jxwhiy5q.jpg"
+    }
+  ],
+  "upcomingTheater": [
+    {
+      "id": "2962",
+      "name": "Pajama Drive",
+      "date": "2025-07-02T12:00:00.000Z",
+      "url": "https://jkt48.com/theater/schedule/id/2962?lang=id",
+      "poster": "https://res.cloudinary.com/haymzm4wp/image/upload/v1717174034/xspjxcs9wwm9jxwhiy5q.jpg"
+    }
+  ]
+}
+```
+</Tab>
+
+</Tabs>
+
+## Implementation Examples
+
+<Tabs items={['JavaScript', 'Python', 'Go']}>
+
+<Tab value="JavaScript">
+```javascript
+const API_KEY = 'YOUR_API_KEY';
+const BASE_URL = 'https://v2.jkt48connect.my.id';
+
+async function getMemberDetail(memberName) {
+  try {
+    const encodedName = encodeURIComponent(memberName);
+    const response = await fetch(`${BASE_URL}/api/jkt48/member/${encodedName}?apikey=${API_KEY}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const memberDetail = await response.json();
+    return memberDetail;
+  } catch (error) {
+    console.error('Failed to fetch member detail:', error);
+    throw error;
+  }
+}
+
+// Calculate member age
+function calculateAge(birthdate) {
+  const birth = new Date(birthdate);
+  const today = new Date();
+  let age = today.getFullYear() - birth.getFullYear();
+  const monthDiff = today.getMonth() - birth.getMonth();
+  
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+// Format streaming stats
+function formatStreamingStats(stats) {
+  return {
+    totalLives: stats.total_live.showroom + stats.total_live.idn,
+    mostGifts: stats.most_gift.gift.toLocaleString(),
+    longestLiveDuration: Math.floor(stats.longest_live.duration / 1000 / 60) + ' minutes',
+    lastLiveDate: new Date(stats.last_live.date.start).toLocaleDateString()
+  };
+}
+
+// Usage example
+async function displayMemberProfile(memberName) {
+  try {
+    const member = await getMemberDetail(memberName);
+    
+    console.log(`Name: ${member.name} (${member.nickname})`);
+    console.log(`Age: ${calculateAge(member.birthdate)} years old`);
+    console.log(`Generation: ${member.generation}`);
+    console.log(`Height: ${member.height}`);
+    console.log(`Blood Type: ${member.bloodType}`);
+    
+    const stats = formatStreamingStats(member.stats);
+    console.log(`Total Lives: ${stats.totalLives}`);
+    console.log(`Most Gifts: ${stats.mostGifts}`);
+    console.log(`Last Live: ${stats.lastLiveDate}`);
+    
+  } catch (error) {
+    console.error('Error displaying member profile:', error);
+  }
+}
+
+// displayMemberProfile('Adeline Wijaya');
+```
+</Tab>
+
+<Tab value="Python">
+```python
+import requests
+from datetime import datetime
+from urllib.parse import quote
+
+API_KEY = 'YOUR_API_KEY'
+BASE_URL = 'https://v2.jkt48connect.my.id'
+
+def get_member_detail(member_name):
+    """Fetch detailed information for a specific member"""
+    encoded_name = quote(member_name)
+    url = f"{BASE_URL}/api/jkt48/member/{encoded_name}"
+    params = {'apikey': API_KEY}
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching member detail: {e}")
+        raise
+
+def calculate_age(birthdate_str):
+    """Calculate member's age from birthdate"""
+    birth = datetime.fromisoformat(birthdate_str.replace('Z', '+00:00'))
+    today = datetime.now()
+    age = today.year - birth.year
+    if today.month < birth.month or (today.month == birth.month and today.day < birth.day):
+        age -= 1
+    return age
+
+def format_streaming_stats(stats):
+    """Format streaming statistics for display"""
+    return {
+        'total_lives': stats['total_live']['showroom'] + stats['total_live']['idn'],
+        'most_gifts': f"{stats['most_gift']['gift']:,}",
+        'longest_live_minutes': stats['longest_live']['duration'] // 1000 // 60,
+        'last_live_date': datetime.fromisoformat(stats['last_live']['date']['start'].replace('Z', '+00:00')).strftime('%Y-%m-%d')
+    }
+
+def display_member_profile(member_name):
+    """Display formatted member profile information"""
+    try:
+        member = get_member_detail(member_name)
+        
+        print(f"Name: {member['name']} ({member['nickname']})")
+        print(f"Age: {calculate_age(member['birthdate'])} years old")
+        print(f"Generation: {member['generation']}")
+        print(f"Height: {member['height']}")
+        print(f"Blood Type: {member['bloodType']}")
+        print(f"Status: {'Graduate' if member['is_graduate'] else 'Active'}")
+        
+        stats = format_streaming_stats(member['stats'])
+        print(f"\nStreaming Stats:")
+        print(f"Total Lives: {stats['total_lives']}")
+        print(f"Most Gifts: {stats['most_gifts']}")
+        print(f"Longest Live: {stats['longest_live_minutes']} minutes")
+        print(f"Last Live: {stats['last_live_date']}")
+        
+        print(f"\nRecent Theater: {len(member['recentTheater'])} shows")
+        print(f"Upcoming Theater: {len(member['upcomingTheater'])} shows")
+        
+    except Exception as e:
+        print(f"Error: {e}")
+
+# Usage example
+if __name__ == "__main__":
+    display_member_profile('Adeline Wijaya')
+```
+</Tab>
+
+<Tab value="Go">
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "net/url"
+    "time"
+)
+
+const (
+    APIKey  = "YOUR_API_KEY"
+    BaseURL = "https://v2.jkt48connect.my.id"
+)
+
+type MemberStats struct {
+    Missing struct {
+        Showroom int `json:"showroom"`
+        IDN      int `json:"idn"`
+    } `json:"missing"`
+    TotalLive struct {
+        Showroom int `json:"showroom"`
+        IDN      int `json:"idn"`
+    } `json:"total_live"`
+    MostGift struct {
+        ID   string `json:"id"`
+        Gift int64  `json:"gift"`
+    } `json:"most_gift"`
+    LongestLive struct {
+        ID       string `json:"id"`
+        Duration int64  `json:"duration"`
+    } `json:"longest_live"`
+    LastLive struct {
+        ID   string `json:"id"`
+        Date struct {
+            Start string `json:"start"`
+            End   string `json:"end"`
+        } `json:"date"`
+    } `json:"last_live"`
+}
+
+type TheaterShow struct {
+    ID     string `json:"id"`
+    Name   string `json:"name"`
+    Date   string `json:"date"`
+    URL    string `json:"url"`
+    Poster string `json:"poster"`
+}
+
+type MemberDetail struct {
+    Name             string        `json:"name"`
+    Nickname         string        `json:"nickname"`
+    Fullname         string        `json:"fullname"`
+    Image            string        `json:"img"`
+    ImageAlt         string        `json:"img_alt"`
+    Description      string        `json:"description"`
+    Group            string        `json:"group"`
+    Generation       string        `json:"generation"`
+    Birthdate        string        `json:"birthdate"`
+    BloodType        string        `json:"bloodType"`
+    Height           string        `json:"height"`
+    IsGraduate       bool          `json:"is_graduate"`
+    URL              string        `json:"url"`
+    Stats            MemberStats   `json:"stats"`
+    Socials          []Social      `json:"socials"`
+    RecentTheater    []TheaterShow `json:"recentTheater"`
+    UpcomingTheater  []TheaterShow `json:"upcomingTheater"`
+}
+
+func getMemberDetail(memberName string) (*MemberDetail, error) {
+    encodedName := url.QueryEscape(memberName)
+    requestURL := fmt.Sprintf("%s/api/jkt48/member/%s?apikey=%s", BaseURL, encodedName, APIKey)
+    
+    client := &http.Client{Timeout: 30 * time.Second}
+    resp, err := client.Get(requestURL)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+    }
+    
+    var member MemberDetail
+    err = json.NewDecoder(resp.Body).Decode(&member)
+    return &member, err
+}
+
+func calculateAge(birthdateStr string) int {
+    birthdate, err := time.Parse(time.RFC3339, birthdateStr)
+    if err != nil {
+        return 0
+    }
+    
+    now := time.Now()
+    age := now.Year() - birthdate.Year()
+    
+    if now.Month() < birthdate.Month() || 
+       (now.Month() == birthdate.Month() && now.Day() < birthdate.Day()) {
+        age--
+    }
+    
+    return age
+}
+
+func displayMemberProfile(memberName string) {
+    member, err := getMemberDetail(memberName)
+    if err != nil {
+        fmt.Printf("Error fetching member detail: %v\n", err)
+        return
+    }
+    
+    fmt.Printf("Name: %s (%s)\n", member.Name, member.Nickname)
+    fmt.Printf("Age: %d years old\n", calculateAge(member.Birthdate))
+    fmt.Printf("Generation: %s\n", member.Generation)
+    fmt.Printf("Height: %s\n", member.Height)
+    fmt.Printf("Blood Type: %s\n", member.BloodType)
+    
+    status := "Active"
+    if member.IsGraduate {
+        status = "Graduate"
+    }
+    fmt.Printf("Status: %s\n", status)
+    
+    // Streaming stats
+    totalLives := member.Stats.TotalLive.Showroom + member.Stats.TotalLive.IDN
+    longestLiveMinutes := member.Stats.LongestLive.Duration / 1000 / 60
+    
+    fmt.Printf("\nStreaming Stats:\n")
+    fmt.Printf("Total Lives: %d\n", totalLives)
+    fmt.Printf("Most Gifts: %d\n", member.Stats.MostGift.Gift)
+    fmt.Printf("Longest Live: %d minutes\n", longestLiveMinutes)
+    
+    fmt.Printf("\nRecent Theater: %d shows\n", len(member.RecentTheater))
+    fmt.Printf("Upcoming Theater: %d shows\n", len(member.UpcomingTheater))
+}
+
+func main() {
+    displayMemberProfile("Adeline Wijaya")
+}
+```
+</Tab>
+
+</Tabs>
+
+## Data Structure
+
+<Callout type="info">
+The member detail response includes comprehensive statistics, theater schedules, and streaming data.
+</Callout>
+
+**Key Statistics Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `stats.total_live` | object | Total live streaming counts per platform |
+| `stats.most_gift` | object | Highest gift amount received in a single stream |
+| `stats.longest_live` | object | Longest streaming session details |
+| `stats.last_live` | object | Most recent streaming session information |
+
+**Theater Schedule Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `recentTheater` | array | Recent theater performances |
+| `upcomingTheater` | array | Scheduled upcoming performances |
+
+## Common Use Cases
+
+<Tabs items={['Profile Page', 'Statistics Dashboard', 'Theater Schedule']}>
+
+<Tab value="Profile Page">
+```javascript
+// Build comprehensive member profile
+async function buildMemberProfile(memberName) {
+  const member = await getMemberDetail(memberName);
+  
+  return {
+    basic: {
+      name: member.name,
+      nickname: member.nickname,
+      age: calculateAge(member.birthdate),
+      height: member.height,
+      bloodType: member.bloodType,
+      generation: member.generation
+    },
+    streaming: {
+      totalLives: member.stats.total_live.showroom + member.stats.total_live.idn,
+      mostGifts: member.stats.most_gift.gift,
+      longestLive: member.stats.longest_live.duration / 1000 / 60
+    },
+    social: member.socials,
+    theater: {
+      recent: member.recentTheater.length,
+      upcoming: member.upcomingTheater.length
+    }
+  };
+}
+```
+</Tab>
+
+<Tab value="Statistics Dashboard">
+```javascript
+// Generate member performance metrics
+function generateMemberMetrics(member) {
+  const stats = member.stats;
+  
+  return {
+    engagement: {
+      avgGiftsPerStream: Math.round(stats.most_gift.gift / (stats.total_live.showroom + stats.total_live.idn)),
+      streamingFrequency: calculateStreamingFrequency(stats),
+      platformPreference: stats.total_live.showroom > stats.total_live.idn ? 'SHOWROOM' : 'IDN'
+    },
+    activity: {
+      recentTheaterCount: member.recentTheater.length,
+      upcomingTheaterCount: member.upcomingTheater.length,
+      socialPlatforms: member.socials.length
+    }
+  };
+}
+```
+</Tab>
+
+<Tab value="Theater Schedule">
+```javascript
+// Process theater schedule data
+function processTheaterSchedule(member) {
+  const formatShow = (show) => ({
+    id: show.id,
+    name: show.name,
+    date: new Date(show.date).toLocaleDateString(),
+    url: show.url,
+    poster: show.poster
+  });
+  
+  return {
+    recent: member.recentTheater.map(formatShow),
+    upcoming: member.upcomingTheater.map(formatShow),
+    totalShows: member.recentTheater.length + member.upcomingTheater.length
+  };
+}
+```
+</Tab>
+
+</Tabs>
+
+## Error Handling
+
+```javascript
+async function getMemberDetailSafely(memberName) {
+  try {
+    const member = await getMemberDetail(memberName);
+    
+    // Validate required fields
+    if (!member.name || !member.stats) {
+      throw new Error('Invalid member data structure');
+    }
+    
+    return member;
+  } catch (error) {
+    if (error.message.includes('404')) {
+      console.error(`Member "${memberName}" not found`);
+      return null;
+    }
+    
+    console.error('Failed to fetch member detail:', error);
+    throw error;
+  }
+}
+```
+
+---
+
+### Get Started
+
+Ready to build detailed member profiles? [Get your API key](https://www.jkt48connect.my.id/buyapi) and start accessing comprehensive JKT48 member data!

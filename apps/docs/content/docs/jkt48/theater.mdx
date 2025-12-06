@@ -1,0 +1,686 @@
+---
+title: Theater
+description: Get JKT48 Theater Shows via JKT48Connect API
+icon: Theater
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+## Introduction
+
+The JKT48Connect Theater API provides information about **JKT48 theater shows and performances**. Perfect for creating show schedules, member tracking, and theater attendance applications.
+
+<Cards>
+<Card icon={<Theater className="text-blue-400" />} title='Theater Shows'>
+Get upcoming and past JKT48 theater performances.
+</Card>
+
+<Card icon={<Users className="text-green-400" />} title='Member Tracking'>
+Track member participation and seitansai celebrations.
+</Card>
+
+<Card icon={<Calendar className="text-purple-400" />} title='Show Schedules'>
+Build theater schedule and attendance planning features.
+</Card>
+</Cards>
+
+## Quick Start
+
+<Steps>
+<Step>
+### Get Your API Key
+Obtain your API key from [JKT48Connect](https://www.jkt48connect.my.id/buyapi).
+</Step>
+
+<Step>
+### Make API Request
+```bash
+curl "https://v2.jkt48connect.my.id/api/jkt48/theater?apikey=YOUR_API_KEY"
+```
+</Step>
+
+<Step>
+### Process Response
+Handle the JSON object containing theater shows with pagination.
+</Step>
+</Steps>
+
+## Endpoint Details
+
+<Tabs items={['Overview', 'Request', 'Response']}>
+
+<Tab value="Overview">
+**Base URL:** `https://v2.jkt48connect.my.id`  
+**Endpoint:** `/api/jkt48/theater`  
+**Method:** `GET`  
+**Authentication:** API Key required
+</Tab>
+
+<Tab value="Request">
+**Query Parameters:**
+- `apikey` (required): Your API authentication key
+- `page` (optional): Page number for pagination (default: 1)
+- `perpage` (optional): Items per page (default: 10)
+
+**Example:**
+```http
+GET /api/jkt48/theater?apikey=YOUR_API_KEY&page=1&perpage=10 HTTP/1.1
+Host: v2.jkt48connect.my.id
+```
+</Tab>
+
+<Tab value="Response">
+Returns JSON object with theater shows and pagination info:
+
+```json
+{
+  "author": "JKT48ConnectCORP - Valzyy",
+  "theater": [
+    {
+      "id": "2963",
+      "title": "Cara Meminum Ramune",
+      "banner": "https://res.cloudinary.com/haymzm4wp/image/upload/v1709811568/hm6aztwojrngb6ryrdn9.png",
+      "poster": "https://res.cloudinary.com/haymzm4wp/image/upload/v1702404446/nixg3rixpjpom3xa0ivf.jpg",
+      "member_count": 16,
+      "seitansai": [
+        {
+          "id": 190,
+          "name": "Gita Sekar Andarini",
+          "img": "https://res.cloudinary.com/haymzm4wp/image/upload/v1730447266/assets/kabesha/oktober_2024/gita_sekar_andarini.jpg",
+          "url_key": "gita"
+        }
+      ],
+      "url": "2963",
+      "date": "2025-07-03T12:00:00.000Z"
+    }
+  ],
+  "page": 1,
+  "perpage": 10,
+  "total_count": 2992
+}
+```
+</Tab>
+
+</Tabs>
+
+## Implementation Examples
+
+<Tabs items={['JavaScript', 'Python', 'Go']}>
+
+<Tab value="JavaScript">
+```javascript
+const API_KEY = 'YOUR_API_KEY';
+const BASE_URL = 'https://v2.jkt48connect.my.id';
+
+async function getTheaterShows(page = 1, perpage = 10) {
+  try {
+    const response = await fetch(
+      `${BASE_URL}/api/jkt48/theater?apikey=${API_KEY}&page=${page}&perpage=${perpage}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch theater shows:', error);
+    throw error;
+  }
+}
+
+// Check if show is today
+function isShowToday(showDate) {
+  const today = new Date().toDateString();
+  const show = new Date(showDate).toDateString();
+  return today === show;
+}
+
+// Check if show is upcoming
+function isUpcoming(showDate) {
+  const now = new Date();
+  const show = new Date(showDate);
+  return show > now;
+}
+
+// Format show information
+function formatShowInfo(show) {
+  const showDate = new Date(show.date);
+  const isToday = isShowToday(show.date);
+  const upcoming = isUpcoming(show.date);
+  
+  return {
+    id: show.id,
+    title: show.title,
+    showDate: showDate.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }),
+    memberCount: show.member_count,
+    hasSeitansai: show.seitansai && show.seitansai.length > 0,
+    seitansaiMembers: show.seitansai || [],
+    isToday,
+    isUpcoming: upcoming,
+    banner: show.banner,
+    poster: show.poster,
+    detailUrl: show.url
+  };
+}
+
+// Get shows with seitansai
+function getShowsWithSeitansai(shows) {
+  return shows.filter(show => show.seitansai && show.seitansai.length > 0);
+}
+
+// Usage example
+async function displayTheaterSchedule() {
+  try {
+    const data = await getTheaterShows();
+    const { theater: shows, page, total_count } = data;
+    
+    console.log(`=== THEATER SCHEDULE (Page ${page}) ===`);
+    console.log(`Total shows: ${total_count}`);
+    
+    const todayShows = shows.filter(show => isShowToday(show.date));
+    const upcomingShows = shows.filter(show => isUpcoming(show.date));
+    const seitansaiShows = getShowsWithSeitansai(shows);
+    
+    if (todayShows.length > 0) {
+      console.log('\n🎭 TODAY\'S SHOWS:');
+      todayShows.forEach(show => {
+        const info = formatShowInfo(show);
+        console.log(`${info.title} - ${info.memberCount} members`);
+        if (info.hasSeitansai) {
+          console.log(`  🎂 Seitansai: ${info.seitansaiMembers.map(m => m.name).join(', ')}`);
+        }
+      });
+    }
+    
+    if (seitansaiShows.length > 0) {
+      console.log('\n🎂 UPCOMING SEITANSAI:');
+      seitansaiShows.forEach(show => {
+        const info = formatShowInfo(show);
+        console.log(`${info.title} - ${info.showDate}`);
+        info.seitansaiMembers.forEach(member => {
+          console.log(`  🎉 ${member.name}`);
+        });
+      });
+    }
+    
+  } catch (error) {
+    console.error('Error displaying theater schedule:', error);
+  }
+}
+```
+</Tab>
+
+<Tab value="Python">
+```python
+import requests
+from datetime import datetime
+from typing import Dict, List, Optional
+
+API_KEY = 'YOUR_API_KEY'
+BASE_URL = 'https://v2.jkt48connect.my.id'
+
+def get_theater_shows(page: int = 1, perpage: int = 10) -> Dict:
+    """Fetch JKT48 theater shows"""
+    url = f"{BASE_URL}/api/jkt48/theater"
+    params = {
+        'apikey': API_KEY,
+        'page': page,
+        'perpage': perpage
+    }
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching theater shows: {e}")
+        raise
+
+def is_show_today(show_date_str: str) -> bool:
+    """Check if show is today"""
+    show_date = datetime.fromisoformat(show_date_str.replace('Z', '+00:00'))
+    today = datetime.now().date()
+    return show_date.date() == today
+
+def is_upcoming(show_date_str: str) -> bool:
+    """Check if show is upcoming"""
+    show_date = datetime.fromisoformat(show_date_str.replace('Z', '+00:00'))
+    now = datetime.now()
+    return show_date > now
+
+def format_show_info(show: Dict) -> Dict:
+    """Format show information for display"""
+    show_date = datetime.fromisoformat(show['date'].replace('Z', '+00:00'))
+    is_today = is_show_today(show['date'])
+    upcoming = is_upcoming(show['date'])
+    
+    return {
+        'id': show['id'],
+        'title': show['title'],
+        'show_date': show_date.strftime('%B %d, %Y at %I:%M %p'),
+        'member_count': show['member_count'],
+        'has_seitansai': 'seitansai' in show and len(show['seitansai']) > 0,
+        'seitansai_members': show.get('seitansai', []),
+        'is_today': is_today,
+        'is_upcoming': upcoming,
+        'banner': show['banner'],
+        'poster': show['poster'],
+        'detail_url': show['url']
+    }
+
+def get_shows_with_seitansai(shows: List[Dict]) -> List[Dict]:
+    """Filter shows that have seitansai celebrations"""
+    return [show for show in shows if 'seitansai' in show and show['seitansai']]
+
+def display_theater_schedule():
+    """Display formatted theater schedule"""
+    try:
+        data = get_theater_shows()
+        shows = data['theater']
+        page = data['page']
+        total_count = data['total_count']
+        
+        print(f"=== THEATER SCHEDULE (Page {page}) ===")
+        print(f"Total shows: {total_count}")
+        
+        today_shows = [show for show in shows if is_show_today(show['date'])]
+        seitansai_shows = get_shows_with_seitansai(shows)
+        
+        if today_shows:
+            print("\n🎭 TODAY'S SHOWS:")
+            for show in today_shows:
+                info = format_show_info(show)
+                print(f"{info['title']} - {info['member_count']} members")
+                if info['has_seitansai']:
+                    names = [m['name'] for m in info['seitansai_members']]
+                    print(f"  🎂 Seitansai: {', '.join(names)}")
+        
+        if seitansai_shows:
+            print("\n🎂 UPCOMING SEITANSAI:")
+            for show in seitansai_shows:
+                info = format_show_info(show)
+                print(f"{info['title']} - {info['show_date']}")
+                for member in info['seitansai_members']:
+                    print(f"  🎉 {member['name']}")
+                    
+    except Exception as e:
+        print(f"Error: {e}")
+
+# Usage example
+if __name__ == "__main__":
+    display_theater_schedule()
+```
+</Tab>
+
+<Tab value="Go">
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "strconv"
+    "time"
+)
+
+const (
+    APIKey  = "YOUR_API_KEY"
+    BaseURL = "https://v2.jkt48connect.my.id"
+)
+
+type SeitansaiMember struct {
+    ID     int    `json:"id"`
+    Name   string `json:"name"`
+    Image  string `json:"img"`
+    URLKey string `json:"url_key"`
+}
+
+type TheaterShow struct {
+    ID          string            `json:"id"`
+    Title       string            `json:"title"`
+    Banner      string            `json:"banner"`
+    Poster      string            `json:"poster"`
+    MemberCount int               `json:"member_count"`
+    Seitansai   []SeitansaiMember `json:"seitansai,omitempty"`
+    URL         string            `json:"url"`
+    Date        string            `json:"date"`
+}
+
+type TheaterResponse struct {
+    Author     string        `json:"author"`
+    Theater    []TheaterShow `json:"theater"`
+    Page       int           `json:"page"`
+    PerPage    int           `json:"perpage"`
+    TotalCount int           `json:"total_count"`
+}
+
+func getTheaterShows(page, perpage int) (*TheaterResponse, error) {
+    url := fmt.Sprintf("%s/api/jkt48/theater?apikey=%s&page=%d&perpage=%d", 
+        BaseURL, APIKey, page, perpage)
+    
+    client := &http.Client{Timeout: 30 * time.Second}
+    resp, err := client.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+    }
+    
+    var theaterResp TheaterResponse
+    err = json.NewDecoder(resp.Body).Decode(&theaterResp)
+    return &theaterResp, err
+}
+
+func isShowToday(showDateStr string) bool {
+    showDate, err := time.Parse(time.RFC3339, showDateStr)
+    if err != nil {
+        return false
+    }
+    
+    now := time.Now()
+    return showDate.Format("2006-01-02") == now.Format("2006-01-02")
+}
+
+func isUpcoming(showDateStr string) bool {
+    showDate, err := time.Parse(time.RFC3339, showDateStr)
+    if err != nil {
+        return false
+    }
+    
+    return showDate.After(time.Now())
+}
+
+func hasActiveSeitansai(show TheaterShow) bool {
+    return len(show.Seitansai) > 0
+}
+
+func displayTheaterSchedule() {
+    data, err := getTheaterShows(1, 10)
+    if err != nil {
+        fmt.Printf("Error fetching theater shows: %v\n", err)
+        return
+    }
+    
+    fmt.Printf("=== THEATER SCHEDULE (Page %d) ===\n", data.Page)
+    fmt.Printf("Total shows: %d\n", data.TotalCount)
+    
+    var todayShows []TheaterShow
+    var seitansaiShows []TheaterShow
+    
+    for _, show := range data.Theater {
+        if isShowToday(show.Date) {
+            todayShows = append(todayShows, show)
+        }
+        if hasActiveSeitansai(show) {
+            seitansaiShows = append(seitansaiShows, show)
+        }
+    }
+    
+    if len(todayShows) > 0 {
+        fmt.Println("\n🎭 TODAY'S SHOWS:")
+        for _, show := range todayShows {
+            fmt.Printf("%s - %d members\n", show.Title, show.MemberCount)
+            if hasActiveSeitansai(show) {
+                fmt.Print("  🎂 Seitansai: ")
+                for i, member := range show.Seitansai {
+                    if i > 0 {
+                        fmt.Print(", ")
+                    }
+                    fmt.Print(member.Name)
+                }
+                fmt.Println()
+            }
+        }
+    }
+    
+    if len(seitansaiShows) > 0 {
+        fmt.Println("\n🎂 UPCOMING SEITANSAI:")
+        for _, show := range seitansaiShows {
+            showDate, _ := time.Parse(time.RFC3339, show.Date)
+            fmt.Printf("%s - %s\n", show.Title, showDate.Format("January 2, 2006 at 3:04 PM"))
+            for _, member := range show.Seitansai {
+                fmt.Printf("  🎉 %s\n", member.Name)
+            }
+        }
+    }
+}
+
+func main() {
+    displayTheaterSchedule()
+}
+```
+</Tab>
+
+</Tabs>
+
+## Data Structure
+
+<Callout type="info">
+The theater API returns paginated data with show details and member information.
+</Callout>
+
+**Response Object:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `author` | string | API author information |
+| `theater` | array | Array of theater show objects |
+| `page` | number | Current page number |
+| `perpage` | number | Items per page |
+| `total_count` | number | Total number of shows |
+
+**Theater Show Object:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `id` | string | Unique show identifier |
+| `title` | string | Show title/setlist name |
+| `banner` | string | Show banner image URL |
+| `poster` | string | Show poster image URL |
+| `member_count` | number | Number of performing members |
+| `seitansai` | array | Members celebrating birthday (optional) |
+| `url` | string | Show detail URL |
+| `date` | string | ISO 8601 formatted show date |
+
+## Common Use Cases
+
+<Tabs items={['Show Schedule', 'Seitansai Tracking', 'Member Analytics']}>
+
+<Tab value="Show Schedule">
+```javascript
+// Create show schedule widget
+function buildShowSchedule(shows) {
+  const schedule = {};
+  
+  shows.forEach(show => {
+    const showDate = new Date(show.date);
+    const dateKey = showDate.toISOString().split('T')[0];
+    
+    if (!schedule[dateKey]) schedule[dateKey] = [];
+    
+    schedule[dateKey].push({
+      id: show.id,
+      title: show.title,
+      time: showDate.toLocaleTimeString('en-US', {
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+      memberCount: show.member_count,
+      hasSeitansai: show.seitansai && show.seitansai.length > 0,
+      banner: show.banner
+    });
+  });
+  
+  return schedule;
+}
+
+// Get upcoming shows
+function getUpcomingShows(shows, days = 7) {
+  const now = new Date();
+  const futureDate = new Date(now.getTime() + (days * 24 * 60 * 60 * 1000));
+  
+  return shows.filter(show => {
+    const showDate = new Date(show.date);
+    return showDate >= now && showDate <= futureDate;
+  });
+}
+```
+</Tab>
+
+<Tab value="Seitansai Tracking">
+```javascript
+// Track seitansai celebrations
+function getSeitansaiSchedule(shows) {
+  const seitansaiShows = shows.filter(show => 
+    show.seitansai && show.seitansai.length > 0
+  );
+  
+  return seitansaiShows.map(show => ({
+    showId: show.id,
+    showTitle: show.title,
+    showDate: show.date,
+    celebrants: show.seitansai.map(member => ({
+      name: member.name,
+      image: member.img,
+      profileKey: member.url_key
+    }))
+  }));
+}
+
+// Count seitansai by member
+function getSeitansaiStats(allShows) {
+  const memberStats = {};
+  
+  allShows.forEach(show => {
+    if (show.seitansai) {
+      show.seitansai.forEach(member => {
+        if (!memberStats[member.name]) {
+          memberStats[member.name] = {
+            count: 0,
+            shows: [],
+            image: member.img,
+            urlKey: member.url_key
+          };
+        }
+        memberStats[member.name].count++;
+        memberStats[member.name].shows.push({
+          showId: show.id,
+          title: show.title,
+          date: show.date
+        });
+      });
+    }
+  });
+  
+  return memberStats;
+}
+```
+</Tab>
+
+<Tab value="Member Analytics">
+```javascript
+// Analyze show patterns
+function analyzeShowPatterns(shows) {
+  const setlistCounts = {};
+  const memberCountStats = {
+    total: 0,
+    average: 0,
+    min: Infinity,
+    max: 0
+  };
+  
+  shows.forEach(show => {
+    // Count setlist frequency
+    if (!setlistCounts[show.title]) {
+      setlistCounts[show.title] = 0;
+    }
+    setlistCounts[show.title]++;
+    
+    // Member count statistics
+    memberCountStats.total += show.member_count;
+    memberCountStats.min = Math.min(memberCountStats.min, show.member_count);
+    memberCountStats.max = Math.max(memberCountStats.max, show.member_count);
+  });
+  
+  memberCountStats.average = memberCountStats.total / shows.length;
+  
+  return {
+    setlistCounts,
+    memberCountStats,
+    totalShows: shows.length
+  };
+}
+
+// Get popular setlists
+function getPopularSetlists(shows, limit = 5) {
+  const setlistCounts = {};
+  
+  shows.forEach(show => {
+    setlistCounts[show.title] = (setlistCounts[show.title] || 0) + 1;
+  });
+  
+  return Object.entries(setlistCounts)
+    .sort(([,a], [,b]) => b - a)
+    .slice(0, limit)
+    .map(([title, count]) => ({ title, count }));
+}
+```
+</Tab>
+
+</Tabs>
+
+## Error Handling
+
+```javascript
+async function getTheaterShowsSafely(page = 1, perpage = 10) {
+  try {
+    const data = await getTheaterShows(page, perpage);
+    
+    // Validate response structure
+    if (!data.theater || !Array.isArray(data.theater)) {
+      throw new Error('Invalid response format: missing theater array');
+    }
+    
+    // Filter out invalid shows
+    const validShows = data.theater.filter(show => 
+      show.id && 
+      show.title && 
+      show.date &&
+      show.member_count >= 0 &&
+      !isNaN(Date.parse(show.date))
+    );
+    
+    return {
+      ...data,
+      theater: validShows
+    };
+    
+  } catch (error) {
+    console.error('Failed to fetch theater shows:', error);
+    return {
+      theater: [],
+      page: 1,
+      perpage: 10,
+      total_count: 0
+    };
+  }
+}
+```
+
+---
+
+### Get Started
+
+Ready to build theater tracking features? [Get your API key](https://www.jkt48connect.my.id/buyapi) and start monitoring JKT48 theater shows!

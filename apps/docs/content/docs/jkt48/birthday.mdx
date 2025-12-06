@@ -1,0 +1,699 @@
+---
+title: Birthday
+description: Get JKT48 Members with Upcoming Birthdays via JKT48Connect API
+icon: Calendar
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+## Introduction
+
+The JKT48Connect Birthday API provides information about **JKT48 members with upcoming birthdays**. Perfect for creating birthday reminder apps, fan celebration calendars, and special event notifications.
+
+<Cards>
+<Card icon={<Calendar className="text-blue-400" />} title='Upcoming Birthdays'>
+Get members celebrating birthdays in the coming days.
+</Card>
+
+<Card icon={<Gift className="text-green-400" />} title='Birthday Planning'>
+Build birthday reminder and celebration planning features.
+</Card>
+
+<Card icon={<Bell className="text-purple-400" />} title='Event Notifications'>
+Create automated birthday notification systems.
+</Card>
+</Cards>
+
+## Quick Start
+
+<Steps>
+<Step>
+### Get Your API Key
+Obtain your API key from [JKT48Connect](https://www.jkt48connect.my.id/buyapi).
+</Step>
+
+<Step>
+### Make API Request
+```bash
+curl "https://v2.jkt48connect.my.id/api/jkt48/birthday?apikey=YOUR_API_KEY"
+```
+</Step>
+
+<Step>
+### Process Response
+Handle the JSON array containing members with upcoming birthdays.
+</Step>
+</Steps>
+
+## Endpoint Details
+
+<Tabs items={['Overview', 'Request', 'Response']}>
+
+<Tab value="Overview">
+**Base URL:** `https://v2.jkt48connect.my.id`  
+**Endpoint:** `/api/jkt48/birthday`  
+**Method:** `GET`  
+**Authentication:** API Key required
+</Tab>
+
+<Tab value="Request">
+**Query Parameters:**
+- `apikey` (required): Your API authentication key
+
+**Example:**
+```http
+GET /api/jkt48/birthday?apikey=YOUR_API_KEY HTTP/1.1
+Host: v2.jkt48connect.my.id
+```
+</Tab>
+
+<Tab value="Response">
+Returns JSON array with members having upcoming birthdays:
+
+```json
+[
+  {
+    "name": "Erine",
+    "birthdate": "2007-08-21",
+    "img": "https://res.cloudinary.com/haymzm4wp/image/upload/v1730447281/assets/kabesha/oktober_2024/catherina_vallencia.jpg",
+    "room_id": 510000,
+    "url_key": "erine",
+    "current_age": 17,
+    "age_after_birthday": 18,
+    "next_birthday": "2025-08-21 00:00:00",
+    "next_birthday_countdown": {
+      "days": 6,
+      "hours": 4,
+      "minutes": 56,
+      "seconds": 10,
+      "total_seconds": 536170
+    },
+    "is_birthday_today": false,
+    "time_zone": "GMT+7 (Indonesia)"
+  },
+  {
+    "name": "Delynn",
+    "birthdate": "2007-09-01",
+    "img": "https://res.cloudinary.com/haymzm4wp/image/upload/v1730447279/assets/kabesha/oktober_2024/adeline_wijaya.jpg",
+    "room_id": 509992,
+    "url_key": "delynn",
+    "current_age": 17,
+    "age_after_birthday": 18,
+    "next_birthday": "2025-09-01 00:00:00",
+    "next_birthday_countdown": {
+      "days": 17,
+      "hours": 4,
+      "minutes": 56,
+      "seconds": 10,
+      "total_seconds": 1486570
+    },
+    "is_birthday_today": false,
+    "time_zone": "GMT+7 (Indonesia)"
+  }
+]
+```
+</Tab>
+
+</Tabs>
+
+## Implementation Examples
+
+<Tabs items={['JavaScript', 'Python', 'Go']}>
+
+<Tab value="JavaScript">
+```javascript
+const API_KEY = 'YOUR_API_KEY';
+const BASE_URL = 'https://v2.jkt48connect.my.id';
+
+async function getUpcomingBirthdays() {
+  try {
+    const response = await fetch(`${BASE_URL}/api/jkt48/birthday?apikey=${API_KEY}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const birthdays = await response.json();
+    return birthdays;
+  } catch (error) {
+    console.error('Failed to fetch birthdays:', error);
+    throw error;
+  }
+}
+
+// Calculate days until birthday
+function getDaysUntilBirthday(birthdate) {
+  const today = new Date();
+  const birthday = new Date(birthdate);
+  const thisYear = today.getFullYear();
+  
+  // Set birthday to this year
+  birthday.setFullYear(thisYear);
+  
+  // If birthday has passed this year, set to next year
+  if (birthday < today) {
+    birthday.setFullYear(thisYear + 1);
+  }
+  
+  const diffTime = birthday - today;
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  return diffDays;
+}
+
+// Calculate member's age on birthday
+function getAgeOnBirthday(birthdate) {
+  const birth = new Date(birthdate);
+  const currentYear = new Date().getFullYear();
+  return currentYear - birth.getFullYear();
+}
+
+// Format birthday display
+function formatBirthdayInfo(member) {
+  const daysUntil = getDaysUntilBirthday(member.birthdate);
+  const age = getAgeOnBirthday(member.birthdate);
+  const birthdayDate = new Date(member.birthdate).toLocaleDateString('en-US', {
+    month: 'long',
+    day: 'numeric'
+  });
+  
+  return {
+    name: member.name,
+    birthdayDate,
+    daysUntil,
+    turningAge: age,
+    isToday: daysUntil === 0,
+    isTomorrow: daysUntil === 1,
+    profileImage: member.img,
+    profileUrl: member.url_key
+  };
+}
+
+// Group birthdays by time period
+function groupBirthdaysByPeriod(birthdays) {
+  const today = [];
+  const thisWeek = [];
+  const thisMonth = [];
+  
+  birthdays.forEach(member => {
+    const days = getDaysUntilBirthday(member.birthdate);
+    
+    if (days === 0) {
+      today.push(member);
+    } else if (days <= 7) {
+      thisWeek.push(member);
+    } else if (days <= 30) {
+      thisMonth.push(member);
+    }
+  });
+  
+  return { today, thisWeek, thisMonth };
+}
+
+// Usage example
+async function displayUpcomingBirthdays() {
+  try {
+    const birthdays = await getUpcomingBirthdays();
+    const grouped = groupBirthdaysByPeriod(birthdays);
+    
+    console.log('=== TODAY\'S BIRTHDAYS ===');
+    grouped.today.forEach(member => {
+      const info = formatBirthdayInfo(member);
+      console.log(`🎂 ${info.name} is turning ${info.turningAge} today!`);
+    });
+    
+    console.log('\n=== THIS WEEK ===');
+    grouped.thisWeek.forEach(member => {
+      const info = formatBirthdayInfo(member);
+      console.log(`🎈 ${info.name} - ${info.birthdayDate} (${info.daysUntil} days)`);
+    });
+    
+    console.log('\n=== THIS MONTH ===');
+    grouped.thisMonth.forEach(member => {
+      const info = formatBirthdayInfo(member);
+      console.log(`📅 ${info.name} - ${info.birthdayDate} (${info.daysUntil} days)`);
+    });
+    
+  } catch (error) {
+    console.error('Error displaying birthdays:', error);
+  }
+}
+```
+</Tab>
+
+<Tab value="Python">
+```python
+import requests
+from datetime import datetime, timedelta
+from typing import List, Dict
+
+API_KEY = 'YOUR_API_KEY'
+BASE_URL = 'https://v2.jkt48connect.my.id'
+
+def get_upcoming_birthdays() -> List[Dict]:
+    """Fetch members with upcoming birthdays"""
+    url = f"{BASE_URL}/api/jkt48/birthday"
+    params = {'apikey': API_KEY}
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching birthdays: {e}")
+        raise
+
+def get_days_until_birthday(birthdate_str: str) -> int:
+    """Calculate days until next birthday"""
+    birthdate = datetime.fromisoformat(birthdate_str.replace('Z', '+00:00'))
+    today = datetime.now().date()
+    
+    # Get this year's birthday
+    this_year_birthday = birthdate.date().replace(year=today.year)
+    
+    # If birthday has passed this year, use next year
+    if this_year_birthday < today:
+        this_year_birthday = this_year_birthday.replace(year=today.year + 1)
+    
+    days_until = (this_year_birthday - today).days
+    return days_until
+
+def get_age_on_birthday(birthdate_str: str) -> int:
+    """Calculate age member will turn on birthday"""
+    birthdate = datetime.fromisoformat(birthdate_str.replace('Z', '+00:00'))
+    current_year = datetime.now().year
+    return current_year - birthdate.year
+
+def format_birthday_info(member: Dict) -> Dict:
+    """Format birthday information for display"""
+    days_until = get_days_until_birthday(member['birthdate'])
+    age = get_age_on_birthday(member['birthdate'])
+    birthday_date = datetime.fromisoformat(member['birthdate'].replace('Z', '+00:00'))
+    
+    return {
+        'name': member['name'],
+        'birthday_date': birthday_date.strftime('%B %d'),
+        'days_until': days_until,
+        'turning_age': age,
+        'is_today': days_until == 0,
+        'is_tomorrow': days_until == 1,
+        'profile_image': member['img'],
+        'profile_url': member['url_key']
+    }
+
+def group_birthdays_by_period(birthdays: List[Dict]) -> Dict:
+    """Group birthdays by time periods"""
+    today = []
+    this_week = []
+    this_month = []
+    
+    for member in birthdays:
+        days = get_days_until_birthday(member['birthdate'])
+        
+        if days == 0:
+            today.append(member)
+        elif days <= 7:
+            this_week.append(member)
+        elif days <= 30:
+            this_month.append(member)
+    
+    return {
+        'today': today,
+        'this_week': this_week,
+        'this_month': this_month
+    }
+
+def display_upcoming_birthdays():
+    """Display formatted birthday information"""
+    try:
+        birthdays = get_upcoming_birthdays()
+        grouped = group_birthdays_by_period(birthdays)
+        
+        print("=== TODAY'S BIRTHDAYS ===")
+        for member in grouped['today']:
+            info = format_birthday_info(member)
+            print(f"🎂 {info['name']} is turning {info['turning_age']} today!")
+        
+        print("\n=== THIS WEEK ===")
+        for member in grouped['this_week']:
+            info = format_birthday_info(member)
+            print(f"🎈 {info['name']} - {info['birthday_date']} ({info['days_until']} days)")
+        
+        print("\n=== THIS MONTH ===")
+        for member in grouped['this_month']:
+            info = format_birthday_info(member)
+            print(f"📅 {info['name']} - {info['birthday_date']} ({info['days_until']} days)")
+            
+    except Exception as e:
+        print(f"Error: {e}")
+
+# Usage example
+if __name__ == "__main__":
+    display_upcoming_birthdays()
+```
+</Tab>
+
+<Tab value="Go">
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "time"
+)
+
+const (
+    APIKey  = "YOUR_API_KEY"
+    BaseURL = "https://v2.jkt48connect.my.id"
+)
+
+type BirthdayMember struct {
+    Name      string `json:"name"`
+    Birthdate string `json:"birthdate"`
+    Image     string `json:"img"`
+    RoomID    int    `json:"room_id"`
+    URLKey    string `json:"url_key"`
+}
+
+type BirthdayInfo struct {
+    Name         string
+    BirthdayDate string
+    DaysUntil    int
+    TurningAge   int
+    IsToday      bool
+    IsTomorrow   bool
+    ProfileImage string
+    ProfileURL   string
+}
+
+func getUpcomingBirthdays() ([]BirthdayMember, error) {
+    url := fmt.Sprintf("%s/api/jkt48/birthday?apikey=%s", BaseURL, APIKey)
+    
+    client := &http.Client{Timeout: 30 * time.Second}
+    resp, err := client.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+    }
+    
+    var birthdays []BirthdayMember
+    err = json.NewDecoder(resp.Body).Decode(&birthdays)
+    return birthdays, err
+}
+
+func getDaysUntilBirthday(birthdateStr string) int {
+    birthdate, err := time.Parse(time.RFC3339, birthdateStr)
+    if err != nil {
+        return 0
+    }
+    
+    now := time.Now()
+    thisYear := now.Year()
+    
+    // Set birthday to this year
+    thisYearBirthday := time.Date(thisYear, birthdate.Month(), birthdate.Day(), 0, 0, 0, 0, time.UTC)
+    
+    // If birthday has passed this year, set to next year
+    if thisYearBirthday.Before(now) {
+        thisYearBirthday = thisYearBirthday.AddDate(1, 0, 0)
+    }
+    
+    duration := thisYearBirthday.Sub(now)
+    days := int(duration.Hours() / 24)
+    
+    return days
+}
+
+func getAgeOnBirthday(birthdateStr string) int {
+    birthdate, err := time.Parse(time.RFC3339, birthdateStr)
+    if err != nil {
+        return 0
+    }
+    
+    currentYear := time.Now().Year()
+    return currentYear - birthdate.Year()
+}
+
+func formatBirthdayInfo(member BirthdayMember) BirthdayInfo {
+    daysUntil := getDaysUntilBirthday(member.Birthdate)
+    age := getAgeOnBirthday(member.Birthdate)
+    
+    birthdate, _ := time.Parse(time.RFC3339, member.Birthdate)
+    birthdayDate := birthdate.Format("January 2")
+    
+    return BirthdayInfo{
+        Name:         member.Name,
+        BirthdayDate: birthdayDate,
+        DaysUntil:    daysUntil,
+        TurningAge:   age,
+        IsToday:      daysUntil == 0,
+        IsTomorrow:   daysUntil == 1,
+        ProfileImage: member.Image,
+        ProfileURL:   member.URLKey,
+    }
+}
+
+func groupBirthdaysByPeriod(birthdays []BirthdayMember) map[string][]BirthdayMember {
+    groups := map[string][]BirthdayMember{
+        "today":     {},
+        "thisWeek":  {},
+        "thisMonth": {},
+    }
+    
+    for _, member := range birthdays {
+        days := getDaysUntilBirthday(member.Birthdate)
+        
+        if days == 0 {
+            groups["today"] = append(groups["today"], member)
+        } else if days <= 7 {
+            groups["thisWeek"] = append(groups["thisWeek"], member)
+        } else if days <= 30 {
+            groups["thisMonth"] = append(groups["thisMonth"], member)
+        }
+    }
+    
+    return groups
+}
+
+func displayUpcomingBirthdays() {
+    birthdays, err := getUpcomingBirthdays()
+    if err != nil {
+        fmt.Printf("Error fetching birthdays: %v\n", err)
+        return
+    }
+    
+    grouped := groupBirthdaysByPeriod(birthdays)
+    
+    fmt.Println("=== TODAY'S BIRTHDAYS ===")
+    for _, member := range grouped["today"] {
+        info := formatBirthdayInfo(member)
+        fmt.Printf("🎂 %s is turning %d today!\n", info.Name, info.TurningAge)
+    }
+    
+    fmt.Println("\n=== THIS WEEK ===")
+    for _, member := range grouped["thisWeek"] {
+        info := formatBirthdayInfo(member)
+        fmt.Printf("🎈 %s - %s (%d days)\n", info.Name, info.BirthdayDate, info.DaysUntil)
+    }
+    
+    fmt.Println("\n=== THIS MONTH ===")
+    for _, member := range grouped["thisMonth"] {
+        info := formatBirthdayInfo(member)
+        fmt.Printf("📅 %s - %s (%d days)\n", info.Name, info.BirthdayDate, info.DaysUntil)
+    }
+}
+
+func main() {
+    displayUpcomingBirthdays()
+}
+```
+</Tab>
+
+</Tabs>
+
+## Data Structure
+
+<Callout type="info">
+Each birthday member object contains essential information for birthday tracking and celebration planning.
+</Callout>
+
+**Key Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Member's name |
+| `birthdate` | string | ISO 8601 formatted birthdate |
+| `img` | string | Profile image URL |
+| `room_id` | number | SHOWROOM room identifier |
+| `url_key` | string | URL-friendly member identifier |
+
+## Common Use Cases
+
+<Tabs items={['Birthday Reminders', 'Celebration Calendar', 'Notification System']}>
+
+<Tab value="Birthday Reminders">
+```javascript
+// Create birthday reminder system
+function createBirthdayReminders(birthdays) {
+  return birthdays.map(member => {
+    const info = formatBirthdayInfo(member);
+    
+    return {
+      memberId: member.url_key,
+      memberName: member.name,
+      reminderText: `🎂 ${member.name}'s birthday is ${info.isToday ? 'today' : `in ${info.daysUntil} day(s)`}!`,
+      priority: info.isToday ? 'high' : info.daysUntil <= 3 ? 'medium' : 'low',
+      image: member.img,
+      celebrationAge: info.turningAge
+    };
+  });
+}
+
+// Set up daily birthday checks
+async function checkDailyBirthdays() {
+  const birthdays = await getUpcomingBirthdays();
+  const todaysBirthdays = birthdays.filter(member => 
+    getDaysUntilBirthday(member.birthdate) === 0
+  );
+  
+  if (todaysBirthdays.length > 0) {
+    console.log('🎉 Birthday Alert!');
+    todaysBirthdays.forEach(member => {
+      const age = getAgeOnBirthday(member.birthdate);
+      console.log(`${member.name} is celebrating their ${age}th birthday today!`);
+    });
+  }
+}
+```
+</Tab>
+
+<Tab value="Celebration Calendar">
+```javascript
+// Build birthday calendar widget
+function buildBirthdayCalendar(birthdays) {
+  const calendar = {};
+  
+  birthdays.forEach(member => {
+    const birthDate = new Date(member.birthdate);
+    const monthKey = birthDate.getMonth();
+    const dayKey = birthDate.getDate();
+    
+    if (!calendar[monthKey]) calendar[monthKey] = {};
+    if (!calendar[monthKey][dayKey]) calendar[monthKey][dayKey] = [];
+    
+    calendar[monthKey][dayKey].push({
+      name: member.name,
+      age: getAgeOnBirthday(member.birthdate),
+      image: member.img,
+      profileUrl: member.url_key
+    });
+  });
+  
+  return calendar;
+}
+
+// Generate birthday countdown
+function generateCountdown(member) {
+  const days = getDaysUntilBirthday(member.birthdate);
+  const age = getAgeOnBirthday(member.birthdate);
+  
+  if (days === 0) return `🎂 Today! ${member.name} turns ${age}`;
+  if (days === 1) return `🎈 Tomorrow! ${member.name} turns ${age}`;
+  return `📅 ${days} days until ${member.name} turns ${age}`;
+}
+```
+</Tab>
+
+<Tab value="Notification System">
+```javascript
+// Birthday notification scheduler
+class BirthdayNotifier {
+  constructor() {
+    this.notifications = [];
+  }
+  
+  async scheduleNotifications() {
+    const birthdays = await getUpcomingBirthdays();
+    
+    birthdays.forEach(member => {
+      const days = getDaysUntilBirthday(member.birthdate);
+      
+      // Schedule notifications for 7 days, 3 days, 1 day, and day of
+      [7, 3, 1, 0].forEach(daysBefore => {
+        if (days === daysBefore) {
+          this.addNotification(member, daysBefore);
+        }
+      });
+    });
+  }
+  
+  addNotification(member, daysBefore) {
+    const age = getAgeOnBirthday(member.birthdate);
+    let message;
+    
+    switch(daysBefore) {
+      case 7:
+        message = `📅 One week until ${member.name}'s ${age}th birthday!`;
+        break;
+      case 3:
+        message = `🎈 3 days until ${member.name}'s ${age}th birthday!`;
+        break;
+      case 1:
+        message = `🎉 Tomorrow is ${member.name}'s ${age}th birthday!`;
+        break;
+      case 0:
+        message = `🎂 Happy ${age}th Birthday ${member.name}!`;
+        break;
+    }
+    
+    this.notifications.push({
+      member: member.name,
+      message,
+      priority: daysBefore === 0 ? 'high' : 'normal',
+      image: member.img
+    });
+  }
+}
+```
+</Tab>
+
+</Tabs>
+
+## Error Handling
+
+```javascript
+async function getBirthdaysSafely() {
+  try {
+    const birthdays = await getUpcomingBirthdays();
+    
+    // Validate data structure
+    if (!Array.isArray(birthdays)) {
+      throw new Error('Invalid response format: expected array');
+    }
+    
+    // Filter out invalid entries
+    return birthdays.filter(member => 
+      member.name && 
+      member.birthdate && 
+      member.img &&
+      !isNaN(Date.parse(member.birthdate))
+    );
+    
+  } catch (error) {
+    console.error('Failed to fetch birthdays:', error);
+    return []; // Return empty array as fallback
+  }
+}
+```
+
+---
+
+### Get Started
+
+Ready to build birthday celebration features? [Get your API key](https://www.jkt48connect.my.id/buyapi) and start tracking JKT48 member birthdays!

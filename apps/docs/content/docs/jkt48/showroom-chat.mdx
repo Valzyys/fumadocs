@@ -1,0 +1,822 @@
+---
+title: Showroom Chat Stream
+description: Get JKT48 live chat data from Showroom streams using JKT48Connect API
+icon: MessageCircle
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+## Introduction
+
+The JKT48Connect Showroom Chat Stream API provides access to **real-time chat messages** from JKT48 member live streams on Showroom. Use this endpoint to fetch live chat data using room_id obtained from the showroom live data API.
+
+<Cards>
+<Card icon={<MessageCircle className="text-blue-400" />} title='Real-time Chat'>
+Access live chat messages from ongoing Showroom streams.
+</Card>
+
+<Card icon={<Users className="text-green-400" />} title='User Interactions'>
+Track viewer engagement and member responses on Showroom.
+</Card>
+
+<Card icon={<Zap className="text-purple-400" />} title='Live Updates'>
+Stream chat data in real-time for interactive applications.
+</Card>
+</Cards>
+
+## Quick Start
+
+<Steps>
+<Step>
+### Get Showroom Live Data
+First, fetch showroom live data to get room_id parameter.
+```javascript
+const liveData = await getShowroomLive();
+const { room_id } = liveData.live_streams[0]; // Get from live stream
+```
+</Step>
+
+<Step>
+### Fetch Chat Stream
+```bash
+curl "https://v2.jkt48connect.my.id/api/jkt48/chat-stream-sr?room_id=123456&apikey=YOUR_API_KEY"
+```
+</Step>
+
+<Step>
+### Process Chat Messages
+Handle real-time chat data and user interactions.
+</Step>
+</Steps>
+
+## Endpoint Details
+
+<Tabs items={['Overview', 'Request', 'Response']}>
+
+<Tab value="Overview">
+**Base URL:** `https://v2.jkt48connect.my.id`  
+**Endpoint:** `/api/jkt48/chat-stream-sr`  
+**Method:** `GET`  
+**Authentication:** API Key required
+</Tab>
+
+<Tab value="Request">
+**Query Parameters:**
+- `room_id` (required): Showroom room ID from live data
+- `apikey` (required): Your API authentication key
+- `limit` (optional): Number of messages to fetch (default: 50)
+- `since` (optional): Timestamp to fetch messages since
+
+**Example:**
+```http
+GET /api/jkt48/chat-stream-sr?room_id=123456&apikey=YOUR_API_KEY HTTP/1.1
+Host: v2.jkt48connect.my.id
+```
+</Tab>
+
+<Tab value="Response">
+Returns live chat messages and metadata:
+
+```json
+{
+  "stream_info": {
+    "room_id": "123456",
+    "room_name": "Freya JKT48",
+    "title": "Weekend Chat with Freya",
+    "status": "live",
+    "viewers": 2150,
+    "duration": "01:45:30",
+    "member": {
+      "name": "Freya Jayawardana",
+      "nickname": "Freya",
+      "team": "KIII"
+    }
+  },
+  "chat_messages": [
+    {
+      "id": "sr_msg_001",
+      "user": {
+        "user_id": "12345",
+        "username": "showroom_fan",
+        "display_name": "JKT48 Fan",
+        "avatar": "https://image.showroom-live.com/avatar/12345.jpg",
+        "level": 15,
+        "is_premium": false
+      },
+      "message": "Halo Freya! Semangat live nya!",
+      "timestamp": "2025-06-29T14:30:15.000Z",
+      "type": "chat",
+      "gifts": null,
+      "stars": 0
+    },
+    {
+      "id": "sr_msg_002",
+      "user": {
+        "user_id": "67890",
+        "username": "premium_fan",
+        "display_name": "Premium Fan",
+        "avatar": "https://image.showroom-live.com/avatar/67890.jpg",
+        "level": 25,
+        "is_premium": true
+      },
+      "message": "🌟✨",
+      "timestamp": "2025-06-29T14:31:00.000Z",
+      "type": "gift",
+      "gifts": {
+        "gift_id": "star",
+        "gift_name": "Star",
+        "quantity": 5,
+        "total_stars": 50
+      },
+      "stars": 50
+    }
+  ],
+  "stats": {
+    "total_messages": 1547,
+    "unique_users": 587,
+    "messages_per_minute": 18.2,
+    "total_stars": 15420,
+    "gift_count": 67,
+    "top_gifts": ["star", "heart", "clap"]
+  }
+}
+```
+</Tab>
+
+</Tabs>
+
+## Implementation Examples
+
+<Tabs items={['JavaScript', 'Python', 'Go']}>
+
+<Tab value="JavaScript">
+```javascript
+const API_KEY = 'YOUR_API_KEY';
+const BASE_URL = 'https://v2.jkt48connect.my.id';
+
+async function getShowroomChatStream(roomId, options = {}) {
+  const params = new URLSearchParams({
+    room_id: roomId,
+    apikey: API_KEY,
+    ...options
+  });
+  
+  try {
+    const response = await fetch(
+      `${BASE_URL}/api/jkt48/chat-stream-sr?${params}`
+    );
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error('Failed to fetch showroom chat stream:', error);
+    throw error;
+  }
+}
+
+// Get recent chat messages
+async function getRecentShowroomMessages(roomId, limit = 20) {
+  return await getShowroomChatStream(roomId, { limit });
+}
+
+// Poll for new messages
+async function pollShowroomChatMessages(roomId, callback) {
+  let lastTimestamp = new Date().toISOString();
+  
+  const poll = async () => {
+    try {
+      const data = await getShowroomChatStream(roomId, { 
+        since: lastTimestamp,
+        limit: 10 
+      });
+      
+      if (data.chat_messages.length > 0) {
+        callback(data.chat_messages);
+        lastTimestamp = data.chat_messages[0].timestamp;
+      }
+    } catch (error) {
+      console.error('Polling error:', error);
+    }
+  };
+  
+  // Poll every 2 seconds
+  setInterval(poll, 2000);
+  poll(); // Initial call
+}
+
+// Format chat message
+function formatShowroomChatMessage(message) {
+  const time = new Date(message.timestamp).toLocaleTimeString('id-ID');
+  const level = `Lv.${message.user.level}`;
+  const premium = message.user.is_premium ? '💎' : '';
+  
+  return {
+    id: message.id,
+    time: time,
+    user: `${premium}${level} ${message.user.display_name}`,
+    text: message.message,
+    stars: message.stars,
+    isGift: message.type === 'gift',
+    gifts: message.gifts
+  };
+}
+
+// Display live chat
+async function displayShowroomLiveChat(roomId) {
+  try {
+    const data = await getShowroomChatStream(roomId);
+    
+    console.log(`=== SHOWROOM LIVE CHAT: ${data.stream_info.title} ===`);
+    console.log(`Member: ${data.stream_info.member.name} (${data.stream_info.member.team})`);
+    console.log(`Viewers: ${data.stream_info.viewers} | Duration: ${data.stream_info.duration}`);
+    console.log(`Messages/min: ${data.stats.messages_per_minute} | Total Stars: ${data.stats.total_stars}`);
+    console.log('Top gifts:', data.stats.top_gifts.join(' '));
+    console.log('\n--- RECENT MESSAGES ---');
+    
+    data.chat_messages.forEach(msg => {
+      const formatted = formatShowroomChatMessage(msg);
+      if (formatted.isGift) {
+        console.log(`🎁 [${formatted.time}] ${formatted.user} sent ${formatted.gifts.quantity}x ${formatted.gifts.gift_name} (${formatted.stars} stars)`);
+      } else {
+        console.log(`💬 [${formatted.time}] ${formatted.user}: ${formatted.text}`);
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error displaying showroom chat:', error);
+  }
+}
+
+// Chat analytics
+function analyzeShowroomChatData(chatData) {
+  const messages = chatData.chat_messages;
+  const giftMessages = messages.filter(m => m.type === 'gift');
+  const chatMessages = messages.filter(m => m.type === 'chat');
+  
+  return {
+    totalMessages: messages.length,
+    chatMessages: chatMessages.length,
+    giftMessages: giftMessages.length,
+    uniqueUsers: new Set(messages.map(m => m.user.user_id)).size,
+    totalStars: messages.reduce((sum, m) => sum + m.stars, 0),
+    averageUserLevel: messages.reduce((sum, m) => sum + m.user.level, 0) / messages.length,
+    premiumUsers: messages.filter(m => m.user.is_premium).length,
+    topGivers: getTopGivers(giftMessages)
+  };
+}
+
+// Real-time showroom chat monitor
+class ShowroomChatMonitor {
+  constructor(roomId) {
+    this.roomId = roomId;
+    this.isMonitoring = false;
+  }
+  
+  start(onMessage) {
+    if (this.isMonitoring) return;
+    this.isMonitoring = true;
+    
+    pollShowroomChatMessages(this.roomId, (messages) => {
+      messages.forEach(msg => {
+        const formatted = formatShowroomChatMessage(msg);
+        onMessage(formatted);
+      });
+    });
+  }
+  
+  stop() {
+    this.isMonitoring = false;
+  }
+}
+
+// Gift tracking
+function trackGifts(chatData) {
+  const giftMessages = chatData.chat_messages.filter(m => m.type === 'gift');
+  const giftStats = {};
+  
+  giftMessages.forEach(msg => {
+    const giftName = msg.gifts.gift_name;
+    if (!giftStats[giftName]) {
+      giftStats[giftName] = { count: 0, total_stars: 0 };
+    }
+    giftStats[giftName].count += msg.gifts.quantity;
+    giftStats[giftName].total_stars += msg.stars;
+  });
+  
+  return Object.entries(giftStats)
+    .sort(([, a], [, b]) => b.total_stars - a.total_stars)
+    .map(([name, stats]) => ({ name, ...stats }));
+}
+```
+</Tab>
+
+<Tab value="Python">
+```python
+import requests
+import time
+from datetime import datetime
+from collections import Counter, defaultdict
+
+API_KEY = 'YOUR_API_KEY'
+BASE_URL = 'https://v2.jkt48connect.my.id'
+
+def get_showroom_chat_stream(room_id, **options):
+    """Fetch showroom chat stream data"""
+    params = {'room_id': room_id, 'apikey': API_KEY, **options}
+    url = f"{BASE_URL}/api/jkt48/chat-stream-sr"
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching showroom chat stream: {e}")
+        raise
+
+def get_recent_showroom_messages(room_id, limit=20):
+    """Get recent showroom chat messages"""
+    return get_showroom_chat_stream(room_id, limit=limit)
+
+def format_showroom_chat_message(message):
+    """Format showroom chat message for display"""
+    time_str = datetime.fromisoformat(message['timestamp'].replace('Z', '+00:00')).strftime('%H:%M:%S')
+    level = f"Lv.{message['user']['level']}"
+    premium = '💎' if message['user']['is_premium'] else ''
+    
+    return {
+        'id': message['id'],
+        'time': time_str,
+        'user': f"{premium}{level} {message['user']['display_name']}",
+        'text': message['message'],
+        'stars': message['stars'],
+        'is_gift': message['type'] == 'gift',
+        'gifts': message.get('gifts')
+    }
+
+def display_showroom_live_chat(room_id):
+    """Display showroom live chat messages"""
+    try:
+        data = get_showroom_chat_stream(room_id)
+        
+        print(f"=== SHOWROOM LIVE CHAT: {data['stream_info']['title']} ===")
+        print(f"Member: {data['stream_info']['member']['name']} ({data['stream_info']['member']['team']})")
+        print(f"Viewers: {data['stream_info']['viewers']} | Duration: {data['stream_info']['duration']}")
+        print(f"Messages/min: {data['stats']['messages_per_minute']} | Total Stars: {data['stats']['total_stars']}")
+        print(f"Top gifts: {' '.join(data['stats']['top_gifts'])}")
+        print("\n--- RECENT MESSAGES ---")
+        
+        for msg in data['chat_messages']:
+            formatted = format_showroom_chat_message(msg)
+            if formatted['is_gift']:
+                gifts = formatted['gifts']
+                print(f"🎁 [{formatted['time']}] {formatted['user']} sent {gifts['quantity']}x {gifts['gift_name']} ({formatted['stars']} stars)")
+            else:
+                print(f"💬 [{formatted['time']}] {formatted['user']}: {formatted['text']}")
+                
+    except Exception as e:
+        print(f"Error displaying showroom chat: {e}")
+
+def monitor_showroom_chat(room_id, duration=60):
+    """Monitor showroom chat for specified duration"""
+    start_time = time.time()
+    last_timestamp = datetime.now().isoformat()
+    
+    print(f"Monitoring showroom chat for {duration} seconds...")
+    
+    while time.time() - start_time < duration:
+        try:
+            data = get_showroom_chat_stream(room_id, since=last_timestamp, limit=5)
+            
+            if data['chat_messages']:
+                for msg in data['chat_messages']:
+                    formatted = format_showroom_chat_message(msg)
+                    if formatted['is_gift']:
+                        gifts = formatted['gifts']
+                        print(f"🔴🎁 [{formatted['time']}] {formatted['user']} sent {gifts['quantity']}x {gifts['gift_name']}")
+                    else:
+                        print(f"🔴💬 [{formatted['time']}] {formatted['user']}: {formatted['text']}")
+                
+                last_timestamp = data['chat_messages'][0]['timestamp']
+            
+            time.sleep(3)  # Wait 3 seconds
+            
+        except Exception as e:
+            print(f"Monitoring error: {e}")
+            time.sleep(5)
+
+def analyze_showroom_chat_data(chat_data):
+    """Analyze showroom chat statistics"""
+    messages = chat_data['chat_messages']
+    gift_messages = [m for m in messages if m['type'] == 'gift']
+    chat_messages = [m for m in messages if m['type'] == 'chat']
+    
+    user_ids = [msg['user']['user_id'] for msg in messages]
+    user_levels = [msg['user']['level'] for msg in messages]
+    
+    return {
+        'total_messages': len(messages),
+        'chat_messages': len(chat_messages),
+        'gift_messages': len(gift_messages),
+        'unique_users': len(set(user_ids)),
+        'total_stars': sum(msg['stars'] for msg in messages),
+        'average_user_level': sum(user_levels) / len(user_levels) if user_levels else 0,
+        'premium_users': len([m for m in messages if m['user']['is_premium']]),
+        'top_gifters': get_top_gifters(gift_messages)
+    }
+
+def track_showroom_gifts(chat_data):
+    """Track gift statistics"""
+    gift_messages = [m for m in chat_data['chat_messages'] if m['type'] == 'gift']
+    gift_stats = defaultdict(lambda: {'count': 0, 'total_stars': 0})
+    
+    for msg in gift_messages:
+        gift_name = msg['gifts']['gift_name']
+        gift_stats[gift_name]['count'] += msg['gifts']['quantity']
+        gift_stats[gift_name]['total_stars'] += msg['stars']
+    
+    return sorted(
+        [{'name': name, **stats} for name, stats in gift_stats.items()],
+        key=lambda x: x['total_stars'],
+        reverse=True
+    )
+
+# Usage example
+if __name__ == "__main__":
+    # Example: Display chat for a showroom live stream
+    display_showroom_live_chat("123456")
+```
+</Tab>
+
+<Tab value="Go">
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "net/url"
+    "strconv"
+    "time"
+)
+
+const (
+    APIKey  = "YOUR_API_KEY"
+    BaseURL = "https://v2.jkt48connect.my.id"
+)
+
+type ShowroomChatStreamData struct {
+    StreamInfo   ShowroomStreamInfo `json:"stream_info"`
+    ChatMessages []ShowroomChatMessage `json:"chat_messages"`
+    Stats        ShowroomChatStats     `json:"stats"`
+}
+
+type ShowroomStreamInfo struct {
+    RoomID   string `json:"room_id"`
+    RoomName string `json:"room_name"`
+    Title    string `json:"title"`
+    Status   string `json:"status"`
+    Viewers  int    `json:"viewers"`
+    Duration string `json:"duration"`
+    Member   struct {
+        Name     string `json:"name"`
+        Nickname string `json:"nickname"`
+        Team     string `json:"team"`
+    } `json:"member"`
+}
+
+type ShowroomChatMessage struct {
+    ID        string           `json:"id"`
+    User      ShowroomChatUser `json:"user"`
+    Message   string           `json:"message"`
+    Timestamp string           `json:"timestamp"`
+    Type      string           `json:"type"`
+    Gifts     *ShowroomGift    `json:"gifts"`
+    Stars     int              `json:"stars"`
+}
+
+type ShowroomChatUser struct {
+    UserID      string `json:"user_id"`
+    Username    string `json:"username"`
+    DisplayName string `json:"display_name"`
+    Avatar      string `json:"avatar"`
+    Level       int    `json:"level"`
+    IsPremium   bool   `json:"is_premium"`
+}
+
+type ShowroomGift struct {
+    GiftID     string `json:"gift_id"`
+    GiftName   string `json:"gift_name"`
+    Quantity   int    `json:"quantity"`
+    TotalStars int    `json:"total_stars"`
+}
+
+type ShowroomChatStats struct {
+    TotalMessages      int      `json:"total_messages"`
+    UniqueUsers        int      `json:"unique_users"`
+    MessagesPerMinute  float64  `json:"messages_per_minute"`
+    TotalStars         int      `json:"total_stars"`
+    GiftCount          int      `json:"gift_count"`
+    TopGifts          []string `json:"top_gifts"`
+}
+
+func getShowroomChatStream(roomID string, options map[string]string) (*ShowroomChatStreamData, error) {
+    params := url.Values{}
+    params.Add("room_id", roomID)
+    params.Add("apikey", APIKey)
+    
+    for key, value := range options {
+        params.Add(key, value)
+    }
+    
+    url := fmt.Sprintf("%s/api/jkt48/chat-stream-sr?%s", BaseURL, params.Encode())
+    
+    client := &http.Client{Timeout: 30 * time.Second}
+    resp, err := client.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+    }
+    
+    var data ShowroomChatStreamData
+    err = json.NewDecoder(resp.Body).Decode(&data)
+    return &data, err
+}
+
+func formatShowroomChatMessage(message ShowroomChatMessage) map[string]interface{} {
+    timestamp, _ := time.Parse(time.RFC3339, message.Timestamp)
+    timeStr := timestamp.Format("15:04:05")
+    
+    level := fmt.Sprintf("Lv.%d", message.User.Level)
+    premium := ""
+    if message.User.IsPremium {
+        premium = "💎"
+    }
+    
+    return map[string]interface{}{
+        "id":      message.ID,
+        "time":    timeStr,
+        "user":    fmt.Sprintf("%s%s %s", premium, level, message.User.DisplayName),
+        "text":    message.Message,
+        "stars":   message.Stars,
+        "is_gift": message.Type == "gift",
+        "gifts":   message.Gifts,
+    }
+}
+
+func displayShowroomLiveChat(roomID string) {
+    data, err := getShowroomChatStream(roomID, nil)
+    if err != nil {
+        fmt.Printf("Error fetching showroom chat stream: %v\n", err)
+        return
+    }
+    
+    fmt.Printf("=== SHOWROOM LIVE CHAT: %s ===\n", data.StreamInfo.Title)
+    fmt.Printf("Member: %s (%s)\n", data.StreamInfo.Member.Name, data.StreamInfo.Member.Team)
+    fmt.Printf("Viewers: %d | Duration: %s\n", data.StreamInfo.Viewers, data.StreamInfo.Duration)
+    fmt.Printf("Messages/min: %.1f | Total Stars: %d\n", data.Stats.MessagesPerMinute, data.Stats.TotalStars)
+    fmt.Printf("Top gifts: %v\n", data.Stats.TopGifts)
+    fmt.Println("\n--- RECENT MESSAGES ---")
+    
+    for _, msg := range data.ChatMessages {
+        formatted := formatShowroomChatMessage(msg)
+        
+        if formatted["is_gift"].(bool) {
+            gifts := msg.Gifts
+            fmt.Printf("🎁 [%s] %s sent %dx %s (%d stars)\n", 
+                formatted["time"], 
+                formatted["user"], 
+                gifts.Quantity,
+                gifts.GiftName,
+                formatted["stars"])
+        } else {
+            fmt.Printf("💬 [%s] %s: %s\n", 
+                formatted["time"], 
+                formatted["user"], 
+                formatted["text"])
+        }
+    }
+}
+
+func monitorShowroomChat(roomID string, duration time.Duration) {
+    fmt.Printf("Monitoring showroom chat for %v...\n", duration)
+    
+    start := time.Now()
+    lastTimestamp := time.Now().Format(time.RFC3339)
+    
+    for time.Since(start) < duration {
+        options := map[string]string{
+            "since": lastTimestamp,
+            "limit": "5",
+        }
+        
+        data, err := getShowroomChatStream(roomID, options)
+        if err != nil {
+            fmt.Printf("Monitoring error: %v\n", err)
+            time.Sleep(5 * time.Second)
+            continue
+        }
+        
+        if len(data.ChatMessages) > 0 {
+            for _, msg := range data.ChatMessages {
+                formatted := formatShowroomChatMessage(msg)
+                if formatted["is_gift"].(bool) {
+                    gifts := msg.Gifts
+                    fmt.Printf("🔴🎁 [%s] %s sent %dx %s\n", 
+                        formatted["time"], 
+                        formatted["user"], 
+                        gifts.Quantity,
+                        gifts.GiftName)
+                } else {
+                    fmt.Printf("🔴💬 [%s] %s: %s\n", 
+                        formatted["time"], 
+                        formatted["user"], 
+                        formatted["text"])
+                }
+            }
+            lastTimestamp = data.ChatMessages[0].Timestamp
+        }
+        
+        time.Sleep(3 * time.Second)
+    }
+}
+
+func main() {
+    // Example: Display chat for a showroom live stream
+    displayShowroomLiveChat("123456")
+}
+```
+</Tab>
+
+</Tabs>
+
+## Real-time Integration
+
+<Tabs items={['Polling', 'Chat Monitor', 'Analytics']}>
+
+<Tab value="Polling">
+```javascript
+// Simple polling for new showroom messages
+async function startShowroomChatPolling(roomId) {
+  let lastCheck = new Date().toISOString();
+  
+  setInterval(async () => {
+    try {
+      const data = await getShowroomChatStream(roomId, { 
+        since: lastCheck, 
+        limit: 10 
+      });
+      
+      if (data.chat_messages.length > 0) {
+        console.log(`📨 ${data.chat_messages.length} new messages`);
+        data.chat_messages.forEach(msg => {
+          if (msg.type === 'gift') {
+            console.log(`🎁 ${msg.user.display_name} sent ${msg.gifts.gift_name} (${msg.stars} stars)`);
+          } else {
+            console.log(`💬 ${msg.user.display_name}: ${msg.message}`);
+          }
+        });
+        lastCheck = data.chat_messages[0].timestamp;
+      }
+    } catch (error) {
+      console.error('Showroom polling failed:', error);
+    }
+  }, 3000);
+}
+```
+</Tab>
+
+<Tab value="Chat Monitor">
+```javascript
+// Advanced showroom chat monitoring
+class ShowroomLiveChatMonitor {
+  constructor(roomId) {
+    this.roomId = roomId;
+    this.subscribers = [];
+  }
+  
+  subscribe(callback) {
+    this.subscribers.push(callback);
+  }
+  
+  async start() {
+    const data = await getShowroomChatStream(this.roomId);
+    
+    // Notify subscribers of initial data
+    this.subscribers.forEach(callback => {
+      callback('init', data);
+    });
+    
+    // Start polling for updates
+    this.poll();
+  }
+  
+  async poll() {
+    // Implementation for continuous polling
+  }
+}
+```
+</Tab>
+
+<Tab value="Analytics">
+```javascript
+// Showroom chat analytics and insights
+function generateShowroomChatAnalytics(chatData) {
+  const messages = chatData.chat_messages;
+  const giftMessages = messages.filter(m => m.type === 'gift');
+  const chatMessages = messages.filter(m => m.type === 'chat');
+  
+  return {
+    engagement: {
+      messagesPerMinute: chatData.stats.messages_per_minute,
+      giftRatio: giftMessages.length / messages.length,
+      averageStarsPerGift: giftMessages.reduce((sum, m) => sum + m.stars, 0) / giftMessages.length
+    },
+    users: {
+      total: chatData.stats.unique_users,
+      premiumUsers: messages.filter(m => m.user.is_premium).length,
+      averageLevel: messages.reduce((sum, m) => sum + m.user.level, 0) / messages.length
+    },
+    gifts: {
+      totalStars: chatData.stats.total_stars,
+      giftCount: chatData.stats.gift_count,
+      topGifts: chatData.stats.top_gifts,
+      topGivers: getTopShowroomGivers(giftMessages)
+    }
+  };
+}
+```
+</Tab>
+
+</Tabs>
+
+## Error Handling
+
+```javascript
+async function safeShowroomChatStream(roomId, options = {}) {
+  try {
+    const data = await getShowroomChatStream(roomId, options);
+    
+    // Validate response
+    if (!data.chat_messages || !Array.isArray(data.chat_messages)) {
+      throw new Error('Invalid showroom chat data structure');
+    }
+    
+    return data;
+    
+  } catch (error) {
+    console.error(`Showroom chat stream error for room ${roomId}:`, error);
+    return {
+      stream_info: { room_id: roomId, status: 'error' },
+      chat_messages: [],
+      stats: { total_messages: 0, unique_users: 0, total_stars: 0 },
+      error: error.message
+    };
+  }
+}
+```
+
+---
+
+### Integration Example
+
+Combine showroom live data and chat stream for complete experience:
+
+```javascript
+// Get showroom live streams and their chat
+async function getShowroomStreamsWithChat() {
+  const liveData = await getShowroomLive();
+  
+  const streamsWithChat = await Promise.all(
+    liveData.live_streams.map(async (stream) => {
+      const chatData = await getShowroomChatStream(stream.room_id, { limit: 10 });
+      return {
+        ...stream,
+        recentChat: chatData.chat_messages,
+        chatStats: chatData.stats
+      };
+    })
+  );
+  
+  return streamsWithChat;
+}
+
+// Monitor all active showroom streams
+async function monitorAllShowroomChats() {
+  const liveData = await getShowroomLive();
+  
+  liveData.live_streams.forEach(stream => {
+    console.log(`Starting monitor for ${stream.member.name} (Room: ${stream.room_id})`);
+    startShowroomChatPolling(stream.room_id);
+  });
+}
+```
+
+Get your API key from [JKT48Connect](https://www.jkt48connect.my.id/buyapi) and start building live showroom chat applications!

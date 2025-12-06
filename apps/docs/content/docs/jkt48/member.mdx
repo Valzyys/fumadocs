@@ -1,0 +1,591 @@
+---
+title: Members
+description: Get Complete JKT48 Members Information via JKT48Connect API
+icon: Users
+---
+
+import { Step, Steps } from 'fumadocs-ui/components/steps';
+
+## Introduction
+
+JKT48Connect Members API provides comprehensive information about **all JKT48 members** including active and graduated members. Access detailed profiles, social media links, streaming platform data, and group information for building member directories, fan applications, and analytics dashboards.
+
+<Cards>
+<Card icon={<Users className="text-blue-400" />} title='Complete Member Database'>
+Access all JKT48 members with detailed profile information.
+</Card>
+
+<Card icon={<Globe className="text-green-400" />} title='Social Media Links'>
+Get official social media accounts and streaming platform URLs.
+</Card>
+
+<Card icon={<Image className="text-purple-400" />} title='Profile Images'>
+Multiple image sources including official and alternative photos.
+</Card>
+</Cards>
+
+## Quick Start
+
+<Steps>
+<Step>
+### Get Your API Key
+Obtain your API key from [JKT48Connect](https://www.jkt48connect.my.id/buyapi).
+</Step>
+
+<Step>
+### Make API Request
+```bash
+curl "https://v2.jkt48connect.my.id/api/jkt48/members?apikey=YOUR_API_KEY"
+```
+</Step>
+
+<Step>
+### Process Response
+Handle the JSON array containing all member data.
+</Step>
+</Steps>
+
+## Endpoint Details
+
+<Tabs items={['Overview', 'Request', 'Response']}>
+
+<Tab value="Overview">
+**Base URL:** `https://v2.jkt48connect.my.id`  
+**Endpoint:** `/api/jkt48/members`  
+**Method:** `GET`  
+**Authentication:** API Key required
+</Tab>
+
+<Tab value="Request">
+**Query Parameters:**
+- `apikey` (required): Your API authentication key
+
+**Example:**
+```http
+GET /api/jkt48/members?apikey=YOUR_API_KEY HTTP/1.1
+Host: v2.jkt48connect.my.id
+```
+</Tab>
+
+<Tab value="Response">
+Returns JSON array with member objects:
+
+```json
+[
+  {
+    "_id": "65ce68ed1dd7aa2c8c0ca76c",
+    "name": "Abigail Rachel",
+    "nicknames": [
+      "Aralie"
+    ],
+    "img": "https://static.showroom-live.com/image/room/cover/7bbb128443499700909dea11a4e2d9973c9f9c74974b3dafe269ec7b6dbc3315_m.jpeg?v=1712491458",
+    "img_alt": "https://res.cloudinary.com/haymzm4wp/image/upload/v1730447278/assets/kabesha/oktober_2024/abigail_rachel.jpg",
+    "url": "aralie",
+    "group": "jkt48",
+    "socials": [
+      {
+        "title": "X",
+        "url": "https://twitter.com/Aralie_JKT48"
+      },
+      {
+        "title": "Instagram",
+        "url": "https://www.instagram.com/jkt48.aralie/"
+      },
+      {
+        "title": "TikTok",
+        "url": "https://www.tiktok.com/@jkt48.aralie/"
+      },
+      {
+        "title": "SHOWROOM",
+        "url": "https://www.showroom-live.com/JKT48_Aralie"
+      },
+      {
+        "title": "IDN",
+        "url": "https://click.idn.media/VKUf?af_dp=idnapp://profile/f001ba66-3c51-4849-9afa-13cf74eb1571&af_web_dp=https://www.idn.app/jkt48_aralie&c=web-android&deep_link_value=profile/f001ba66-3c51-4849-9afa-13cf74eb1571&pid=idnapp"
+      }
+    ],
+    "room_id": 509985,
+    "sr_exists": true,
+    "is_graduate": false,
+    "generation": "gen12-jkt48",
+    "idn_username": "jkt48_aralie"
+  }
+]
+```
+</Tab>
+
+</Tabs>
+
+## Implementation Examples
+
+<Tabs items={['JavaScript', 'Python', 'Go']}>
+
+<Tab value="JavaScript">
+```javascript
+const API_KEY = 'YOUR_API_KEY';
+const BASE_URL = 'https://v2.jkt48connect.my.id';
+
+async function getAllMembers() {
+  try {
+    const response = await fetch(`${BASE_URL}/api/jkt48/members?apikey=${API_KEY}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const members = await response.json();
+    return members;
+  } catch (error) {
+    console.error('Failed to fetch members:', error);
+    throw error;
+  }
+}
+
+// Filter active members
+function getActiveMembers(members) {
+  return members.filter(member => !member.is_graduate);
+}
+
+// Get members by generation
+function getMembersByGeneration(members, generation) {
+  return members.filter(member => member.generation === generation);
+}
+
+// Find member by nickname
+function findMemberByNickname(members, nickname) {
+  return members.find(member => 
+    member.nicknames.some(nick => 
+      nick.toLowerCase() === nickname.toLowerCase()
+    )
+  );
+}
+
+// Usage example
+async function displayMembers() {
+  const members = await getAllMembers();
+  
+  console.log(`Total members: ${members.length}`);
+  console.log(`Active members: ${getActiveMembers(members).length}`);
+  
+  // Display first few members
+  members.slice(0, 3).forEach(member => {
+    console.log(`${member.name} (${member.nicknames.join(', ')})`);
+    console.log(`Generation: ${member.generation}`);
+    console.log(`Social Media: ${member.socials.length} platforms`);
+    console.log('---');
+  });
+}
+```
+</Tab>
+
+<Tab value="Python">
+```python
+import requests
+import json
+from typing import List, Dict, Optional
+
+API_KEY = 'YOUR_API_KEY'
+BASE_URL = 'https://v2.jkt48connect.my.id'
+
+def get_all_members() -> List[Dict]:
+    """Fetch all JKT48 members"""
+    url = f"{BASE_URL}/api/jkt48/members"
+    params = {'apikey': API_KEY}
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Error fetching members: {e}")
+        raise
+
+def filter_active_members(members: List[Dict]) -> List[Dict]:
+    """Get only active (non-graduated) members"""
+    return [member for member in members if not member['is_graduate']]
+
+def get_members_by_generation(members: List[Dict], generation: str) -> List[Dict]:
+    """Filter members by generation"""
+    return [member for member in members if member['generation'] == generation]
+
+def find_member_by_nickname(members: List[Dict], nickname: str) -> Optional[Dict]:
+    """Find member by nickname"""
+    nickname_lower = nickname.lower()
+    for member in members:
+        if any(nick.lower() == nickname_lower for nick in member['nicknames']):
+            return member
+    return None
+
+def get_social_platforms(member: Dict) -> List[str]:
+    """Get list of social media platforms for a member"""
+    return [social['title'] for social in member['socials']]
+
+def display_member_info(member: Dict):
+    """Display formatted member information"""
+    print(f"Name: {member['name']}")
+    print(f"Nicknames: {', '.join(member['nicknames'])}")
+    print(f"Generation: {member['generation']}")
+    print(f"Status: {'Graduate' if member['is_graduate'] else 'Active'}")
+    print(f"SHOWROOM: {'Yes' if member['sr_exists'] else 'No'}")
+    print(f"Social Platforms: {', '.join(get_social_platforms(member))}")
+    print(f"Profile URL: {member['url']}")
+    print("-" * 50)
+
+# Usage example
+if __name__ == "__main__":
+    try:
+        members = get_all_members()
+        active_members = filter_active_members(members)
+        
+        print(f"Total Members: {len(members)}")
+        print(f"Active Members: {len(active_members)}")
+        print(f"Graduated Members: {len(members) - len(active_members)}")
+        print("=" * 50)
+        
+        # Display first 3 active members
+        for member in active_members[:3]:
+            display_member_info(member)
+            
+    except Exception as e:
+        print(f"Error: {e}")
+```
+</Tab>
+
+<Tab value="Go">
+```go
+package main
+
+import (
+    "encoding/json"
+    "fmt"
+    "net/http"
+    "strings"
+    "time"
+)
+
+const (
+    APIKey  = "YOUR_API_KEY"
+    BaseURL = "https://v2.jkt48connect.my.id"
+)
+
+type Social struct {
+    Title string `json:"title"`
+    URL   string `json:"url"`
+}
+
+type Member struct {
+    ID          string   `json:"_id"`
+    Name        string   `json:"name"`
+    Nicknames   []string `json:"nicknames"`
+    Image       string   `json:"img"`
+    ImageAlt    string   `json:"img_alt"`
+    URL         string   `json:"url"`
+    Group       string   `json:"group"`
+    Socials     []Social `json:"socials"`
+    RoomID      int      `json:"room_id"`
+    SRExists    bool     `json:"sr_exists"`
+    IsGraduate  bool     `json:"is_graduate"`
+    Generation  string   `json:"generation"`
+    IDNUsername string   `json:"idn_username"`
+}
+
+func getAllMembers() ([]Member, error) {
+    url := fmt.Sprintf("%s/api/jkt48/members?apikey=%s", BaseURL, APIKey)
+    
+    client := &http.Client{Timeout: 30 * time.Second}
+    resp, err := client.Get(url)
+    if err != nil {
+        return nil, err
+    }
+    defer resp.Body.Close()
+    
+    if resp.StatusCode != http.StatusOK {
+        return nil, fmt.Errorf("API request failed with status: %d", resp.StatusCode)
+    }
+    
+    var members []Member
+    err = json.NewDecoder(resp.Body).Decode(&members)
+    return members, err
+}
+
+func filterActiveMembers(members []Member) []Member {
+    var active []Member
+    for _, member := range members {
+        if !member.IsGraduate {
+            active = append(active, member)
+        }
+    }
+    return active
+}
+
+func getMembersByGeneration(members []Member, generation string) []Member {
+    var filtered []Member
+    for _, member := range members {
+        if member.Generation == generation {
+            filtered = append(filtered, member)
+        }
+    }
+    return filtered
+}
+
+func findMemberByNickname(members []Member, nickname string) *Member {
+    lowerNickname := strings.ToLower(nickname)
+    for _, member := range members {
+        for _, nick := range member.Nicknames {
+            if strings.ToLower(nick) == lowerNickname {
+                return &member
+            }
+        }
+    }
+    return nil
+}
+
+func getSocialPlatforms(member Member) []string {
+    var platforms []string
+    for _, social := range member.Socials {
+        platforms = append(platforms, social.Title)
+    }
+    return platforms
+}
+
+func displayMemberInfo(member Member) {
+    fmt.Printf("Name: %s\n", member.Name)
+    fmt.Printf("Nicknames: %s\n", strings.Join(member.Nicknames, ", "))
+    fmt.Printf("Generation: %s\n", member.Generation)
+    
+    status := "Active"
+    if member.IsGraduate {
+        status = "Graduate"
+    }
+    fmt.Printf("Status: %s\n", status)
+    
+    showroom := "No"
+    if member.SRExists {
+        showroom = "Yes"
+    }
+    fmt.Printf("SHOWROOM: %s\n", showroom)
+    
+    fmt.Printf("Social Platforms: %s\n", strings.Join(getSocialPlatforms(member), ", "))
+    fmt.Printf("Profile URL: %s\n", member.URL)
+    fmt.Println(strings.Repeat("-", 50))
+}
+
+func main() {
+    members, err := getAllMembers()
+    if err != nil {
+        fmt.Printf("Error fetching members: %v\n", err)
+        return
+    }
+    
+    activeMembers := filterActiveMembers(members)
+    
+    fmt.Printf("Total Members: %d\n", len(members))
+    fmt.Printf("Active Members: %d\n", len(activeMembers))
+    fmt.Printf("Graduated Members: %d\n", len(members)-len(activeMembers))
+    fmt.Println(strings.Repeat("=", 50))
+    
+    // Display first 3 active members
+    for i, member := range activeMembers {
+        if i >= 3 {
+            break
+        }
+        displayMemberInfo(member)
+    }
+}
+```
+</Tab>
+
+</Tabs>
+
+## Data Structure
+
+<Callout type="info">
+Each member object contains comprehensive profile information including social media links and platform-specific data.
+</Callout>
+
+**Key Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `_id` | string | Unique member identifier |
+| `name` | string | Full member name |
+| `nicknames` | array | List of member nicknames |
+| `img` | string | Primary profile image URL |
+| `img_alt` | string | Alternative profile image URL |
+| `url` | string | Member's profile URL slug |
+| `group` | string | Group affiliation (jkt48) |
+| `socials` | array | Social media platform links |
+| `room_id` | number | SHOWROOM room identifier |
+| `sr_exists` | boolean | SHOWROOM account status |
+| `is_graduate` | boolean | Graduation status |
+| `generation` | string | Member's generation |
+| `idn_username` | string | IDN Live username |
+
+**Social Media Object:**
+```json
+{
+  "title": "Platform Name",
+  "url": "https://platform.com/username"
+}
+```
+
+## Common Use Cases
+
+<Tabs items={['Member Directory', 'Analytics', 'Social Integration']}>
+
+<Tab value="Member Directory">
+```javascript
+// Build a member directory with filtering
+async function buildMemberDirectory() {
+  const members = await getAllMembers();
+  
+  // Group by generation
+  const byGeneration = {};
+  members.forEach(member => {
+    const gen = member.generation;
+    if (!byGeneration[gen]) byGeneration[gen] = [];
+    byGeneration[gen].push(member);
+  });
+  
+  // Create directory structure
+  const directory = {
+    total: members.length,
+    active: members.filter(m => !m.is_graduate).length,
+    graduated: members.filter(m => m.is_graduate).length,
+    generations: byGeneration
+  };
+  
+  return directory;
+}
+```
+</Tab>
+
+<Tab value="Analytics">
+```javascript
+// Generate member statistics
+function generateMemberStats(members) {
+  const stats = {
+    total: members.length,
+    active: members.filter(m => !m.is_graduate).length,
+    withShowroom: members.filter(m => m.sr_exists).length,
+    withIDN: members.filter(m => m.idn_username).length,
+    platformDistribution: {}
+  };
+  
+  // Count social platform usage
+  members.forEach(member => {
+    member.socials.forEach(social => {
+      const platform = social.title;
+      stats.platformDistribution[platform] = 
+        (stats.platformDistribution[platform] || 0) + 1;
+    });
+  });
+  
+  return stats;
+}
+```
+</Tab>
+
+<Tab value="Social Integration">
+```javascript
+// Extract social media links
+function getMemberSocialLinks(member, platform) {
+  const social = member.socials.find(s => 
+    s.title.toLowerCase() === platform.toLowerCase()
+  );
+  return social ? social.url : null;
+}
+
+// Build social media widget
+function buildSocialWidget(member) {
+  const socialIcons = {
+    'X': 'twitter-icon',
+    'Instagram': 'instagram-icon',
+    'TikTok': 'tiktok-icon',
+    'SHOWROOM': 'showroom-icon',
+    'IDN': 'idn-icon'
+  };
+  
+  return member.socials.map(social => ({
+    platform: social.title,
+    url: social.url,
+    icon: socialIcons[social.title] || 'default-icon'
+  }));
+}
+```
+</Tab>
+
+</Tabs>
+
+## Error Handling
+
+<Callout type="warn">
+Implement proper error handling and data validation when processing member data.
+</Callout>
+
+```javascript
+async function fetchMembersSafely() {
+  try {
+    const response = await fetch(`${BASE_URL}/api/jkt48/members?apikey=${API_KEY}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const members = await response.json();
+    
+    // Validate data structure
+    if (!Array.isArray(members)) {
+      throw new Error('Invalid response format: expected array');
+    }
+    
+    // Validate required fields
+    members.forEach((member, index) => {
+      if (!member.name || !member.nicknames) {
+        console.warn(`Member at index ${index} missing required fields`);
+      }
+    });
+    
+    return members;
+  } catch (error) {
+    console.error('Failed to fetch members:', error);
+    // Return empty array or cached data as fallback
+    return [];
+  }
+}
+```
+
+## Performance Tips
+
+**Optimization Strategies:**
+- Cache member data locally (data doesn't change frequently)
+- Implement pagination for large member lists in UI
+- Use lazy loading for member images
+- Filter data on client-side to reduce API calls
+- Store frequently accessed member data in local storage
+
+**Caching Example:**
+```javascript
+const CACHE_DURATION = 1000 * 60 * 60; // 1 hour
+
+async function getCachedMembers() {
+  const cached = localStorage.getItem('jkt48_members');
+  const cacheTime = localStorage.getItem('jkt48_members_time');
+  
+  if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < CACHE_DURATION) {
+    return JSON.parse(cached);
+  }
+  
+  const members = await getAllMembers();
+  localStorage.setItem('jkt48_members', JSON.stringify(members));
+  localStorage.setItem('jkt48_members_time', Date.now().toString());
+  
+  return members;
+}
+```
+
+---
+
+### Get Started
+
+Ready to build amazing member directories and fan applications? [Get your API key](https://www.jkt48connect.my.id/buyapi) and start exploring JKT48 member data!
