@@ -11,10 +11,10 @@ import { NextProvider } from 'fumadocs-core/framework/next';
 
 export const metadata = createMetadata({
   title: {
-    template: '%s | Fumadocs',
-    default: 'Fumadocs',
+    template: '%s | JKT48Connect',
+    default: 'JKT48Connect',
   },
-  description: 'The React.js documentation framework.',
+  description: 'The JKT48Connect documentation website.',
   metadataBase: baseUrl,
 });
 
