@@ -1,11 +1,7 @@
 import { DocsLayout } from 'fumadocs-ui/layouts/docs';
 import { baseOptions, linkItems, logo } from '@/lib/layout.shared';
 import { source } from '@/lib/source';
-import {
-  AISearch,
-  AISearchPanel,
-  AISearchTrigger,
-} from '@/components/ai/search';
+import { AISearchTrigger } from '@/components/ai/search';
 import 'katex/dist/katex.min.css';
 
 export default function Layout({ children }: LayoutProps<'/docs'>) {
@@ -16,14 +12,14 @@ export default function Layout({ children }: LayoutProps<'/docs'>) {
       {...base}
       tree={source.pageTree}
       // just icon items
-      links={linkItems.filter((item) => item.type === 'icon')}
+      links={[...linkItems.filter((item) => item.type === 'icon')]}
       nav={{
         ...base.nav,
         title: (
           <>
             {logo}
             <span className="font-medium in-[.uwu]:hidden max-md:hidden">
-              Fumadocs
+              JKT48Connect
             </span>
           </>
         ),
@@ -57,10 +53,7 @@ export default function Layout({ children }: LayoutProps<'/docs'>) {
     >
       {children}
 
-      <AISearch>
-        <AISearchPanel />
-        <AISearchTrigger />
-      </AISearch>
+      <AISearchTrigger />
     </DocsLayout>
   );
 }
