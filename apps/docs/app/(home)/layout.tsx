@@ -56,7 +56,7 @@ export default function Layout({ children }: LayoutProps<'/'>) {
                   </div>
                   <p className="font-medium">Getting Started</p>
                   <p className="text-fd-muted-foreground text-sm">
-                    Learn to use Fumadocs on your docs site.
+                    Learn to use JKT48Connect on your docs project.
                   </p>
                 </NavbarMenuLink>
 

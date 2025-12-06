@@ -18,7 +18,7 @@ import MainImg from './main.png';
 import OpenAPIImg from './openapi.png';
 import NotebookImg from './notebook.png';
 import { cva } from 'class-variance-authority';
-import HeroImage from './hero-preview.jpeg';
+import HeroImage from './Screenshot 2025-11-21 202204.png';
 import { useTheme } from 'next-themes';
 import dynamic from 'next/dynamic';
 
@@ -80,9 +80,9 @@ export function Hero() {
           type="4x4"
           scale={0.5}
           size={3}
-          speed={0}
-          frame={5000 * 120}
-          className="absolute animate-fd-fade-in duration-400 max-lg:bottom-[-50%] max-lg:left-[-200px] lg:top-[-5%] lg:right-0"
+          speed={visible ? 0.5 : 0}
+          rotation={270}
+          className="absolute max-lg:bottom-[-50%] max-lg:left-[-200px] animate-fd-fade-in duration-400 lg:top-[-5%] lg:right-0"
           minPixelRatio={1}
         />
       )}
@@ -102,7 +102,7 @@ export function Hero() {
 }
 
 export function CreateAppAnimation() {
-  const installCmd = 'pnpm create fumadocs-app';
+  const installCmd = 'npm install @jkt48/core';
   const tickTime = 100;
   const timeCommandEnter = installCmd.length;
   const timeCommandRun = timeCommandEnter + 3;
@@ -149,14 +149,14 @@ export function CreateAppAnimation() {
         {tick > timeCommandRun + 2 && (
           <>
             <span>│</span>
-            <span className="font-bold">◆ Choose a framework</span>
+            <span className="font-bold">◆ support</span>
           </>
         )}
         {tick > timeCommandRun + 3 && (
           <>
             <span>│ ● Next.js</span>
-            <span>│ ○ Tanstack Start</span>
-            <span>│ ○ React Router</span>
+            <span>│ ○ Nodejs</span>
+            <span>│ ○ TypeScript</span>
           </>
         )}
       </Fragment>,
@@ -273,16 +273,16 @@ export function PreviewImages(props: ComponentProps<'div'>) {
 
 const WritingTabs = [
   {
-    name: 'Writer',
-    value: 'writer',
+    name: 'RestApi',
+    value: 'restapi',
   },
   {
-    name: 'Developer',
-    value: 'developer',
+    name: 'Package',
+    value: 'npmpackage',
   },
   {
-    name: 'Automation',
-    value: 'automation',
+    name: 'Comunity',
+    value: 'comunity',
   },
 ] as const;
 
@@ -292,7 +292,7 @@ export function Writing({
   tabs: Record<(typeof WritingTabs)[number]['value'], ReactNode>;
 }) {
   const [tab, setTab] =
-    useState<(typeof WritingTabs)[number]['value']>('writer');
+    useState<(typeof WritingTabs)[number]['value']>('restapi');
 
   return (
     <div className="col-span-full my-20">
