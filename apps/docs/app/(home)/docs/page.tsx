@@ -1,42 +1,36 @@
-import { Building2, Library, Pencil } from 'lucide-react';
+import { Music, Sparkles, Package } from 'lucide-react';
 import Link, { type LinkProps } from 'next/link';
 
 export default function DocsPage() {
   return (
-    <main className="w-full max-w-page mx-auto flex flex-col flex-1 justify-center items-center px-4 py-16 text-center z-2">
+    <main className="container flex flex-col flex-1 justify-center items-center py-16 text-center z-2">
       <h1 className="mb-4 text-3xl font-semibold md:text-4xl">
         Getting Started
       </h1>
       <p className="text-fd-muted-foreground">
-        Portal to different sections of docs.
+        Portal to different sections of JKT48Connect documentation.
       </p>
       <div className="mt-8 grid grid-cols-1 gap-4 text-start md:grid-cols-2">
         {[
           {
-            name: 'Fumadocs',
+            name: 'JKT48 API',
             description:
-              'The full-powered documentation framework with an excellent UI.',
-            icon: <Building2 className="size-full" />,
-            href: '/docs/ui',
+              'Complete REST API documentation for accessing JKT48 data including members, theater, events, and more.',
+            icon: <Music className="size-full" />,
+            href: '/docs/jkt48',
           },
           {
-            name: 'Fumadocs Core',
-            description: 'The core library of Fumadocs.',
-            icon: <Library className="size-full" />,
-            href: '/docs/headless',
+            name: 'KLP48 API',
+            description: 'Specialized API for KLP48 like JKT48.',
+            icon: <Sparkles className="size-full" />,
+            href: '/docs/klp48',
           },
           {
-            name: 'Fumadocs MDX',
+            name: '@jkt48/core',
             description:
-              'The library for handling MDX in your React.js framework.',
-            icon: <Pencil className="size-full" />,
-            href: '/docs/mdx',
-          },
-          {
-            name: 'Fumadocs CLI',
-            description: 'The CLI tool for Fumadocs.',
-            icon: <Pencil className="size-full" />,
-            href: '/docs/cli',
+              'The npm package for easy integration with TypeScript support and React compatibility.',
+            icon: <Package className="size-full" />,
+            href: '/docs/package',
           },
         ].map((item) => (
           <Item key={item.name} href={item.href}>
@@ -62,7 +56,7 @@ function Icon({ children }: { children: React.ReactNode }) {
 
 function Item(props: LinkProps & { children: React.ReactNode }) {
   return (
-    <Link {...props} className="bg-fd-card rounded-2xl border p-4 shadow-lg">
+    <Link {...props} className="bg-fd-card rounded-2xl border p-4 shadow-lg hover:shadow-xl transition-shadow">
       {props.children}
     </Link>
   );
