@@ -2,11 +2,9 @@
 import {
   type ComponentProps,
   createContext,
-  type ReactNode,
   type SyntheticEvent,
   use,
   useEffect,
-  useEffectEvent,
   useMemo,
   useRef,
   useState,
@@ -15,25 +13,32 @@ import { Loader2, MessageCircleIcon, RefreshCw, Send, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { buttonVariants } from 'fumadocs-ui/components/ui/button';
 import Link from 'fumadocs-core/link';
-import { type UIMessage, useChat, type UseChatHelpers } from '@ai-sdk/react';
-import type { ProvideLinksToolSchema } from '@/lib/chat/inkeep-qa-schema';
-import type { z } from 'zod';
-import { DefaultChatTransport } from 'ai';
-import { Markdown } from './markdown';
 import { Presence } from '@radix-ui/react-presence';
+import { Markdown } from './markdown';
+
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 const Context = createContext<{
   open: boolean;
   setOpen: (open: boolean) => void;
-  chat: UseChatHelpers<UIMessage>;
+  messages: Message[];
+  sendMessage: (text: string) => Promise<void>;
+  isLoading: boolean;
+  clearMessages: () => void;
 } | null>(null);
 
 function useChatContext() {
-  return use(Context)!.chat;
+  const ctx = use(Context);
+  if (!ctx) throw new Error('useChatContext must be used within Context');
+  return ctx;
 }
 
 function Header() {
-  const { setOpen } = use(Context)!;
+  const { setOpen } = useChatContext();
 
   return (
     <div className="sticky top-0 flex items-start gap-2">
@@ -42,11 +47,11 @@ function Header() {
         <p className="text-xs text-fd-muted-foreground">
           Powered by{' '}
           <a
-            href="https://inkeep.com"
+            href="https://docs.jkt48connect.com"
             target="_blank"
             rel="noreferrer noopener"
           >
-            Inkeep AI
+            JKT48Connect AI
           </a>
         </p>
       </div>
@@ -60,7 +65,9 @@ function Header() {
             className: 'rounded-full',
           }),
         )}
-        onClick={() => setOpen(false)}
+        onClick={() => {
+          setOpen(false);
+        }}
       >
         <X />
       </button>
@@ -69,29 +76,12 @@ function Header() {
 }
 
 function SearchAIActions() {
-  const { messages, status, setMessages, regenerate } = useChatContext();
-  const isLoading = status === 'streaming';
+  const { messages, clearMessages } = useChatContext();
 
   if (messages.length === 0) return null;
 
   return (
     <>
-      {!isLoading && messages.at(-1)?.role === 'assistant' && (
-        <button
-          type="button"
-          className={cn(
-            buttonVariants({
-              color: 'secondary',
-              size: 'sm',
-              className: 'rounded-full gap-1.5',
-            }),
-          )}
-          onClick={() => regenerate()}
-        >
-          <RefreshCw className="size-4" />
-          Retry
-        </button>
-      )}
       <button
         type="button"
         className={cn(
@@ -101,7 +91,7 @@ function SearchAIActions() {
             className: 'rounded-full',
           }),
         )}
-        onClick={() => setMessages([])}
+        onClick={clearMessages}
       >
         Clear Chat
       </button>
@@ -110,22 +100,34 @@ function SearchAIActions() {
 }
 
 const StorageKeyInput = '__ai_search_input';
+
 function SearchAIInput(props: ComponentProps<'form'>) {
-  const { status, sendMessage, stop } = useChatContext();
-  const [input, setInput] = useState(
-    () => localStorage.getItem(StorageKeyInput) ?? '',
-  );
-  const isLoading = status === 'streaming' || status === 'submitted';
-  const onStart = (e?: SyntheticEvent) => {
+  const { sendMessage, isLoading } = useChatContext();
+  const [input, setInput] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem(StorageKeyInput) ?? '';
+    }
+    return '';
+  });
+
+  const onStart = async (e?: SyntheticEvent) => {
     e?.preventDefault();
-    void sendMessage({ text: input });
-    setInput('');
+    if (input.trim()) {
+      await sendMessage(input);
+      setInput('');
+    }
   };
 
-  localStorage.setItem(StorageKeyInput, input);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(StorageKeyInput, input);
+    }
+  }, [input]);
 
   useEffect(() => {
-    if (isLoading) document.getElementById('nd-ai-input')?.focus();
+    if (isLoading) {
+      document.getElementById('nd-ai-input')?.focus();
+    }
   }, [isLoading]);
 
   return (
@@ -139,46 +141,33 @@ function SearchAIInput(props: ComponentProps<'form'>) {
         placeholder={isLoading ? 'AI is answering...' : 'Ask a question'}
         autoFocus
         className="p-3"
-        disabled={status === 'streaming' || status === 'submitted'}
+        disabled={isLoading}
         onChange={(e) => {
           setInput(e.target.value);
         }}
         onKeyDown={(event) => {
           if (!event.shiftKey && event.key === 'Enter') {
-            onStart(event);
+            void onStart(event);
           }
         }}
       />
-      {isLoading ? (
-        <button
-          key="bn"
-          type="button"
-          className={cn(
-            buttonVariants({
-              color: 'secondary',
-              className: 'transition-all rounded-full mt-2 gap-2',
-            }),
-          )}
-          onClick={stop}
-        >
-          <Loader2 className="size-4 animate-spin text-fd-muted-foreground" />
-          Abort Answer
-        </button>
-      ) : (
-        <button
-          key="bn"
-          type="submit"
-          className={cn(
-            buttonVariants({
-              color: 'secondary',
-              className: 'transition-all rounded-full mt-2',
-            }),
-          )}
-          disabled={input.length === 0}
-        >
+      <button
+        key="bn"
+        type="submit"
+        className={cn(
+          buttonVariants({
+            color: 'secondary',
+            className: 'transition-all rounded-full mt-2',
+          }),
+        )}
+        disabled={input.length === 0 || isLoading}
+      >
+        {isLoading ? (
+          <Loader2 className="size-4 animate-spin" />
+        ) : (
           <Send className="size-4" />
-        </button>
-      )}
+        )}
+      </button>
     </form>
   );
 }
@@ -188,13 +177,14 @@ function List(props: Omit<ComponentProps<'div'>, 'dir'>) {
 
   useEffect(() => {
     if (!containerRef.current) return;
+    
     function callback() {
       const container = containerRef.current;
       if (!container) return;
 
       container.scrollTo({
         top: container.scrollHeight,
-        behavior: 'instant',
+        behavior: 'smooth',
       });
     }
 
@@ -249,27 +239,13 @@ function Input(props: ComponentProps<'textarea'>) {
 
 const roleName: Record<string, string> = {
   user: 'you',
-  assistant: 'fumadocs',
+  assistant: 'jkt48connect',
 };
 
 function Message({
   message,
   ...props
-}: { message: UIMessage } & ComponentProps<'div'>) {
-  let markdown = '';
-  let links: z.infer<typeof ProvideLinksToolSchema>['links'] = [];
-
-  for (const part of message.parts ?? []) {
-    if (part.type === 'text') {
-      markdown += part.text;
-      continue;
-    }
-
-    if (part.type === 'tool-provideLinks' && part.input) {
-      links = (part.input as z.infer<typeof ProvideLinksToolSchema>).links;
-    }
-  }
-
+}: { message: Message } & ComponentProps<'div'>) {
   return (
     <div {...props}>
       <p
@@ -281,67 +257,68 @@ function Message({
         {roleName[message.role] ?? 'unknown'}
       </p>
       <div className="prose text-sm">
-        <Markdown text={markdown} />
+        <Markdown text={message.content} />
       </div>
-      {links && links.length > 0 && (
-        <div className="mt-2 flex flex-row flex-wrap items-center gap-1">
-          {links.map((item, i) => (
-            <Link
-              key={i}
-              href={item.url}
-              className="block text-xs rounded-lg border p-3 hover:bg-fd-accent hover:text-fd-accent-foreground"
-            >
-              <p className="font-medium">{item.title}</p>
-              <p className="text-fd-muted-foreground">Reference {item.label}</p>
-            </Link>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
 
-export function AISearch({ children }: { children: ReactNode }) {
-  const [open, setOpen] = useState(false);
-  const chat = useChat({
-    id: 'search',
-    transport: new DefaultChatTransport({
-      api: '/api/chat',
-    }),
-  });
-
-  return (
-    <Context value={useMemo(() => ({ chat, open, setOpen }), [chat, open])}>
-      {children}
-    </Context>
-  );
-}
-
 export function AISearchTrigger() {
-  const { open, setOpen } = use(Context)!;
+  const [open, setOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  return (
-    <button
-      className={cn(
-        buttonVariants({
-          variant: 'secondary',
+  const sendMessage = async (text: string) => {
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: 'user',
+      content: text,
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [...messages, userMessage],
         }),
-        'fixed bottom-4 gap-3 w-24 end-[calc(--spacing(4)+var(--removed-body-scroll-bar-size,0px))] text-fd-muted-foreground rounded-2xl shadow-lg z-20 transition-[translate,opacity]',
-        open && 'translate-y-10 opacity-0',
-      )}
-      onClick={() => setOpen(true)}
-    >
-      <MessageCircleIcon className="size-4.5" />
-      Ask AI
-    </button>
-  );
-}
+      });
 
-export function AISearchPanel() {
-  const { open, setOpen } = use(Context)!;
-  const chat = useChatContext();
+      const data = await response.json();
 
-  const onKeyPress = useEffectEvent((e: KeyboardEvent) => {
+      if (data.success) {
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: data.result,
+        };
+        setMessages((prev) => [...prev, assistantMessage]);
+      } else {
+        throw new Error(data.error || 'Failed to get response');
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: 'assistant',
+        content: 'Maaf, terjadi kesalahan. Silakan coba lagi.',
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const clearMessages = () => {
+    setMessages([]);
+  };
+
+  const onKeyPress = (e: KeyboardEvent) => {
     if (e.key === 'Escape' && open) {
       setOpen(false);
       e.preventDefault();
@@ -351,78 +328,93 @@ export function AISearchPanel() {
       setOpen(true);
       e.preventDefault();
     }
-  });
+  };
 
+  const onKeyPressRef = useRef(onKeyPress);
+  onKeyPressRef.current = onKeyPress;
+  
   useEffect(() => {
-    window.addEventListener('keydown', onKeyPress);
-    return () => window.removeEventListener('keydown', onKeyPress);
+    const listener = (e: KeyboardEvent) => {
+      onKeyPressRef.current(e);
+    };
+    window.addEventListener('keydown', listener);
+    return () => {
+      window.removeEventListener('keydown', listener);
+    };
   }, []);
 
+  const contextValue = useMemo(
+    () => ({ open, setOpen, messages, sendMessage, isLoading, clearMessages }),
+    [open, messages, isLoading],
+  );
+
   return (
-    <>
+    <Context value={contextValue}>
       <style>
         {`
         @keyframes ask-ai-open {
           from {
-            width: 0px;
-          }
-          to {
-            width: var(--ai-chat-width);
+            translate: 100% 0;
           }
         }
+        
         @keyframes ask-ai-close {
-          from {
-            width: var(--ai-chat-width);
-          }
           to {
-            width: 0px;
+            translate: 100% 0;
+            opacity: 0;
           }
         }`}
       </style>
       <Presence present={open}>
         <div
-          data-state={open ? 'open' : 'closed'}
-          className="fixed inset-0 z-30 backdrop-blur-xs bg-fd-overlay data-[state=open]:animate-fd-fade-in data-[state=closed]:animate-fd-fade-out lg:hidden"
-          onClick={() => setOpen(false)}
-        />
-      </Presence>
-      <Presence present={open}>
-        <div
           className={cn(
-            'overflow-hidden z-30 bg-fd-popover text-fd-popover-foreground [--ai-chat-width:400px] xl:[--ai-chat-width:460px]',
-            'max-lg:fixed max-lg:inset-x-2 max-lg:top-4 max-lg:border max-lg:rounded-2xl max-lg:shadow-xl',
-            'lg:sticky lg:top-0 lg:h-dvh lg:border-s  lg:ms-auto lg:in-[#nd-docs-layout]:[grid-area:toc] lg:in-[#nd-notebook-layout]:row-span-full lg:in-[#nd-notebook-layout]:col-start-5',
+            'fixed flex flex-col inset-y-2 p-2 bg-fd-popover text-fd-popover-foreground border rounded-2xl shadow-lg z-30 sm:w-[460px] sm:end-2 max-sm:inset-x-2',
             open
-              ? 'animate-fd-dialog-in lg:animate-[ask-ai-open_200ms]'
-              : 'animate-fd-dialog-out lg:animate-[ask-ai-close_200ms]',
+              ? 'animate-[ask-ai-open_300ms]'
+              : 'animate-[ask-ai-close_300ms]',
           )}
         >
-          <div className="flex flex-col p-2 size-full max-lg:max-h-[80dvh] lg:w-(--ai-chat-width) xl:p-4">
-            <Header />
-            <List
-              className="px-3 py-4 flex-1 overscroll-contain"
-              style={{
-                maskImage:
-                  'linear-gradient(to bottom, transparent, white 1rem, white calc(100% - 1rem), transparent 100%)',
-              }}
-            >
-              <div className="flex flex-col gap-4">
-                {chat.messages
-                  .filter((msg) => msg.role !== 'system')
-                  .map((item) => (
-                    <Message key={item.id} message={item} />
-                  ))}
-              </div>
-            </List>
-            <div className="rounded-xl border bg-fd-card text-fd-card-foreground has-focus-visible:ring-2 has-focus-visible:ring-fd-ring">
-              <SearchAIInput />
-              <div className="flex items-center gap-1.5 p-1 empty:hidden">
-                <SearchAIActions />
-              </div>
+          <Header />
+          <List
+            className="px-3 py-4 flex-1 overscroll-contain"
+            style={{
+              maskImage:
+                'linear-gradient(to bottom, transparent, white 1rem, white calc(100% - 1rem), transparent 100%)',
+            }}
+          >
+            <div className="flex flex-col gap-4">
+              {messages.map((item) => (
+                <Message key={item.id} message={item} />
+              ))}
+              {isLoading && (
+                <div className="flex items-center gap-2 text-sm text-fd-muted-foreground">
+                  <Loader2 className="size-4 animate-spin" />
+                  <span>Thinking...</span>
+                </div>
+              )}
+            </div>
+          </List>
+          <div className="rounded-xl border bg-fd-card text-fd-card-foreground has-focus-visible:ring-2 has-focus-visible:ring-fd-ring">
+            <SearchAIInput />
+            <div className="flex items-center gap-1.5 p-1 empty:hidden">
+              <SearchAIActions />
             </div>
           </div>
         </div>
       </Presence>
-    </>
+      <button
+        className={cn(
+          'fixed flex items-center gap-2 bottom-4 bg-fd-secondary px-2 gap-3 w-24 h-10 text-sm font-medium text-fd-muted-foreground rounded-2xl border shadow-lg z-20 transition-[translate,opacity]',
+          'end-[calc(var(--removed-body-scroll-bar-size,0px)+var(--fd-layout-offset)+1rem)]',
+          open && 'translate-y-10 opacity-0',
+        )}
+        onClick={() => {
+          setOpen(true);
+        }}
+      >
+        <MessageCircleIcon className="size-4.5" />
+        Ask AI
+      </button>
+    </Context>
   );
 }
