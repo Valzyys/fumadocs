@@ -20,6 +20,7 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  isStreaming?: boolean;
 }
 
 const Context = createContext<{
@@ -246,6 +247,33 @@ function Message({
   message,
   ...props
 }: { message: Message } & ComponentProps<'div'>) {
+  const [displayedContent, setDisplayedContent] = useState('');
+  const [isStreamComplete, setIsStreamComplete] = useState(!message.isStreaming);
+
+  useEffect(() => {
+    if (!message.isStreaming || isStreamComplete) {
+      setDisplayedContent(message.content);
+      return;
+    }
+
+    let currentIndex = 0;
+    const fullContent = message.content;
+    
+    const streamInterval = setInterval(() => {
+      if (currentIndex < fullContent.length) {
+        // Stream 2-4 characters at a time for smoother effect
+        const charsToAdd = Math.min(Math.floor(Math.random() * 3) + 2, fullContent.length - currentIndex);
+        currentIndex += charsToAdd;
+        setDisplayedContent(fullContent.slice(0, currentIndex));
+      } else {
+        setIsStreamComplete(true);
+        clearInterval(streamInterval);
+      }
+    }, 30); // Speed: 30ms per update
+
+    return () => clearInterval(streamInterval);
+  }, [message.content, message.isStreaming, isStreamComplete]);
+
   return (
     <div {...props}>
       <p
@@ -257,7 +285,10 @@ function Message({
         {roleName[message.role] ?? 'unknown'}
       </p>
       <div className="prose text-sm">
-        <Markdown text={message.content} />
+        <Markdown text={displayedContent} />
+        {message.isStreaming && !isStreamComplete && (
+          <span className="inline-block w-1.5 h-4 bg-fd-primary animate-pulse ml-0.5" />
+        )}
       </div>
     </div>
   );
@@ -296,8 +327,18 @@ export function AISearchTrigger() {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
           content: data.result,
+          isStreaming: true,
         };
         setMessages((prev) => [...prev, assistantMessage]);
+        
+        // Mark streaming as complete after 3 seconds (adjust based on typical response length)
+        setTimeout(() => {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === assistantMessage.id ? { ...msg, isStreaming: false } : msg
+            )
+          );
+        }, 3000);
       } else {
         throw new Error(data.error || 'Failed to get response');
       }
@@ -307,6 +348,7 @@ export function AISearchTrigger() {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: 'Maaf, terjadi kesalahan. Silakan coba lagi.',
+        isStreaming: false,
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
@@ -416,4 +458,3 @@ export function AISearchTrigger() {
       </button>
     </Context>
   );
-}
