@@ -404,8 +404,7 @@ export function AISearchTrigger() {
       </Presence>
       <button
         className={cn(
-          'fixed flex items-center gap-2 bottom-4 bg-fd-secondary px-2 gap-3 w-24 h-10 text-sm font-medium text-fd-muted-foreground rounded-2xl border shadow-lg z-20 transition-[translate,opacity]',
-          'end-[calc(var(--removed-body-scroll-bar-size,0px)+var(--fd-layout-offset)+1rem)]',
+          'fixed flex items-center gap-2 bottom-4 right-4 bg-fd-secondary px-2 gap-3 w-24 h-10 text-sm font-medium text-fd-muted-foreground rounded-2xl border shadow-lg z-20 transition-[translate,opacity]',
           open && 'translate-y-10 opacity-0',
         )}
         onClick={() => {
