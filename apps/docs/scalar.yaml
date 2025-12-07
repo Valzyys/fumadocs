@@ -1,991 +1,934 @@
 openapi: 3.1.1
 info:
-  title: Scalar Galaxy
+  title: JKT48Connect API
   description: |
-    The Scalar Galaxy is an example OpenAPI specification to test OpenAPI tools and libraries. It’s a fictional universe with fictional planets and fictional data. Get all the data for [all planets](#tag/planets/GET/planets).
+    The JKT48Connect API provides access to various data related to JKT48 members, live streams, news, events, theater schedules, and video call sessions. 
+    
+    ## Authentication
+    
+    This API supports two authentication methods:
+    1. **API Key (Query Parameter)** - Standard authentication using `apikey` query parameter
+    2. **Priority Token (Header)** - Enhanced authentication using `x-priority-token` header for priority access
+    
+    You can use either authentication method, but Priority Token is recommended for better performance and priority handling.
 
     ## Resources
 
-    * https://github.com/scalar/scalar
-    * https://github.com/OAI/OpenAPI-Specification
-    * https://scalar.com
-
-    ## Markdown Support
-
-    All descriptions *can* contain ~~tons of text~~ **Markdown**. [If GitHub supports the syntax](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax), chances are we’re supporting it, too. You can even create [internal links to reference endpoints](#tag/authentication/POST/user/signup).
-
-    <details>
-      <summary>Examples</summary>
-
-      **Blockquotes**
-
-      > I love OpenAPI. <3
-
-      **Tables**
-
-      | Feature          | Availability |
-      | ---------------- | ------------ |
-      | Markdown Support | ✓            |
-
-      **Accordion**
-
-      ```html
-      <details>
-        <summary>Using Details Tags</summary>
-        <p>HTML Example</p>
-      </details>
-      ```
-
-      **Images**
-
-      Yes, there’s support for images, too!
-
-      ![Empty placeholder image showing the width/height](https://images.placeholders.dev/?width=1280&height=720)
-
-      **Alerts**
-
-      > [!tip]
-      > You can now use markdown alerts in your descriptions.
-
-    </details>
-  version: 1.0.0
+    * https://v2.jkt48connect.com/api
+  version: 1.2.0
   contact:
-    name: Marc from Scalar
-    url: https://scalar.com
-    email: marc@scalar.com
-  license:
-    name: MIT
-    url: https://opensource.org/license/MIT
-externalDocs:
-  description: Documentation
-  url: https://github.com/scalar/scalar
+    name: JKT48Connect
+    url: https://v2.jkt48connect.com/api
 servers:
-  - url: https://galaxy.scalar.com
-  - url: '{protocol}://void.scalar.com/{path}'
-    description: Responds with your request data
-    variables:
-      protocol:
-        enum:
-          - https
-        default: https
-      path:
-        default: ''
+  - url: https://v2.jkt48connect.com/api
 security:
-  - bearerAuth: []
-  - basicAuth: []
   - apiKeyQuery: []
-  - apiKeyHeader: []
-  - apiKeyCookie: []
-  - oAuth2: []
-  - openIdConnect: []
+  - priorityToken: []
 tags:
-  - name: Authentication
-    description:
-      Some endpoints are public, but some require authentication. We provide
-      all the required endpoints to create an account and authorize yourself.
-  - name: Planets
-    description: Everything about planets
+  - name: Members
+    description: JKT48 member information and details
+  - name: Live Streams
+    description: Current and recent live streams across platforms
+  - name: Content
+    description: YouTube videos and replays
+  - name: News & Events
+    description: News articles and upcoming events
+  - name: Theater
+    description: Theater schedules and performances
+  - name: Video Call
+    description: JKT48 video call sessions and schedules
+  - name: Chat
+    description: Live stream chat functionality
+
 paths:
-  '/planets':
+  '/jkt48/members':
     get:
       tags:
-        - Planets
-      summary: Get all planets
-      description: It’s easy to say you know them all, but do you really? Retrieve all the planets and check whether you missed one.
-      operationId: getAllData
+        - Members
+      summary: Get all JKT48 members
+      description: Retrieve a list of all JKT48 members.
+      operationId: getMembers
       security:
-        - {}
-      parameters:
-        - $ref: '#/components/parameters/limit'
-        - $ref: '#/components/parameters/offset'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - type: object
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Planet'
-                  - $ref: '#/components/schemas/PaginatedResource'
-            application/xml:
-              schema:
-                allOf:
-                  - type: object
-                    xml:
-                      name: planets
-                    properties:
-                      data:
-                        type: array
-                        items:
-                          $ref: '#/components/schemas/Planet'
-                  - $ref: '#/components/schemas/PaginatedResource'
-    post:
-      tags:
-        - Planets
-      summary: Create a planet
-      description: Time to play god and create a new planet. What do you think? Ah, don’t think too much. What could go wrong anyway?
-      operationId: createPlanet
-      callbacks:
-        planetCreated:
-          '{$request.body#/successCallbackUrl}':
-            post:
-              requestBody:
-                description: Information about the newly created planet
-                content:
-                  application/json:
-                    schema:
-                      $ref: '#/components/schemas/Planet'
-              responses:
-                '200':
-                  description: Your server returns this code if it accepts the callback
-                '204':
-                  description: Your server should return this HTTP status code if no longer interested in further updates
-          '{$request.body#/failureCallbackUrl}':
-            post:
-              requestBody:
-                description: Information about which fields failed to validate
-                content:
-                  application/json:
-                    schema:
-                      $ref: '#/components/schemas/Planet'
-              responses:
-                '200':
-                  description: Your server returns this code if it accepts the callback
-        planetExploded:
-          '{$request.body#/successCallbackUrl}':
-            post:
-              requestBody:
-                description: Information about the newly exploded planet
-                content:
-                  application/json:
-                    schema:
-                      $ref: '#/components/schemas/Planet'
-              responses:
-                '200':
-                  description: Your server returns this code if it accepts the callback
-      requestBody:
-        description: Planet
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Planet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Planet'
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Planet'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Planet'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-  '/planets/{planetId}':
-    get:
-      tags:
-        - Planets
-      summary: Get a planet
-      description: You’ll better learn a little bit more about the planets. It might come in handy once space travel is available for everyone.
-      operationId: getPlanet
-      security:
-        - {}
-      parameters:
-        - $ref: '#/components/parameters/planetId'
-      responses:
-        '200':
-          description: Planet Found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Planet'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Planet'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    put:
-      tags:
-        - Planets
-      summary: Update a planet
-      description: Sometimes you make mistakes, that's fine. No worries, you can update all planets.
-      operationId: updatePlanet
-      requestBody:
-        description: New information about the planet
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Planet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Planet'
-      parameters:
-        - $ref: '#/components/parameters/planetId'
-      responses:
-        '200':
-          description: OK
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Planet'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Planet'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    delete:
-      tags:
-        - Planets
-      summary: Delete a planet
-      operationId: deletePlanet
-      description:
-        This endpoint was used to delete planets. Unfortunately, that caused
-        a lot of trouble for planets with life. So, this endpoint is now deprecated
-        and should not be used anymore.
-      x-scalar-stability: experimental
-      parameters:
-        - $ref: '#/components/parameters/planetId'
-      responses:
-        '204':
-          description: No Content
-        '404':
-          $ref: '#/components/responses/NotFound'
-  '/planets/{planetId}/image':
-    post:
-      tags:
-        - Planets
-      summary: Upload an image to a planet
-      description: Got a crazy good photo of a planet? Share it with the world!
-      operationId: uploadImage
-      parameters:
-        - $ref: '#/components/parameters/planetId'
-      requestBody:
-        description: Image to upload
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                image:
-                  type: string
-                  format: binary
-                  description: The image file to upload
-                  examples:
-                    - '@mars.jpg'
-                    - '@jupiter.png'
-      responses:
-        '200':
-          $ref: '#/components/responses/ImageUploaded'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '404':
-          $ref: '#/components/responses/NotFound'
-  '/user/signup':
-    post:
-      tags:
-        - Authentication
-      summary: Create a user
-      description: Time to create a user account, eh?
-      operationId: createUser
-      security:
-        - {}
-      requestBody:
-        description: User to create
-        content:
-          application/json:
-            schema:
-              allOf:
-                - $ref: '#/components/schemas/User'
-                - $ref: '#/components/schemas/Credentials'
-            examples:
-              Marc:
-                value:
-                  name: Marc
-                  email: marc@scalar.com
-                  password: i-love-scalar
-              Cam:
-                value:
-                  name: Cam
-                  email: cam@scalar.com
-                  password: scalar-is-cool
-          application/xml:
-            schema:
-              allOf:
-                - $ref: '#/components/schemas/User'
-                - $ref: '#/components/schemas/Credentials'
-            examples:
-              Marc:
-                value:
-                  name: Marc
-                  email: marc@scalar.com
-                  password: i-love-scalar
-              Cam:
-                value:
-                  name: Cam
-                  email: cam@scalar.com
-                  password: scalar-is-cool
-      responses:
-        '201':
-          description: Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/User'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/User'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '409':
-          $ref: '#/components/responses/Conflict'
-        '422':
-          $ref: '#/components/responses/UnprocessableEntity'
-  '/auth/token':
-    post:
-      tags:
-        - Authentication
-      summary: Get a token
-      description: Yeah, this is the boring security stuff. Just get your super secret token and move on.
-      operationId: getToken
-      security:
-        - {}
-      requestBody:
-        description: Credentials to authenticate a user
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Credentials'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Credentials'
-      responses:
-        '201':
-          description: Token Created
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Token'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/Token'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-  '/me':
-    get:
-      tags:
-        - Authentication
-      summary: Get authenticated user
-      description: Find yourself they say. That’s what you can do here.
-      operationId: getMe
-      security:
-        - basicAuth: []
-        - oAuth2:
-            - read:account
-        - bearerAuth: []
-        - apiKeyHeader: []
         - apiKeyQuery: []
+        - priorityToken: []
       responses:
         '200':
           description: OK
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
-            application/xml:
-              schema:
-                $ref: '#/components/schemas/User'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
-webhooks:
-  newPlanet:
-    post:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Member'
+
+  '/jkt48/member/{name}':
+    get:
       tags:
-        - Planets
-      requestBody:
-        description: Information about a new planet
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/Planet'
-          application/xml:
-            schema:
-              $ref: '#/components/schemas/Planet'
+        - Members
+      summary: Get JKT48 member details
+      description: Retrieve detailed information about a specific JKT48 member.
+      operationId: getMemberDetail
+      parameters:
+        - name: name
+          in: path
+          required: true
+          description: The name of the member.
+          schema:
+            type: string
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
       responses:
         '200':
-          description:
-            Return a 200 status to indicate that the data was received
-            successfully
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MemberDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  '/jkt48/birthday':
+    get:
+      tags:
+        - Members
+      summary: Get JKT48 member birthdays
+      description: Retrieve upcoming or recent JKT48 member birthdays.
+      operationId: getBirthdays
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Birthday'
+
+  '/jkt48/live':
+    get:
+      tags:
+        - Live Streams
+      summary: Get current JKT48 live streams
+      description: Retrieve a list of currently active JKT48 live streams across all platforms.
+      operationId: getCurrentLives
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LiveStream'
+
+  '/jkt48/live/youtube':
+    get:
+      tags:
+        - Live Streams
+      summary: Get JKT48 YouTube lives
+      description: Retrieve a list of currently active JKT48 YouTube live streams.
+      operationId: getYouTubeLives
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/YouTubeLive'
+
+  '/jkt48/live/idn':
+    get:
+      tags:
+        - Live Streams
+      summary: Get JKT48 IDN lives
+      description: Retrieve a list of currently active JKT48 IDN live streams.
+      operationId: getIDNLives
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/IDNLive'
+
+  '/jkt48/live/showroom':
+    get:
+      tags:
+        - Live Streams
+      summary: Get JKT48 Showroom lives
+      description: Retrieve a list of currently active JKT48 Showroom live streams.
+      operationId: getShowroomLives
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ShowroomLive'
+
+  '/jkt48/recent':
+    get:
+      tags:
+        - Live Streams
+      summary: Get recent JKT48 live streams
+      description: Retrieve a list of recently finished JKT48 live streams.
+      operationId: getRecentLives
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RecentLive'
+
+  '/jkt48/recent/{liveId}':
+    get:
+      tags:
+        - Live Streams
+      summary: Get details of a recent JKT48 live stream
+      description: Retrieve detailed information about a specific recent JKT48 live stream.
+      operationId: getRecentDetail
+      parameters:
+        - name: liveId
+          in: path
+          required: true
+          description: The ID of the live stream.
+          schema:
+            type: string
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecentLiveDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  '/jkt48/replay':
+    get:
+      tags:
+        - Content
+      summary: Get JKT48 live stream replays
+      description: Retrieve a list of available JKT48 live stream replays.
+      operationId: getReplays
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Replay'
+
+  '/jkt48/youtube':
+    get:
+      tags:
+        - Content
+      summary: Get JKT48 YouTube videos
+      description: Retrieve information about JKT48 YouTube videos.
+      operationId: getYouTubeVideos
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/YouTubeVideo'
+
+  '/jkt48/events':
+    get:
+      tags:
+        - News & Events
+      summary: Get JKT48 events
+      description: Retrieve a list of JKT48 events.
+      operationId: getEvents
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+
+  '/jkt48/news':
+    get:
+      tags:
+        - News & Events
+      summary: Get JKT48 news
+      description: Retrieve a list of JKT48 news articles.
+      operationId: getNews
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/News'
+
+  '/jkt48/news/{id}':
+    get:
+      tags:
+        - News & Events
+      summary: Get JKT48 news detail
+      description: Retrieve detailed information about a specific JKT48 news article.
+      operationId: getNewsDetail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the news article.
+          schema:
+            type: integer
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NewsDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  '/jkt48/theater':
+    get:
+      tags:
+        - Theater
+      summary: Get JKT48 theater schedules
+      description: Retrieve upcoming JKT48 theater schedules.
+      operationId: getTheater
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Theater'
+
+  '/jkt48/theater/{id}':
+    get:
+      tags:
+        - Theater
+      summary: Get JKT48 theater detail
+      description: Retrieve detailed information about a specific JKT48 theater schedule.
+      operationId: getTheaterDetail
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the theater schedule.
+          schema:
+            type: integer
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TheaterDetail'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  '/jkt48/videocall':
+    get:
+      tags:
+        - Video Call
+      summary: Get JKT48 video call sessions
+      description: |
+        Retrieve JKT48 video call session data with optional filtering.
+        All parameters are optional - if no parameters are provided, all video call data will be returned.
+        
+        **Example usage:**
+        - `/jkt48/videocall` - All video call data (default)
+        - `/jkt48/videocall?date=16` - Sessions on date 16
+        - `/jkt48/videocall?sesi=1` - All session 1 data
+        - `/jkt48/videocall?member=Adeline` - All sessions with Adeline (partial match)
+        - `/jkt48/videocall?date=16&sesi=1` - Session 1 on date 16
+        - `/jkt48/videocall?member=Adeline&sesi=2` - Session 2 with Adeline
+      operationId: getVideocalls
+      parameters:
+        - name: sesi
+          in: query
+          required: false
+          description: Optional filter by session number (1, 2, 3, etc.). Leave empty for all sessions.
+          schema:
+            type: integer
+          allowEmptyValue: true
+        - name: date
+          in: query
+          required: false
+          description: Optional filter by date (format 13, 14, 15, etc.). Leave empty for all dates.
+          schema:
+            type: integer
+          allowEmptyValue: true
+        - name: member
+          in: query
+          required: false
+          description: Optional filter by member name (partial match). Leave empty for all members.
+          schema:
+            type: string
+          allowEmptyValue: true
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideocallResponse'
+
+  '/jkt48/videocall/today':
+    get:
+      tags:
+        - Video Call
+      summary: Get today's JKT48 video call sessions
+      description: |
+        Retrieve today's JKT48 video call schedule with real-time status for each session.
+        Shows statistics and countdown information for upcoming sessions.
+      operationId: getTodayVideocalls
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TodayVideocallResponse'
+
+  '/jkt48/chat-stream':
+    get:
+      tags:
+        - Chat
+      summary: Get chat stream (JKT48)
+      description: Retrieve chat messages for a specific JKT48 live stream.
+      operationId: getChatStream
+      parameters:
+        - name: username
+          in: query
+          required: true
+          description: The username associated with the live stream.
+          schema:
+            type: string
+        - name: slug
+          in: query
+          required: true
+          description: The slug of the live stream.
+          schema:
+            type: string
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMessage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  '/jkt48/chat-stream-sr':
+    get:
+      tags:
+        - Chat
+      summary: Get Showroom chat stream (JKT48)
+      description: Retrieve chat messages for a specific Showroom live stream.
+      operationId: getChatStreamSR
+      parameters:
+        - name: room_id
+          in: query
+          required: true
+          description: The room ID of the Showroom live stream.
+          schema:
+            type: string
+      security:
+        - apiKeyQuery: []
+        - priorityToken: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChatMessage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      description: JWT Bearer token authentication
-    basicAuth:
-      type: http
-      scheme: basic
-      description: Basic HTTP authentication
-    apiKeyHeader:
-      type: apiKey
-      in: header
-      name: X-API-Key
-      description: API key request header
     apiKeyQuery:
       type: apiKey
       in: query
-      name: api_key
-      description: API key query parameter
-    apiKeyCookie:
+      name: apikey
+      description: API key required for authentication
+    priorityToken:
       type: apiKey
-      in: cookie
-      name: api_key
-      description: API key browser cookie
-    oAuth2:
-      type: oauth2
-      description: OAuth 2.0 authentication
-      flows:
-        authorizationCode:
-          authorizationUrl: https://galaxy.scalar.com/oauth/authorize
-          tokenUrl: https://galaxy.scalar.com/oauth/token
-          scopes:
-            read:account: read your account information
-            write:planets: modify planets in your account
-            read:planets: read your planets
-        clientCredentials:
-          tokenUrl: https://galaxy.scalar.com/oauth/token
-          scopes:
-            read:account: read your account information
-            write:planets: modify planets in your account
-            read:planets: read your planets
-        # Legacy
-        implicit:
-          authorizationUrl: https://galaxy.scalar.com/oauth/authorize
-          scopes:
-            read:account: read your account information
-            write:planets: modify planets in your account
-            read:planets: read your planets
-        # Legacy
-        password:
-          tokenUrl: https://galaxy.scalar.com/oauth/token
-          scopes:
-            read:account: read your account information
-            write:planets: modify planets in your account
-            read:planets: read your planets
-    openIdConnect:
-      type: openIdConnect
-      openIdConnectUrl: https://galaxy.scalar.com/.well-known/openid-configuration
-      description: OpenID Connect Authentication
-  parameters:
-    planetId:
-      name: planetId
-      description: The ID of the planet to get
-      in: path
-      required: true
-      schema:
-        type: integer
-        format: int64
-        examples:
-          - 1
-    limit:
-      name: limit
-      description: The number of items to return
-      in: query
-      required: false
-      schema:
-        type: integer
-        format: int64
-        default: 10
-    offset:
-      name: offset
-      description:
-        The number of items to skip before starting to collect the result
-        set
-      in: query
-      required: false
-      schema:
-        type: integer
-        format: int64
-        default: 0
+      in: header
+      name: x-priority-token
+      description: Priority token for enhanced authentication and priority access
+
   responses:
-    ImageUploaded:
-      description: Image uploaded
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ImageUploadedMessage'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/ImageUploadedMessage'
     BadRequest:
-      description: Bad Request
+      description: Bad Request - The request was invalid.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/BadRequestError'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/BadRequestError'
-    Forbidden:
-      description: Forbidden
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/ForbiddenError'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/ForbiddenError'
+            $ref: '#/components/schemas/Error'
     NotFound:
-      description: NotFound
+      description: Not Found - The requested resource does not exist.
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/NotFoundError'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/NotFoundError'
-    Unauthorized:
-      description: Unauthorized
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/UnauthorizedError'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/UnauthorizedError'
-    Conflict:
-      description: Conflict
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/Conflict'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/Conflict'
-    UnprocessableEntity:
-      description: Unprocessable Entity
-      content:
-        application/json:
-          schema:
-            $ref: '#/components/schemas/UnprocessableEntity'
-        application/xml:
-          schema:
-            $ref: '#/components/schemas/UnprocessableEntity'
+            $ref: '#/components/schemas/Error'
+
   schemas:
-    User:
-      description: A user
+    Member:
       type: object
-      xml:
-        name: user
       properties:
         id:
           type: integer
-          format: int64
-          readOnly: true
-          examples:
-            - 1
+          description: Unique identifier for the member
         name:
           type: string
-          examples:
-            - Marc
-    Credentials:
-      description: Credentials to authenticate a user
+          description: Member's name
+        nickname:
+          type: string
+          description: Member's nickname
+        generation:
+          type: string
+          description: Member's generation
+
+    MemberDetail:
+      allOf:
+        - $ref: '#/components/schemas/Member'
+        - type: object
+          properties:
+            birthdate:
+              type: string
+              format: date
+              description: Member's birth date
+            bloodType:
+              type: string
+              description: Member's blood type
+            zodiac:
+              type: string
+              description: Member's zodiac sign
+
+    Birthday:
       type: object
-      required:
-        - email
-        - password
       properties:
-        email:
+        member:
           type: string
-          format: email
-          examples:
-            - marc@scalar.com
-        password:
+          description: Member's name
+        date:
           type: string
-          writeOnly: true
-          examples:
-            - i-love-scalar
-            - i-love-OSS
-            - i-love-code
-    Token:
-      description: A token to authenticate a user
+          format: date
+          description: Birthday date
+        daysUntil:
+          type: integer
+          description: Days until birthday
+
+    LiveStream:
       type: object
       properties:
-        token:
+        platform:
           type: string
-          examples:
-            - eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c
-    Planet:
-      description: A planet in the Scalar Galaxy
+          enum: [youtube, idn, showroom]
+          description: Platform where the stream is happening
+        liveId:
+          type: string
+          description: Unique identifier for the live stream
+        title:
+          type: string
+          description: Title of the live stream
+        member:
+          type: string
+          description: Member hosting the stream
+        viewerCount:
+          type: integer
+          description: Current viewer count
+
+    YouTubeLive:
       type: object
-      required:
-        - id
-        - name
-      xml:
-        name: planet
+      properties:
+        liveId:
+          type: string
+          description: YouTube live stream ID
+        title:
+          type: string
+          description: Title of the live stream
+        member:
+          type: string
+          description: Member hosting the stream
+        viewerCount:
+          type: integer
+          description: Current viewer count
+
+    IDNLive:
+      type: object
+      properties:
+        liveId:
+          type: string
+          description: IDN live stream ID
+        title:
+          type: string
+          description: Title of the live stream
+        member:
+          type: string
+          description: Member hosting the stream
+        viewerCount:
+          type: integer
+          description: Current viewer count
+
+    ShowroomLive:
+      type: object
+      properties:
+        liveId:
+          type: string
+          description: Showroom live stream ID
+        title:
+          type: string
+          description: Title of the live stream
+        member:
+          type: string
+          description: Member hosting the stream
+        viewerCount:
+          type: integer
+          description: Current viewer count
+
+    RecentLive:
+      type: object
+      properties:
+        liveId:
+          type: string
+          description: Live stream ID
+        title:
+          type: string
+          description: Title of the live stream
+        member:
+          type: string
+          description: Member who hosted the stream
+        endTime:
+          type: string
+          format: date-time
+          description: When the stream ended
+
+    RecentLiveDetail:
+      allOf:
+        - $ref: '#/components/schemas/RecentLive'
+        - type: object
+          properties:
+            duration:
+              type: integer
+              description: Stream duration in minutes
+            platform:
+              type: string
+              description: Platform where the stream happened
+            description:
+              type: string
+              description: Stream description
+
+    Replay:
+      type: object
+      properties:
+        liveId:
+          type: string
+          description: Live stream ID
+        title:
+          type: string
+          description: Title of the replay
+        member:
+          type: string
+          description: Member featured in the replay
+        url:
+          type: string
+          format: uri
+          description: URL to the replay
+
+    YouTubeVideo:
+      type: object
+      properties:
+        videoId:
+          type: string
+          description: YouTube video ID
+        title:
+          type: string
+          description: Video title
+        publishedAt:
+          type: string
+          format: date-time
+          description: When the video was published
+        viewCount:
+          type: integer
+          description: Video view count
+
+    Event:
+      type: object
       properties:
         id:
           type: integer
-          format: int64
-          readOnly: true
-          examples:
-            - 1
-          x-variable: planetId
+          description: Event ID
         name:
           type: string
-          examples:
-            - Mars
-            - Jupiter
-            - HD 40307g
+          description: Event name
+        date:
+          type: string
+          format: date-time
+          description: Event date and time
+        venue:
+          type: string
+          description: Event venue
         description:
-          type:
-            - string
-            - 'null'
-          examples:
-            - The red planet
-            - A gas giant with a great red spot
-        type:
           type: string
-          enum:
-            - terrestrial
-            - gas_giant
-            - ice_giant
-            - dwarf
-            - super_earth
-          examples:
-            - terrestrial
-        habitabilityIndex:
-          type: number
-          format: float
-          minimum: 0
-          maximum: 1
-          description: A score from 0 to 1 indicating potential habitability
-          examples:
-            - 0.68
-        physicalProperties:
-          type: object
+          description: Event description
+
+    News:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: News article ID
+        title:
+          type: string
+          description: News article title
+        publishedAt:
+          type: string
+          format: date-time
+          description: When the article was published
+        category:
+          type: string
+          description: News category
+
+    NewsDetail:
+      allOf:
+        - $ref: '#/components/schemas/News'
+        - type: object
           properties:
-            mass:
-              type: number
-              format: float
-              description: Mass in Earth masses
-              examples:
-                - 0.107
-            radius:
-              type: boolean
-              description: Radius in Earth radii
-            gravity:
-              type: number
-              format: float
-              description: Surface gravity in Earth g
-              examples:
-                - 0.378
-            temperature:
-              type: object
-              properties:
-                min:
-                  type: number
-                  format: float
-                  description: Minimum temperature in Kelvin
-                  examples:
-                    - 130
-                max:
-                  type: number
-                  format: float
-                  description: Maximum temperature in Kelvin
-                  examples:
-                    - 308
-                average:
-                  type: number
-                  format: float
-                  description: Average temperature in Kelvin
-                  examples:
-                    - 210
-        atmosphere:
-          type: array
-          description: Atmospheric composition
-          items:
-            type: object
-            properties:
-              compound:
+            content:
+              type: string
+              description: Full article content
+            author:
+              type: string
+              description: Article author
+            tags:
+              type: array
+              items:
                 type: string
-                examples:
-                  - CO2
-                  - N2
-              percentage:
-                type: number
-                format: float
-                examples:
-                  - 95.3
-        discoveredAt:
-          type: string
-          format: date-time
-          examples:
-            - '1610-01-07T00:00:00Z'
-        image:
-          type: string
-          nullable: true
-          examples:
-            - https://cdn.scalar.com/photos/mars.jpg
-        satellites:
-          type: array
-          items:
-            $ref: '#/components/schemas/Satellite'
-        creator:
-          $ref: '#/components/schemas/User'
-        tags:
-          type: array
-          items:
-            type: string
-          examples:
-            - ['solar-system', 'rocky', 'explored']
-        lastUpdated:
-          type: string
-          format: date-time
-          readOnly: true
-          examples:
-            - '2024-01-15T14:30:00Z'
-        successCallbackUrl:
-          type: string
-          format: uri
-          description: URL which gets invoked upon a successful operation
-          examples:
-            - https://example.com/webhook
-        failureCallbackUrl:
-          type: string
-          format: uri
-          description: URL which gets invoked upon a failed operation
-          examples:
-            - https://example.com/webhook
-    PaginatedResource:
-      description: A paginated resource
+              description: Article tags
+
+    Theater:
       type: object
       properties:
-        meta:
-          type: object
+        id:
+          type: integer
+          description: Theater schedule ID
+        title:
+          type: string
+          description: Performance title
+        date:
+          type: string
+          format: date
+          description: Performance date
+        time:
+          type: string
+          description: Performance time
+        setlist:
+          type: string
+          description: Setlist name
+
+    TheaterDetail:
+      allOf:
+        - $ref: '#/components/schemas/Theater'
+        - type: object
           properties:
-            limit:
-              type: integer
-              format: int64
-              examples:
-                - 10
-            offset:
-              type: integer
-              format: int64
-              examples:
-                - 0
-            total:
-              type: integer
-              format: int64
-              examples:
-                - 100
-            next:
-              type:
-                - string
-                - 'null'
-              examples:
-                - '/planets?limit=10&offset=10'
-    ImageUploadedMessage:
-      x-scalar-ignore: true
-      description: Message about an image upload
+            description:
+              type: string
+              description: Performance description
+            members:
+              type: array
+              items:
+                type: string
+              description: Participating members
+            ticketInfo:
+              type: string
+              description: Ticket information
+
+    VideocallSession:
       type: object
       properties:
+        id:
+          type: integer
+          description: Video call session ID
+        sesi:
+          type: integer
+          description: Session number
+        date:
+          type: integer
+          description: Date of the session
+        time:
+          type: string
+          description: Session time
+        member:
+          type: string
+          description: Member participating in the video call
+        status:
+          type: string
+          enum: [upcoming, preparation, ongoing, finished]
+          description: Current status of the session
+        duration:
+          type: integer
+          description: Session duration in minutes
+        countdown:
+          type: integer
+          description: Minutes until session starts (for upcoming sessions)
+
+    VideocallResponse:
+      type: object
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideocallSession'
+        totalSessions:
+          type: integer
+          description: Total number of sessions
+        currentTime:
+          type: string
+          format: date-time
+          description: Current time in Indonesia timezone
+
+    VideocallStatistics:
+      type: object
+      properties:
+        totalSessions:
+          type: integer
+          description: Total sessions for today
+        ongoingSessions:
+          type: integer
+          description: Currently ongoing sessions
+        finishedSessions:
+          type: integer
+          description: Finished sessions today
+        upcomingSessions:
+          type: integer
+          description: Upcoming sessions today
+
+    TodayVideocallResponse:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          description: Today's date
+        currentTime:
+          type: string
+          format: date-time
+          description: Current time in Indonesia timezone
+        statistics:
+          $ref: '#/components/schemas/VideocallStatistics'
+        sessions:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideocallSession'
+
+    ChatMessage:
+      type: object
+      properties:
+        sender:
+          type: string
+          description: Message sender username
         message:
           type: string
-          examples:
-            - Image uploaded successfully
-        imageUrl:
-          type: string
-          description: The URL where the uploaded image can be accessed
-          examples:
-            - https://cdn.scalar.com/images/8f47c132-9d1f-4f83-b5a4-91db5ee757ab.jpg
-        uploadedAt:
+          description: Chat message content
+        timestamp:
           type: string
           format: date-time
-          description: Timestamp when the image was uploaded
-          examples:
-            - '2024-01-15T14:30:00Z'
-        fileSize:
-          type: integer
-          description: Size of the uploaded image in bytes
-          examples:
-            - 1048576
-        mimeType:
+          description: When the message was sent
+        platform:
           type: string
-          description: The content type of the uploaded image
-          examples:
-            - image/jpeg
-            - image/png
-    BadRequestError:
-      x-scalar-ignore: true
-      description: RFC 7807 (https://datatracker.ietf.org/doc/html/rfc7807)
+          description: Platform where the message was sent
+
+    Error:
       type: object
       properties:
         type:
           type: string
-          examples:
-            - https://example.com/errors/bad-request
+          description: Error type
         title:
           type: string
-          examples:
-            - Bad Request
+          description: Error title
         status:
           type: integer
-          format: int64
-          examples:
-            - 400
+          description: HTTP status code
         detail:
           type: string
-          examples:
-            - The request was invalid.
-    ForbiddenError:
-      x-scalar-ignore: true
-      description: RFC 7807 (https://datatracker.ietf.org/doc/html/rfc7807)
-      type: object
-      properties:
-        type:
-          type: string
-          examples:
-            - https://example.com/errors/forbidden
-        title:
-          type: string
-          examples:
-            - Forbidden
-        status:
-          type: integer
-          format: int64
-          examples:
-            - 403
-        detail:
-          type: string
-          examples:
-            - You are not authorized to access this resource.
-    NotFoundError:
-      x-scalar-ignore: true
-      description: RFC 7807 (https://datatracker.ietf.org/doc/html/rfc7807)
-      type: object
-      properties:
-        type:
-          type: string
-          examples:
-            - https://example.com/errors/not-found
-        title:
-          type: string
-          examples:
-            - Not Found
-        status:
-          type: integer
-          format: int64
-          examples:
-            - 404
-        detail:
-          type: string
-          examples:
-            - The resource you are trying to access does not exist.
-    UnauthorizedError:
-      x-scalar-ignore: true
-      description: RFC 7807 (https://datatracker.ietf.org/doc/html/rfc7807)
-      type: object
-      properties:
-        type:
-          type: string
-          examples:
-            - https://example.com/errors/not-found
-        title:
-          type: string
-          examples:
-            - Unauthorized
-        status:
-          type: integer
-          format: int64
-          examples:
-            - 401
-        detail:
-          type: string
-          examples:
-            - You are not authorized to access this resource.
-    Conflict:
-      x-scalar-ignore: true
-      description: RFC 7807 (https://datatracker.ietf.org/doc/html/rfc7807)
-      type: object
-      properties:
-        type:
-          type: string
-          examples:
-            - https://example.com/errors/conflict
-        title:
-          type: string
-          examples:
-            - Conflict
-        status:
-          type: integer
-          format: int64
-          examples:
-            - 409
-        detail:
-          type: string
-          examples:
-            - The resource you are trying to access is in conflict.
-    UnprocessableEntity:
-      x-scalar-ignore: true
-      description: RFC 7807 (https://datatracker.ietf.org/doc/html/rfc7807)
-      type: object
-      properties:
-        type:
-          type: string
-          examples:
-            - https://example.com/errors/unprocessable-entity
-        title:
-          type: string
-          examples:
-            - Unprocessable Entity
-        status:
-          type: integer
-          format: int64
-          examples:
-            - 422
-        detail:
-          type: string
-          examples:
-            - The request was invalid.
-    Satellite:
-      description: A natural satellite (moon) orbiting a planet
-      type: object
-      required:
-        - name
-      properties:
-        name:
-          type: string
-          examples:
-            - Phobos
-        diameter:
-          type: number
-          format: float
-          description: Diameter in kilometers
-          examples:
-            - 22.2
+          description: Detailed error description
