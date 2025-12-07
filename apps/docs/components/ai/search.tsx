@@ -391,7 +391,7 @@ export function AISearchTrigger() {
   );
 
   return (
-    <Context value={contextValue}>
+    <Context.Provider value={contextValue}>
       <style>
         {`
         @keyframes ask-ai-open {
@@ -456,5 +456,6 @@ export function AISearchTrigger() {
         <MessageCircleIcon className="size-4.5" />
         Ask AI
       </button>
-    </Context>
+    </Context.Provider>
   );
+}
