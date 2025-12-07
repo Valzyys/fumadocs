@@ -261,7 +261,6 @@ function Message({
     
     const streamInterval = setInterval(() => {
       if (currentIndex < fullContent.length) {
-        // Stream 2-4 characters at a time for smoother effect
         const charsToAdd = Math.min(Math.floor(Math.random() * 3) + 2, fullContent.length - currentIndex);
         currentIndex += charsToAdd;
         setDisplayedContent(fullContent.slice(0, currentIndex));
@@ -269,7 +268,7 @@ function Message({
         setIsStreamComplete(true);
         clearInterval(streamInterval);
       }
-    }, 30); // Speed: 30ms per update
+    }, 30);
 
     return () => clearInterval(streamInterval);
   }, [message.content, message.isStreaming, isStreamComplete]);
@@ -331,7 +330,6 @@ export function AISearchTrigger() {
         };
         setMessages((prev) => [...prev, assistantMessage]);
         
-        // Mark streaming as complete after 3 seconds (adjust based on typical response length)
         setTimeout(() => {
           setMessages((prev) =>
             prev.map((msg) =>
@@ -391,7 +389,7 @@ export function AISearchTrigger() {
   );
 
   return (
-    <Context.Provider value={contextValue}>
+    <Context value={contextValue}>
       <style>
         {`
         @keyframes ask-ai-open {
@@ -456,6 +454,6 @@ export function AISearchTrigger() {
         <MessageCircleIcon className="size-4.5" />
         Ask AI
       </button>
-    </Context.Provider>
+    </Context>
   );
 }
