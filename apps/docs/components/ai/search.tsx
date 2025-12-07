@@ -249,28 +249,50 @@ function Message({
 }: { message: Message } & ComponentProps<'div'>) {
   const [displayedContent, setDisplayedContent] = useState('');
   const [isStreamComplete, setIsStreamComplete] = useState(!message.isStreaming);
+  const streamRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    if (!message.isStreaming || isStreamComplete) {
+    if (!message.isStreaming) {
+      setDisplayedContent(message.content);
+      setIsStreamComplete(true);
+      return;
+    }
+
+    if (isStreamComplete) {
       setDisplayedContent(message.content);
       return;
     }
 
     let currentIndex = 0;
     const fullContent = message.content;
+    setDisplayedContent('');
     
-    const streamInterval = setInterval(() => {
+    const streamText = () => {
       if (currentIndex < fullContent.length) {
-        const charsToAdd = Math.min(Math.floor(Math.random() * 3) + 2, fullContent.length - currentIndex);
+        // Stream more characters at once for smoother animation (5-8 chars)
+        const charsToAdd = Math.min(
+          Math.floor(Math.random() * 4) + 5, 
+          fullContent.length - currentIndex
+        );
         currentIndex += charsToAdd;
         setDisplayedContent(fullContent.slice(0, currentIndex));
+        
+        streamRef.current = setTimeout(streamText, 20);
       } else {
         setIsStreamComplete(true);
-        clearInterval(streamInterval);
+        if (streamRef.current) {
+          clearTimeout(streamRef.current);
+        }
       }
-    }, 30);
+    };
 
-    return () => clearInterval(streamInterval);
+    streamText();
+
+    return () => {
+      if (streamRef.current) {
+        clearTimeout(streamRef.current);
+      }
+    };
   }, [message.content, message.isStreaming, isStreamComplete]);
 
   return (
@@ -283,10 +305,10 @@ function Message({
       >
         {roleName[message.role] ?? 'unknown'}
       </p>
-      <div className="prose text-sm">
+      <div className="prose text-sm relative">
         <Markdown text={displayedContent} />
         {message.isStreaming && !isStreamComplete && (
-          <span className="inline-block w-1.5 h-4 bg-fd-primary animate-pulse ml-0.5" />
+          <span className="inline-block w-1.5 h-4 bg-fd-primary animate-pulse ml-0.5 align-middle" />
         )}
       </div>
     </div>
