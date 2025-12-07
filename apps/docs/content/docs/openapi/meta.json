@@ -1,6 +1,6 @@
 {
-  "title": "OpenAPI Example",
-  "description": "A demo for Fumadocs OpenAPI",
+  "title": "JKT48Connect RestAPI",
+  "description": "JKT48Connect RestAPI(API) Playground",
   "root": true,
   "icon": "Shapes",
   "pages": ["index", "...(generated)"]
