@@ -10,11 +10,11 @@ import {
   CopyIcon,
   CheckIcon,
   ShieldCheckIcon,
-  RefreshCwIcon
+  RefreshCwIcon,
+  LoaderIcon
 } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { buttonVariants } from '@/components/ui/button';
-import Image from 'next/image';
 
 interface OrderData {
   id: string;
@@ -40,6 +40,29 @@ interface QRISResponse {
   qrImageUrl: string;
 }
 
+interface MutationData {
+  id: number;
+  debet: string;
+  kredit: string;
+  saldo_akhir: string;
+  keterangan: string;
+  tanggal: string;
+  status: string;
+  fee: string;
+  brand: {
+    name: string;
+    logo: string;
+  };
+}
+
+interface PaymentSuccess {
+  amount: string;
+  from: string;
+  logo: string;
+  description: string;
+  date: string;
+}
+
 export default function PaymentPage() {
   const router = useRouter();
   const [orderData, setOrderData] = useState<OrderData | null>(null);
@@ -47,11 +70,13 @@ export default function PaymentPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copiedQRIS, setCopiedQRIS] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(900); // 15 minutes
+  const [timeLeft, setTimeLeft] = useState(900);
   const [isExpired, setIsExpired] = useState(false);
+  const [isChecking, setIsChecking] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState<PaymentSuccess | null>(null);
+  const [checkInterval, setCheckInterval] = useState<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
-    // Load order data from localStorage
     const storedData = localStorage.getItem('orderData');
     if (storedData) {
       const data = JSON.parse(storedData);
@@ -63,9 +88,11 @@ export default function PaymentPage() {
   }, [router]);
 
   useEffect(() => {
-    // Countdown timer
     if (timeLeft <= 0) {
       setIsExpired(true);
+      if (checkInterval) {
+        clearInterval(checkInterval);
+      }
       return;
     }
 
@@ -74,7 +101,20 @@ export default function PaymentPage() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timeLeft]);
+  }, [timeLeft, checkInterval]);
+
+  // Auto-check payment setiap 10 detik
+  useEffect(() => {
+    if (orderData && !isExpired && !paymentSuccess) {
+      const interval = setInterval(() => {
+        checkPayment();
+      }, 10000); // Check setiap 10 detik
+
+      setCheckInterval(interval);
+
+      return () => clearInterval(interval);
+    }
+  }, [orderData, isExpired, paymentSuccess]);
 
   const generateQRIS = async (amount: number) => {
     setIsLoading(true);
@@ -97,6 +137,130 @@ export default function PaymentPage() {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const checkPayment = async () => {
+    if (!orderData || isChecking) return;
+
+    setIsChecking(true);
+
+    try {
+      // Get mutation data
+      const response = await fetch(
+        'https://api-simplebot.vercel.app/orderkuota/mutasiqr?apikey=ubot&username=valzhost&token=1453563%3APegBGy3NOkz69pZJdohTWMFiI1qsLRVH'
+      );
+
+      if (!response.ok) {
+        throw new Error('Gagal mengecek pembayaran');
+      }
+
+      const data = await response.json();
+
+      if (data.status && data.result && Array.isArray(data.result)) {
+        const now = new Date();
+        const currentDate = formatDateForComparison(now);
+
+        // Filter transaksi masuk (IN) dengan tanggal yang sesuai
+        const incomingTransactions = data.result.filter((transaction: MutationData) => {
+          if (transaction.status !== 'IN') return false;
+
+          const transactionDate = parseTransactionDate(transaction.tanggal);
+          const transactionDateStr = formatDateForComparison(transactionDate);
+
+          // Cek apakah tanggal dan jam sesuai (toleransi 5 menit)
+          const timeDiff = Math.abs(now.getTime() - transactionDate.getTime()) / 1000 / 60;
+          return transactionDateStr === currentDate && timeDiff <= 5;
+        });
+
+        // Cek apakah ada transaksi dengan nominal yang sesuai
+        const matchedTransaction = incomingTransactions.find((transaction: MutationData) => {
+          const amount = parseFloat(transaction.kredit.replace(/\./g, ''));
+          return amount === orderData.price;
+        });
+
+        if (matchedTransaction) {
+          // Pembayaran ditemukan, buat API key
+          await createAPIKey(matchedTransaction);
+        }
+      }
+    } catch (err) {
+      console.error('Error checking payment:', err);
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  const parseTransactionDate = (dateStr: string): Date => {
+    // Format: "04/12/2025 18:56"
+    const [datePart, timePart] = dateStr.split(' ');
+    const [day, month, year] = datePart.split('/');
+    const [hour, minute] = timePart.split(':');
+
+    return new Date(
+      parseInt(year),
+      parseInt(month) - 1,
+      parseInt(day),
+      parseInt(hour),
+      parseInt(minute)
+    );
+  };
+
+  const formatDateForComparison = (date: Date): string => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hour = String(date.getHours()).padStart(2, '0');
+    
+    return `${day}/${month}/${year}-${hour}`;
+  };
+
+  const createAPIKey = async (transaction: MutationData) => {
+    try {
+      // Tentukan type berdasarkan plan
+      let planType = 'basic';
+      if (orderData?.planName.toLowerCase().includes('premium')) {
+        planType = 'premium';
+      } else if (orderData?.planName.toLowerCase().includes('enterprise')) {
+        planType = 'enterprise';
+      }
+
+      const createKeyResponse = await fetch(
+        `https://v2.jkt48connect.com/api/admin/create-key?username=vzy&password=vzy&owner=${encodeURIComponent(orderData!.customerName)}&email=${encodeURIComponent(orderData!.customerEmail)}&type=${planType}&apikey=${encodeURIComponent(orderData!.apiKey)}`
+      );
+
+      if (!createKeyResponse.ok) {
+        throw new Error('Gagal membuat API key');
+      }
+
+      const keyData = await createKeyResponse.json();
+
+      if (keyData.status) {
+        // Stop checking
+        if (checkInterval) {
+          clearInterval(checkInterval);
+        }
+
+        // Set payment success data
+        setPaymentSuccess({
+          amount: transaction.kredit,
+          from: transaction.brand.name,
+          logo: transaction.brand.logo,
+          description: transaction.keterangan,
+          date: transaction.tanggal
+        });
+
+        // Update order data di localStorage
+        const updatedOrder = {
+          ...orderData!,
+          status: 'paid',
+          apiKeyData: keyData.data
+        };
+        localStorage.setItem('orderData', JSON.stringify(updatedOrder));
+      }
+    } catch (err) {
+      console.error('Error creating API key:', err);
+      alert('Pembayaran terdeteksi, namun terjadi kesalahan saat membuat API key. Silakan hubungi admin.');
     }
   };
 
@@ -124,10 +288,88 @@ export default function PaymentPage() {
     }
   };
 
-  const handleConfirmPayment = () => {
-    // Simulate payment verification
-    alert('Fitur verifikasi pembayaran akan segera hadir. Silakan hubungi admin untuk konfirmasi manual.');
+  const handleConfirmPayment = async () => {
+    await checkPayment();
   };
+
+  // Success Page
+  if (paymentSuccess) {
+    return (
+      <main className="px-4 py-12 w-full max-w-[800px] mx-auto">
+        <div className="border rounded-lg p-8 text-center">
+          <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircleIcon className="w-12 h-12 text-green-600" />
+          </div>
+
+          <h1 className="text-3xl font-bold mb-2">Pembayaran Berhasil!</h1>
+          <p className="text-fd-muted-foreground mb-8">
+            Terima kasih, pembayaran Anda telah dikonfirmasi
+          </p>
+
+          <div className="bg-fd-accent/50 rounded-lg p-6 mb-6 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b">
+              <span className="text-fd-muted-foreground">Dibayar dari</span>
+              <div className="flex items-center gap-2">
+                <img src={paymentSuccess.logo} alt={paymentSuccess.from} className="w-6 h-6" />
+                <span className="font-bold">{paymentSuccess.from}</span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pb-3 border-b">
+              <span className="text-fd-muted-foreground">Keterangan</span>
+              <span className="font-medium">{paymentSuccess.description}</span>
+            </div>
+
+            <div className="flex items-center justify-between pb-3 border-b">
+              <span className="text-fd-muted-foreground">Tanggal</span>
+              <span className="font-medium">{paymentSuccess.date}</span>
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-fd-muted-foreground">Jumlah</span>
+              <span className="font-bold text-2xl text-fd-primary">
+                Rp {parseInt(paymentSuccess.amount.replace(/\./g, '')).toLocaleString('id-ID')}
+              </span>
+            </div>
+          </div>
+
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <p className="text-sm text-blue-900">
+              <strong>API Key Anda telah dikirim ke email:</strong><br />
+              {orderData?.customerEmail}
+            </p>
+          </div>
+
+          <div className="space-y-3">
+            <button
+              onClick={() => router.push('/docs')}
+              className={cn(
+                buttonVariants({
+                  variant: 'default',
+                  size: 'lg',
+                }),
+                'w-full'
+              )}
+            >
+              Ke Documentation
+            </button>
+            <button
+              onClick={() => router.push('/')}
+              className={cn(
+                buttonVariants({
+                  variant: 'outline',
+                  size: 'lg',
+                }),
+                'w-full'
+              )}
+            >
+              Kembali ke Beranda
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
   if (!orderData) {
     return (
@@ -201,6 +443,12 @@ export default function PaymentPage() {
                 </button>
               </div>
             )}
+            {isChecking && (
+              <div className="flex items-center gap-2 text-sm text-fd-primary">
+                <LoaderIcon className="w-4 h-4 animate-spin" />
+                <span>Mengecek pembayaran...</span>
+              </div>
+            )}
           </div>
 
           {/* QRIS Section */}
@@ -249,6 +497,36 @@ export default function PaymentPage() {
                   </div>
                 </div>
 
+                {/* QRIS String */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Kode QRIS (Copy Manual)
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={qrisData.dynamicQRIS}
+                      readOnly
+                      className="flex-1 px-4 py-2 border border-fd-border rounded-lg bg-fd-accent/50 font-mono text-sm"
+                    />
+                    <button
+                      onClick={() => copyToClipboard(qrisData.dynamicQRIS)}
+                      className={cn(
+                        buttonVariants({
+                          variant: 'outline',
+                          size: 'sm',
+                        })
+                      )}
+                    >
+                      {copiedQRIS ? (
+                        <CheckIcon className="w-4 h-4" />
+                      ) : (
+                        <CopyIcon className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
                 {/* Payment Instructions */}
                 <div className="bg-fd-accent/50 p-4 rounded-lg">
                   <h3 className="font-medium mb-3">Cara Pembayaran:</h3>
@@ -286,11 +564,24 @@ export default function PaymentPage() {
                     }),
                     'w-full'
                   )}
-                  disabled={isExpired}
+                  disabled={isExpired || isChecking}
                 >
-                  <CheckCircleIcon className="w-5 h-5 mr-2" />
-                  Saya Sudah Bayar
+                  {isChecking ? (
+                    <>
+                      <LoaderIcon className="w-5 h-5 mr-2 animate-spin" />
+                      Mengecek Pembayaran...
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircleIcon className="w-5 h-5 mr-2" />
+                      Saya Sudah Bayar
+                    </>
+                  )}
                 </button>
+
+                <p className="text-xs text-center text-fd-muted-foreground">
+                  Sistem akan otomatis mengecek pembayaran setiap 10 detik
+                </p>
               </div>
             ) : null}
           </div>
@@ -312,7 +603,7 @@ export default function PaymentPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-fd-primary"></div>
-                    Jika ada kendala, hubungi customer support kami
+                    Verifikasi otomatis menggunakan sistem real-time
                   </li>
                 </ul>
               </div>
