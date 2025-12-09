@@ -1,18 +1,13 @@
+'use client';
+
 import { CheckIcon, XIcon, SparklesIcon } from 'lucide-react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { cn } from '@/lib/cn';
 import { buttonVariants } from '@/components/ui/button';
-import { createMetadata } from '@/lib/metadata';
-import Link from 'fumadocs-core/link';
-
-export const metadata = createMetadata({
-  title: 'Pricing',
-  description: 'Choose the perfect plan for your JKT48Connect API needs',
-  openGraph: {
-    url: 'https://docs.jkt48connect.com/pricing',
-  },
-});
 
 interface PricingPlan {
+  id: string;
   name: string;
   price: string;
   priceNumeric: number;
@@ -23,11 +18,11 @@ interface PricingPlan {
   notIncluded?: string[];
   popular?: boolean;
   cta: string;
-  ctaLink: string;
 }
 
 const pricingPlans: PricingPlan[] = [
   {
+    id: 'basic',
     name: 'Basic',
     price: 'Rp 5.000',
     priceNumeric: 5000,
@@ -48,9 +43,9 @@ const pricingPlans: PricingPlan[] = [
       'Custom integration',
     ],
     cta: 'Mulai Basic',
-    ctaLink: 'https://wa.me/6285701479245?text=Halo,%20saya%20ingin%20berlangganan%20paket%20Basic',
   },
   {
+    id: 'premium',
     name: 'Premium',
     price: 'Rp 15.000',
     priceNumeric: 15000,
@@ -72,9 +67,9 @@ const pricingPlans: PricingPlan[] = [
       'Dedicated support channel',
     ],
     cta: 'Pilih Premium',
-    ctaLink: 'https://wa.me/6285701479245?text=Halo,%20saya%20ingin%20berlangganan%20paket%20Premium',
   },
   {
+    id: 'enterprise',
     name: 'Enterprise',
     price: 'Rp 50.000',
     priceNumeric: 50000,
@@ -92,9 +87,9 @@ const pricingPlans: PricingPlan[] = [
       'API monitoring dashboard',
     ],
     cta: 'Pilih Enterprise',
-    ctaLink: 'https://wa.me/6285701479245?text=Halo,%20saya%20ingin%20berlangganan%20paket%20Enterprise',
   },
   {
+    id: 'premium-plus',
     name: 'Premium Plus',
     price: 'Rp 150.000',
     priceNumeric: 150000,
@@ -113,8 +108,7 @@ const pricingPlans: PricingPlan[] = [
       'Early access to new features',
       'Custom integration assistance',
     ],
-    cta: 'Hubungi Kami',
-    ctaLink: 'https://wa.me/6285701479245?text=Halo,%20saya%20ingin%20berlangganan%20paket%20Premium%20Plus',
+    cta: 'Pilih Premium Plus',
   },
 ];
 
@@ -138,6 +132,46 @@ const faqs = [
 ];
 
 export default function Pricing() {
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
+  const router = useRouter();
+
+  const handleSelectPlan = (plan: PricingPlan) => {
+    setSelectedPlan(plan);
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmPurchase = () => {
+    if (!selectedPlan) return;
+
+    // Generate unique order ID
+    const orderId = `ORDER-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+    // Prepare purchase data
+    const purchaseData = {
+      id: orderId,
+      planId: selectedPlan.id,
+      planName: selectedPlan.name,
+      price: selectedPlan.priceNumeric,
+      priceFormatted: selectedPlan.price,
+      limit: selectedPlan.limit,
+      expireDays: selectedPlan.expireDays,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Save to localStorage
+    localStorage.setItem('pendingPurchase', JSON.stringify(purchaseData));
+
+    // Close modal and redirect
+    setShowConfirmModal(false);
+    router.push('/confirm');
+  };
+
+  const handleCancelPurchase = () => {
+    setShowConfirmModal(false);
+    setSelectedPlan(null);
+  };
+
   return (
     <main className="px-4 py-12 w-full max-w-[1400px] mx-auto">
       {/* Hero Section */}
@@ -152,8 +186,12 @@ export default function Pricing() {
 
       {/* Pricing Cards */}
       <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4 mb-16">
-        {pricingPlans.map((plan, index) => (
-          <PricingCard key={index} {...plan} />
+        {pricingPlans.map((plan) => (
+          <PricingCard 
+            key={plan.id} 
+            {...plan} 
+            onSelect={() => handleSelectPlan(plan)}
+          />
         ))}
       </div>
 
@@ -245,7 +283,7 @@ export default function Pricing() {
           >
             Konsultasi Gratis
           </a>
-          <Link
+          <a
             href="https://docs.jkt48connect.my.id"
             className={cn(
               buttonVariants({
@@ -255,11 +293,24 @@ export default function Pricing() {
             )}
           >
             Lihat Dokumentasi
-          </Link>
+          </a>
         </div>
       </div>
+
+      {/* Confirmation Modal */}
+      {showConfirmModal && selectedPlan && (
+        <ConfirmationModal
+          plan={selectedPlan}
+          onConfirm={handleConfirmPurchase}
+          onCancel={handleCancelPurchase}
+        />
+      )}
     </main>
   );
+}
+
+interface PricingCardProps extends PricingPlan {
+  onSelect: () => void;
 }
 
 function PricingCard({
@@ -272,8 +323,8 @@ function PricingCard({
   notIncluded,
   popular,
   cta,
-  ctaLink,
-}: PricingPlan) {
+  onSelect,
+}: PricingCardProps) {
   return (
     <div
       className={cn(
@@ -321,10 +372,8 @@ function PricingCard({
         </ul>
       </div>
 
-      <a
-        href={ctaLink}
-        target="_blank"
-        rel="noreferrer noopener"
+      <button
+        onClick={onSelect}
         className={cn(
           buttonVariants({
             variant: popular ? 'default' : 'outline',
@@ -334,7 +383,82 @@ function PricingCard({
         )}
       >
         {cta}
-      </a>
+      </button>
+    </div>
+  );
+}
+
+interface ConfirmationModalProps {
+  plan: PricingPlan;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+function ConfirmationModal({ plan, onConfirm, onCancel }: ConfirmationModalProps) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="bg-fd-background border rounded-lg p-6 max-w-md w-full shadow-xl">
+        <h3 className="text-2xl font-bold mb-4">Konfirmasi Pembelian</h3>
+        
+        <div className="mb-6 space-y-3">
+          <div className="flex justify-between items-center pb-2 border-b">
+            <span className="text-fd-muted-foreground">Paket</span>
+            <span className="font-medium">{plan.name}</span>
+          </div>
+          
+          <div className="flex justify-between items-center pb-2 border-b">
+            <span className="text-fd-muted-foreground">Harga</span>
+            <span className="font-bold text-lg">{plan.price}</span>
+          </div>
+          
+          <div className="flex justify-between items-center pb-2 border-b">
+            <span className="text-fd-muted-foreground">API Requests</span>
+            <span className="font-medium">
+              {typeof plan.limit === 'number' ? plan.limit.toLocaleString() : plan.limit}
+            </span>
+          </div>
+          
+          <div className="flex justify-between items-center pb-2 border-b">
+            <span className="text-fd-muted-foreground">Durasi</span>
+            <span className="font-medium">
+              {plan.expireDays ? `${plan.expireDays} hari` : 'Selamanya'}
+            </span>
+          </div>
+        </div>
+
+        <div className="bg-fd-accent/50 p-4 rounded-lg mb-6">
+          <p className="text-sm text-fd-muted-foreground">
+            Anda akan diarahkan ke halaman konfirmasi untuk melanjutkan proses pembayaran.
+          </p>
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            className={cn(
+              buttonVariants({
+                variant: 'outline',
+                size: 'lg',
+              }),
+              'flex-1'
+            )}
+          >
+            Batal
+          </button>
+          <button
+            onClick={onConfirm}
+            className={cn(
+              buttonVariants({
+                variant: 'default',
+                size: 'lg',
+              }),
+              'flex-1'
+            )}
+          >
+            Lanjutkan
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
