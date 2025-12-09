@@ -340,7 +340,6 @@ export default function PaymentPage() {
             <div className="flex items-center justify-between pb-3 border-b">
               <span className="text-fd-muted-foreground">Dibayar dari</span>
               <div className="flex items-center gap-2">
-                <img src={paymentSuccess.logo} alt={paymentSuccess.from} className="w-6 h-6" />
                 <span className="font-bold">{paymentSuccess.from}</span>
               </div>
             </div>
