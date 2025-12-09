@@ -3,5 +3,5 @@ import path from 'node:path';
 
 export const openapi = createOpenAPI({
   input: [path.resolve('./scalar.yaml')],
-  proxyUrl: '/api/proxy',
+  // Hapus proxyUrl - biarkan OpenAPI handle langsung
 });
