@@ -29,6 +29,7 @@ interface OrderData {
   apiKey: string;
   status: string;
   createdAt: string;
+  uniqueAmount?: number; // Jumlah dengan fee unik
 }
 
 interface QRISResponse {
@@ -61,6 +62,8 @@ interface PaymentSuccess {
   logo: string;
   description: string;
   date: string;
+  originalAmount: number;
+  uniqueFee: number;
 }
 
 export default function PaymentPage() {
@@ -76,12 +79,25 @@ export default function PaymentPage() {
   const [paymentSuccess, setPaymentSuccess] = useState<PaymentSuccess | null>(null);
   const [checkInterval, setCheckInterval] = useState<NodeJS.Timeout | null>(null);
 
+  // Generate fee unik (1-999)
+  const generateUniqueFee = (): number => {
+    return Math.floor(Math.random() * 999) + 1;
+  };
+
   useEffect(() => {
     const storedData = localStorage.getItem('orderData');
     if (storedData) {
       const data = JSON.parse(storedData);
+      
+      // Generate unique fee jika belum ada
+      if (!data.uniqueAmount) {
+        const uniqueFee = generateUniqueFee();
+        data.uniqueAmount = data.price + uniqueFee;
+        localStorage.setItem('orderData', JSON.stringify(data));
+      }
+      
       setOrderData(data);
-      generateQRIS(data.price);
+      generateQRIS(data.uniqueAmount);
     } else {
       router.push('/pricing');
     }
@@ -173,10 +189,10 @@ export default function PaymentPage() {
           return transactionDateStr === currentDate && timeDiff <= 5;
         });
 
-        // Cek apakah ada transaksi dengan nominal yang sesuai
+        // Cek apakah ada transaksi dengan nominal unik yang sesuai
         const matchedTransaction = incomingTransactions.find((transaction: MutationData) => {
           const amount = parseFloat(transaction.kredit.replace(/\./g, ''));
-          return amount === orderData.price;
+          return amount === orderData.uniqueAmount;
         });
 
         if (matchedTransaction) {
@@ -247,7 +263,9 @@ export default function PaymentPage() {
           from: transaction.brand.name,
           logo: transaction.brand.logo,
           description: transaction.keterangan,
-          date: transaction.tanggal
+          date: transaction.tanggal,
+          originalAmount: orderData!.price,
+          uniqueFee: orderData!.uniqueAmount! - orderData!.price
         });
 
         // Update order data di localStorage
@@ -282,9 +300,21 @@ export default function PaymentPage() {
 
   const handleRefreshQRIS = () => {
     if (orderData) {
+      // Generate fee baru
+      const newUniqueFee = generateUniqueFee();
+      const newUniqueAmount = orderData.price + newUniqueFee;
+      
+      const updatedOrder = {
+        ...orderData,
+        uniqueAmount: newUniqueAmount
+      };
+      
+      setOrderData(updatedOrder);
+      localStorage.setItem('orderData', JSON.stringify(updatedOrder));
+      
       setIsExpired(false);
       setTimeLeft(900);
-      generateQRIS(orderData.price);
+      generateQRIS(newUniqueAmount);
     }
   };
 
@@ -325,8 +355,22 @@ export default function PaymentPage() {
               <span className="font-medium">{paymentSuccess.date}</span>
             </div>
 
+            <div className="flex items-center justify-between pb-3 border-b">
+              <span className="text-fd-muted-foreground">Harga Paket</span>
+              <span className="font-medium">
+                Rp {paymentSuccess.originalAmount.toLocaleString('id-ID')}
+              </span>
+            </div>
+
+            <div className="flex items-center justify-between pb-3 border-b">
+              <span className="text-fd-muted-foreground">Kode Unik</span>
+              <span className="font-medium text-fd-primary">
+                Rp {paymentSuccess.uniqueFee.toLocaleString('id-ID')}
+              </span>
+            </div>
+
             <div className="flex items-center justify-between pt-2">
-              <span className="text-fd-muted-foreground">Jumlah</span>
+              <span className="text-fd-muted-foreground font-medium">Total Dibayar</span>
               <span className="font-bold text-2xl text-fd-primary">
                 Rp {parseInt(paymentSuccess.amount.replace(/\./g, '')).toLocaleString('id-ID')}
               </span>
@@ -342,7 +386,7 @@ export default function PaymentPage() {
 
           <div className="space-y-3">
             <button
-              onClick={() => router.push('/docs')}
+              onClick={() => router.push('/dashboard')}
               className={cn(
                 buttonVariants({
                   variant: 'default',
@@ -351,7 +395,7 @@ export default function PaymentPage() {
                 'w-full'
               )}
             >
-              Ke Documentation
+              Ke Dashboard
             </button>
             <button
               onClick={() => router.push('/')}
@@ -468,7 +512,7 @@ export default function PaymentPage() {
                 <AlertCircleIcon className="w-12 h-12 text-red-500 mb-4" />
                 <p className="text-red-500 mb-4">{error}</p>
                 <button
-                  onClick={() => generateQRIS(orderData.price)}
+                  onClick={() => generateQRIS(orderData.uniqueAmount || orderData.price)}
                   className={cn(
                     buttonVariants({
                       variant: 'outline',
@@ -497,34 +541,29 @@ export default function PaymentPage() {
                   </div>
                 </div>
 
-                {/* QRIS String */}
-                <div>
-                  <label className="block text-sm font-medium mb-2">
-                    Kode QRIS (Copy Manual)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={qrisData.dynamicQRIS}
-                      readOnly
-                      className="flex-1 px-4 py-2 border border-fd-border rounded-lg bg-fd-accent/50 font-mono text-sm"
-                    />
-                    <button
-                      onClick={() => copyToClipboard(qrisData.dynamicQRIS)}
-                      className={cn(
-                        buttonVariants({
-                          variant: 'outline',
-                          size: 'sm',
-                        })
-                      )}
-                    >
-                      {copiedQRIS ? (
-                        <CheckIcon className="w-4 h-4" />
-                      ) : (
-                        <CopyIcon className="w-4 h-4" />
-                      )}
-                    </button>
+                {/* Amount Info with Unique Fee */}
+                <div className="bg-fd-primary/5 border border-fd-primary/20 rounded-lg p-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-fd-muted-foreground">Harga Paket</span>
+                      <span className="font-medium">Rp {orderData.price.toLocaleString('id-ID')}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-fd-muted-foreground">Kode Unik</span>
+                      <span className="font-medium text-fd-primary">
+                        Rp {(orderData.uniqueAmount! - orderData.price).toLocaleString('id-ID')}
+                      </span>
+                    </div>
+                    <div className="border-t pt-2 flex justify-between items-center">
+                      <span className="font-bold">Total Pembayaran</span>
+                      <span className="font-bold text-xl text-fd-primary">
+                        Rp {orderData.uniqueAmount!.toLocaleString('id-ID')}
+                      </span>
+                    </div>
                   </div>
+                  <p className="text-xs text-fd-muted-foreground mt-3">
+                    💡 Kode unik membantu sistem mengidentifikasi pembayaran Anda secara otomatis
+                  </p>
                 </div>
 
                 {/* Payment Instructions */}
