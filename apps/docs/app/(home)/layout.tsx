@@ -23,12 +23,12 @@ export default function Layout({ children }: LayoutProps<'/'>) {
           items: [
             {
               text: 'Getting Started',
-              url: '/docs/ui',
+              url: '/docs/jkt48',
               icon: <Book />,
             },
             {
-              text: 'Components',
-              url: '/docs/ui/components',
+              text: 'Live',
+              url: '/docs/jkt48/all-live',
               icon: <ComponentIcon />,
             },
           ],
@@ -42,7 +42,7 @@ export default function Layout({ children }: LayoutProps<'/'>) {
                 <Link href="/docs/ui">Documentation</Link>
               </NavbarMenuTrigger>
               <NavbarMenuContent>
-                <NavbarMenuLink href="/docs/ui" className="md:row-span-2">
+                <NavbarMenuLink href="/docs/jkt48" className="md:row-span-2">
                   <div className="-mx-3 -mt-3">
                     <Image
                       src={Preview}
@@ -61,47 +61,46 @@ export default function Layout({ children }: LayoutProps<'/'>) {
                 </NavbarMenuLink>
 
                 <NavbarMenuLink
-                  href="/docs/ui/components"
+                  href="/docs/jkt48/all-live"
                   className="lg:col-start-2"
                 >
                   <ComponentIcon className="bg-fd-primary text-fd-primary-foreground p-1 mb-2 rounded-md" />
-                  <p className="font-medium">Components</p>
+                  <p className="font-medium">All Live</p>
                   <p className="text-fd-muted-foreground text-sm">
-                    Add interactive experience to your docs.
+                    Melihat list member yang sedang live saat ini.
                   </p>
                 </NavbarMenuLink>
 
                 <NavbarMenuLink
-                  href="/docs/ui/openapi"
+                  href="/docs/openapi"
                   className="lg:col-start-2"
                 >
                   <Server className="bg-fd-primary text-fd-primary-foreground p-1 mb-2 rounded-md" />
                   <p className="font-medium">OpenAPI</p>
                   <p className="text-fd-muted-foreground text-sm">
-                    Generate interactive playgrounds and docs for your OpenAPI
-                    schema.
+                    playground untuk mencoba fitur restapi secara langsung.
                   </p>
                 </NavbarMenuLink>
 
                 <NavbarMenuLink
-                  href="/docs/ui/markdown"
+                  href="/docs/jkt48/theater"
                   className="lg:col-start-3 lg:row-start-1"
                 >
                   <Pencil className="bg-fd-primary text-fd-primary-foreground p-1 mb-2 rounded-md" />
-                  <p className="font-medium">Markdown</p>
+                  <p className="font-medium">Theater</p>
                   <p className="text-fd-muted-foreground text-sm">
-                    Learn the writing format/syntax of Fumadocs.
+                   Melihat data semua show theater yang ada secara realtime.
                   </p>
                 </NavbarMenuLink>
 
                 <NavbarMenuLink
-                  href="/docs/ui/manual-installation"
+                  href="/docs/jkt48/news"
                   className="lg:col-start-3 lg:row-start-2"
                 >
                   <PlusIcon className="bg-fd-primary text-fd-primary-foreground p-1 mb-2 rounded-md" />
-                  <p className="font-medium">Manual Installation</p>
+                  <p className="font-medium">News</p>
                   <p className="text-fd-muted-foreground text-sm">
-                    Setup Fumadocs for your existing Next.js app.
+                    List berita terbaru yang ada pada web jkt48.
                   </p>
                 </NavbarMenuLink>
               </NavbarMenuContent>
