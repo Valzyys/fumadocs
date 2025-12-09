@@ -1,4 +1,4 @@
-import { AlbumIcon, Heart, LayoutTemplate } from 'lucide-react';
+import { AlbumIcon, Heart, LayoutTemplate, CreditCardIcon } from 'lucide-react';
 import Image from 'next/image';
 import type { BaseLayoutProps, LinkItemType } from 'fumadocs-ui/layouts/shared';
 import { FumadocsIcon } from '@/app/layout.client';
@@ -18,8 +18,14 @@ export const linkItems: LinkItemType[] = [
     active: 'url',
   },
   {
+    text: 'Pricing',
+    url: '/pricing',
+    icon: <CreditCardIcon />,
+    active: 'url',
+  },
+  {
     type: 'icon',
-    url: 'https://github.com/fuma-nama/fumadocs',
+    url: 'https://github.com/jkt48-connect',
     label: 'github',
     text: 'Github',
     icon: (
@@ -40,7 +46,6 @@ export const logo = (
       className="hidden w-22 in-[.uwu]:block"
       aria-label="Fumadocs"
     />
-
     <FumadocsIcon className="size-5 in-[.uwu]:hidden" />
   </>
 );
