@@ -5,17 +5,16 @@ export async function getLLMText(page: Page) {
 
   const category =
     {
-      ui: 'Fumadocs Framework',
-      headless: 'Fumadocs Core (core library of framework)',
-      mdx: 'Fumadocs MDX (the built-in content source)',
-      cli: 'Fumadocs CLI (the CLI tool for automating Fumadocs apps)',
+      ui: 'JKT48Connect Framework',
+      headless: 'JKT48Connect Core (core library of framework)',
+      mdx: 'JKT48Connect MDX (the built-in content source)',
+      cli: 'JKT48Connect CLI (the CLI tool for automating JKT48Connect apps)',
     }[page.slugs[0]] ?? page.slugs[0];
 
   const processed = await page.data.getText('processed');
 
   return `# ${category}: ${page.data.title}
 URL: ${page.url}
-Source: https://raw.githubusercontent.com/fuma-nama/fumadocs/refs/heads/main/apps/docs/content/docs/${page.path}
 
 ${page.data.description ?? ''}
         
