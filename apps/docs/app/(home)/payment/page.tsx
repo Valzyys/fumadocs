@@ -7,8 +7,6 @@ import {
   ClockIcon, 
   CheckCircleIcon, 
   AlertCircleIcon,
-  CopyIcon,
-  CheckIcon,
   ShieldCheckIcon,
   RefreshCwIcon,
   LoaderIcon
@@ -29,7 +27,7 @@ interface OrderData {
   apiKey: string;
   status: string;
   createdAt: string;
-  uniqueAmount?: number; // Jumlah dengan fee unik
+  uniqueAmount?: number;
 }
 
 interface QRISResponse {
@@ -39,21 +37,6 @@ interface QRISResponse {
   amount: string;
   includeFee: boolean;
   qrImageUrl: string;
-}
-
-interface MutationData {
-  id: number;
-  debet: string;
-  kredit: string;
-  saldo_akhir: string;
-  keterangan: string;
-  tanggal: string;
-  status: string;
-  fee: string;
-  brand: {
-    name: string;
-    logo: string;
-  };
 }
 
 interface PaymentSuccess {
@@ -72,14 +55,12 @@ export default function PaymentPage() {
   const [qrisData, setQrisData] = useState<QRISResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [copiedQRIS, setCopiedQRIS] = useState(false);
   const [timeLeft, setTimeLeft] = useState(900);
   const [isExpired, setIsExpired] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState<PaymentSuccess | null>(null);
   const [checkInterval, setCheckInterval] = useState<NodeJS.Timeout | null>(null);
 
-  // Generate fee unik (1-999)
   const generateUniqueFee = (): number => {
     return Math.floor(Math.random() * 999) + 1;
   };
@@ -89,7 +70,6 @@ export default function PaymentPage() {
     if (storedData) {
       const data = JSON.parse(storedData);
       
-      // Generate unique fee jika belum ada
       if (!data.uniqueAmount) {
         const uniqueFee = generateUniqueFee();
         data.uniqueAmount = data.price + uniqueFee;
@@ -119,12 +99,11 @@ export default function PaymentPage() {
     return () => clearInterval(timer);
   }, [timeLeft, checkInterval]);
 
-  // Auto-check payment setiap 10 detik
   useEffect(() => {
     if (orderData && !isExpired && !paymentSuccess) {
       const interval = setInterval(() => {
         checkPayment();
-      }, 10000); // Check setiap 10 detik
+      }, 10000);
 
       setCheckInterval(interval);
 
@@ -137,11 +116,14 @@ export default function PaymentPage() {
     setError(null);
 
     try {
-      const qrisCode = '00020101021126670016COM.NOBUBANK.WWW01189360050300000879140214149391352933240303UMI51440014ID.CO.QRIS.WWW0215ID20233077025890303UMI5204541153033605802ID5919VALZSTORE%20OK14535636006SERANG61054211162070703A016304DCD2';
-      
-      const response = await fetch(
-        `https://api.jkt48connect.my.id/api/orkut/createpayment?amount=${amount}&qris=${qrisCode}&api_key=JKTCONNECT`
-      );
+      // ✅ Panggil API route internal
+      const response = await fetch('/api/payment/generate-qris', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ amount }),
+      });
 
       if (!response.ok) {
         throw new Error('Gagal generate QRIS');
@@ -162,10 +144,17 @@ export default function PaymentPage() {
     setIsChecking(true);
 
     try {
-      // Get mutation data
-      const response = await fetch(
-        'https://api-simplebot.vercel.app/orderkuota/mutasiqr?apikey=ubot&username=valzhost&token=1453563%3APegBGy3NOkz69pZJdohTWMFiI1qsLRVH'
-      );
+      // ✅ Panggil API route internal
+      const response = await fetch('/api/payment/check-mutation', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          uniqueAmount: orderData.uniqueAmount,
+          currentDate: new Date().toISOString(),
+        }),
+      });
 
       if (!response.ok) {
         throw new Error('Gagal mengecek pembayaran');
@@ -173,32 +162,8 @@ export default function PaymentPage() {
 
       const data = await response.json();
 
-      if (data.status && data.result && Array.isArray(data.result)) {
-        const now = new Date();
-        const currentDate = formatDateForComparison(now);
-
-        // Filter transaksi masuk (IN) dengan tanggal yang sesuai
-        const incomingTransactions = data.result.filter((transaction: MutationData) => {
-          if (transaction.status !== 'IN') return false;
-
-          const transactionDate = parseTransactionDate(transaction.tanggal);
-          const transactionDateStr = formatDateForComparison(transactionDate);
-
-          // Cek apakah tanggal dan jam sesuai (toleransi 5 menit)
-          const timeDiff = Math.abs(now.getTime() - transactionDate.getTime()) / 1000 / 60;
-          return transactionDateStr === currentDate && timeDiff <= 5;
-        });
-
-        // Cek apakah ada transaksi dengan nominal unik yang sesuai
-        const matchedTransaction = incomingTransactions.find((transaction: MutationData) => {
-          const amount = parseFloat(transaction.kredit.replace(/\./g, ''));
-          return amount === orderData.uniqueAmount;
-        });
-
-        if (matchedTransaction) {
-          // Pembayaran ditemukan, buat API key
-          await createAPIKey(matchedTransaction);
-        }
+      if (data.success && data.transaction) {
+        await createAPIKey(data.transaction);
       }
     } catch (err) {
       console.error('Error checking payment:', err);
@@ -207,33 +172,8 @@ export default function PaymentPage() {
     }
   };
 
-  const parseTransactionDate = (dateStr: string): Date => {
-    // Format: "04/12/2025 18:56"
-    const [datePart, timePart] = dateStr.split(' ');
-    const [day, month, year] = datePart.split('/');
-    const [hour, minute] = timePart.split(':');
-
-    return new Date(
-      parseInt(year),
-      parseInt(month) - 1,
-      parseInt(day),
-      parseInt(hour),
-      parseInt(minute)
-    );
-  };
-
-  const formatDateForComparison = (date: Date): string => {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    const hour = String(date.getHours()).padStart(2, '0');
-    
-    return `${day}/${month}/${year}-${hour}`;
-  };
-
-  const createAPIKey = async (transaction: MutationData) => {
+  const createAPIKey = async (transaction: any) => {
     try {
-      // Tentukan type berdasarkan plan
       let planType = 'basic';
       if (orderData?.planName.toLowerCase().includes('premium')) {
         planType = 'premium';
@@ -241,23 +181,31 @@ export default function PaymentPage() {
         planType = 'enterprise';
       }
 
-      const createKeyResponse = await fetch(
-        `https://v2.jkt48connect.com/api/admin/create-key?username=vzy&password=vzy&owner=${encodeURIComponent(orderData!.customerName)}&email=${encodeURIComponent(orderData!.customerEmail)}&type=${planType}&apikey=${encodeURIComponent(orderData!.apiKey)}`
-      );
+      // ✅ Panggil API route internal
+      const response = await fetch('/api/payment/create-key', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          owner: orderData!.customerName,
+          email: orderData!.customerEmail,
+          type: planType,
+          apikey: orderData!.apiKey,
+        }),
+      });
 
-      if (!createKeyResponse.ok) {
+      if (!response.ok) {
         throw new Error('Gagal membuat API key');
       }
 
-      const keyData = await createKeyResponse.json();
+      const keyData = await response.json();
 
       if (keyData.status) {
-        // Stop checking
         if (checkInterval) {
           clearInterval(checkInterval);
         }
 
-        // Set payment success data
         setPaymentSuccess({
           amount: transaction.kredit,
           from: transaction.brand.name,
@@ -268,7 +216,6 @@ export default function PaymentPage() {
           uniqueFee: orderData!.uniqueAmount! - orderData!.price
         });
 
-        // Update order data di localStorage
         const updatedOrder = {
           ...orderData!,
           status: 'paid',
@@ -282,16 +229,6 @@ export default function PaymentPage() {
     }
   };
 
-  const copyToClipboard = async (text: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedQRIS(true);
-      setTimeout(() => setCopiedQRIS(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  };
-
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
@@ -300,7 +237,6 @@ export default function PaymentPage() {
 
   const handleRefreshQRIS = () => {
     if (orderData) {
-      // Generate fee baru
       const newUniqueFee = generateUniqueFee();
       const newUniqueAmount = orderData.price + newUniqueFee;
       
