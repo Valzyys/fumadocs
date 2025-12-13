@@ -1,8 +1,9 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    const { amount } = await request.json();
+    const body = await request.json();
+    const { amount } = body;
 
     if (!amount || typeof amount !== 'number') {
       return NextResponse.json(
@@ -14,11 +15,17 @@ export async function POST(request: Request) {
     // QRIS code disimpan di server-side
     const qrisCode = '00020101021126670016COM.NOBUBANK.WWW01189360050300000879140214149391352933240303UMI51440014ID.CO.QRIS.WWW0215ID20233077025890303UMI5204541153033605802ID5919VALZSTORE%20OK14535636006SERANG61054211162070703A016304DCD2';
     
-    // API key disimpan di server-side (bisa juga dari env variable)
+    // API key disimpan di server-side
     const apiKey = process.env.JKTCONNECT_API_KEY || 'JKTCONNECT';
 
     const response = await fetch(
-      `https://api.jkt48connect.my.id/api/orkut/createpayment?amount=${amount}&qris=${qrisCode}&api_key=${apiKey}`
+      `https://api.jkt48connect.my.id/api/orkut/createpayment?amount=${amount}&qris=${qrisCode}&api_key=${apiKey}`,
+      {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      }
     );
 
     if (!response.ok) {
@@ -27,7 +34,7 @@ export async function POST(request: Request) {
 
     const data = await response.json();
     
-    return NextResponse.json(data);
+    return NextResponse.json(data, { status: 200 });
   } catch (error) {
     console.error('Generate QRIS error:', error);
     return NextResponse.json(
@@ -35,4 +42,16 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
+}
+
+// Tambahkan OPTIONS untuk CORS jika diperlukan
+export async function OPTIONS(request: NextRequest) {
+  return new NextResponse(null, {
+    status: 200,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+    },
+  });
 }
