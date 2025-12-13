@@ -39,6 +39,21 @@ interface QRISResponse {
   qrImageUrl: string;
 }
 
+interface MutationData {
+  id: number;
+  debet: string;
+  kredit: string;
+  saldo_akhir: string;
+  keterangan: string;
+  tanggal: string;
+  status: string;
+  fee: string;
+  brand: {
+    name: string;
+    logo: string;
+  };
+}
+
 interface PaymentSuccess {
   amount: string;
   from: string;
@@ -116,7 +131,6 @@ export default function PaymentPage() {
     setError(null);
 
     try {
-      // ✅ Panggil API route internal
       const response = await fetch('/api/payment/generate-qris', {
         method: 'POST',
         headers: {
@@ -138,22 +152,39 @@ export default function PaymentPage() {
     }
   };
 
+  const parseTransactionDate = (dateStr: string): Date => {
+    // Format: "04/12/2025 18:56"
+    const [datePart, timePart] = dateStr.split(' ');
+    const [day, month, year] = datePart.split('/');
+    const [hour, minute] = timePart.split(':');
+
+    return new Date(
+      parseInt(year),
+      parseInt(month) - 1,
+      parseInt(day),
+      parseInt(hour),
+      parseInt(minute)
+    );
+  };
+
+  const formatDateForComparison = (date: Date): string => {
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    const hour = String(date.getHours()).padStart(2, '0');
+    
+    return `${day}/${month}/${year}-${hour}`;
+  };
+
   const checkPayment = async () => {
     if (!orderData || isChecking) return;
 
     setIsChecking(true);
 
     try {
-      // ✅ Panggil API route internal
+      // Ambil full data dari API route
       const response = await fetch('/api/payment/check-mutation', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          uniqueAmount: orderData.uniqueAmount,
-          currentDate: new Date().toISOString(),
-        }),
+        method: 'GET',
       });
 
       if (!response.ok) {
@@ -162,8 +193,40 @@ export default function PaymentPage() {
 
       const data = await response.json();
 
-      if (data.success && data.transaction) {
-        await createAPIKey(data.transaction);
+      // Filter dan sort di client side
+      if (data.status && data.result && Array.isArray(data.result)) {
+        const now = new Date();
+        const currentDate = formatDateForComparison(now);
+
+        // Filter transaksi masuk (IN) dengan tanggal yang sesuai
+        const incomingTransactions = data.result.filter((transaction: MutationData) => {
+          if (transaction.status !== 'IN') return false;
+
+          const transactionDate = parseTransactionDate(transaction.tanggal);
+          const transactionDateStr = formatDateForComparison(transactionDate);
+
+          // Cek apakah tanggal dan jam sesuai (toleransi 30 menit untuk testing)
+          const timeDiff = Math.abs(now.getTime() - transactionDate.getTime()) / 1000 / 60;
+          return transactionDateStr === currentDate && timeDiff <= 30;
+        });
+
+        console.log('Found incoming transactions:', incomingTransactions.length);
+        console.log('Looking for amount:', orderData.uniqueAmount);
+
+        // Cek apakah ada transaksi dengan nominal unik yang sesuai
+        const matchedTransaction = incomingTransactions.find((transaction: MutationData) => {
+          const amount = parseFloat(transaction.kredit.replace(/\./g, ''));
+          console.log('Checking transaction amount:', amount, 'vs', orderData.uniqueAmount);
+          return amount === orderData.uniqueAmount;
+        });
+
+        if (matchedTransaction) {
+          console.log('Payment matched!', matchedTransaction);
+          // Pembayaran ditemukan, buat API key
+          await createAPIKey(matchedTransaction);
+        } else {
+          console.log('No matching transaction found');
+        }
       }
     } catch (err) {
       console.error('Error checking payment:', err);
@@ -172,7 +235,7 @@ export default function PaymentPage() {
     }
   };
 
-  const createAPIKey = async (transaction: any) => {
+  const createAPIKey = async (transaction: MutationData) => {
     try {
       let planType = 'basic';
       if (orderData?.planName.toLowerCase().includes('premium')) {
@@ -181,7 +244,6 @@ export default function PaymentPage() {
         planType = 'enterprise';
       }
 
-      // ✅ Panggil API route internal
       const response = await fetch('/api/payment/create-key', {
         method: 'POST',
         headers: {
