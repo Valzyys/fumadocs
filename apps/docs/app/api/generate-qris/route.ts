@@ -18,15 +18,15 @@ export async function POST(request: NextRequest) {
     // API key disimpan di server-side
     const apiKey = process.env.JKTCONNECT_API_KEY || 'JKTCONNECT';
 
-    const response = await fetch(
-      `https://api.jkt48connect.com/api/orkut/createpayment?amount=${amount}&qris=${qrisCode}&api_key=${apiKey}`,
-      {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
-    );
+    // Menggunakan endpoint API v2 yang baru
+    const apiUrl = `https://v2.jkt48connect.com/api/qris/generate?qris=${qrisCode}&amount=${amount}&apikey=${apiKey}`;
+
+    const response = await fetch(apiUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
     if (!response.ok) {
       throw new Error('Failed to generate QRIS');
