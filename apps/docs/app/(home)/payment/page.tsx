@@ -149,8 +149,14 @@ export default function PaymentPage() {
         throw new Error('Gagal generate QRIS');
       }
 
-      const data: QRISResponse = await response.json();
-      setQrisData(data);
+      const result = await response.json();
+      
+      // Extract data from the wrapper
+      if (result.status && result.data) {
+        setQrisData(result.data);
+      } else {
+        throw new Error(result.message || 'Gagal generate QRIS');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
     } finally {
