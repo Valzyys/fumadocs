@@ -18,7 +18,7 @@ export async function POST(request: Request) {
     const apiKey = process.env.JKTCONNECT_API_KEY || 'JKTCONNECT';
 
     const response = await fetch(
-      `https://api.jkt48connect.my.id/api/orkut/createpayment?amount=${amount}&qris=${qrisCode}&api_key=${apiKey}`
+      `https://api.jkt48connect.com/api/orkut/createpayment?amount=${amount}&qris=${qrisCode}&api_key=${apiKey}`
     );
 
     if (!response.ok) {
