@@ -425,7 +425,50 @@ export function AISearchTrigger() {
             translate: 100% 0;
             opacity: 0;
           }
-        }`}
+        }
+        
+        /* Glassmorphism Button Styles */
+        .glass-button {
+          --c-glass: #bbbbbc;
+          --c-light: #fff;
+          --c-dark: #000;
+          --glass-reflex-dark: 1;
+          --glass-reflex-light: 1;
+          --saturation: 150%;
+          
+          background-color: color-mix(in srgb, var(--c-glass) 12%, transparent);
+          backdrop-filter: blur(0.5px) saturate(var(--saturation));
+          -webkit-backdrop-filter: blur(0.5px) saturate(var(--saturation));
+          box-shadow: 
+            inset 0 0 0 1px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 10%), transparent),
+            inset 1.8px 3px 0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 90%), transparent), 
+            inset -2px -2px 0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 80%), transparent), 
+            inset -3px -8px 1px -6px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 60%), transparent), 
+            inset -0.3px -1px 4px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 12%), transparent), 
+            inset -1.5px 2.5px 0px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 20%), transparent), 
+            inset 0px 3px 4px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 20%), transparent), 
+            inset 2px -6.5px 1px -4px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 10%), transparent), 
+            0px 1px 5px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 10%), transparent), 
+            0px 6px 16px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 8%), transparent);
+          transition: all 400ms cubic-bezier(1, 0.0, 0.4, 1);
+        }
+        
+        .glass-button:hover {
+          transform: scale(1.05);
+        }
+        
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+          .glass-button {
+            --c-glass: #bbbbbc;
+            --c-light: #fff;
+            --c-dark: #000;
+            --glass-reflex-dark: 2;
+            --glass-reflex-light: 0.3;
+            --saturation: 150%;
+          }
+        }
+        `}
       </style>
       <Presence present={open}>
         <div
@@ -465,10 +508,11 @@ export function AISearchTrigger() {
         </div>
       </Presence>
       <button
-        className={cn(
-          'fixed flex items-center gap-2 bottom-4 right-4 bg-fd-secondary px-2 gap-3 w-24 h-10 text-sm font-medium text-fd-muted-foreground rounded-2xl border shadow-lg z-20 transition-[translate,opacity]',
-          open && 'translate-y-10 opacity-0',
-        )}
+        className="glass-button fixed flex items-center justify-center gap-2 bottom-4 right-4 px-4 h-12 text-sm font-medium rounded-full z-20 transition-[translate,opacity]"
+        style={{
+          opacity: open ? 0 : 1,
+          transform: open ? 'translateY(2.5rem)' : 'translateY(0)',
+        }}
         onClick={() => {
           setOpen(true);
         }}
