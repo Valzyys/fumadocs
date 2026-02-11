@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 export async function POST(request: Request) {
   try {
     const { uniqueAmount, currentDate } = await request.json();
-
+    
     if (!uniqueAmount || !currentDate) {
       return NextResponse.json(
         { error: 'Missing required parameters' },
@@ -13,13 +13,8 @@ export async function POST(request: Request) {
       );
     }
 
-    // Credentials disimpan di server-side (sebaiknya di env variables)
-    const apiKey = process.env.MUTATION_API_KEY || 'ubot';
-    const username = process.env.MUTATION_USERNAME || 'valzhost';
-    const token = process.env.MUTATION_TOKEN || '1453563:PegBGy3NOkz69pZJdohTWMFiI1qsLRVH';
-
     const response = await fetch(
-      `https://api-simplebot.vercel.app/orderkuota/mutasiqr?apikey=${apiKey}&username=${username}&token=${token}`
+      'https://orkut.jkt48connect.com/api/jkt48connect/qris/history'
     );
 
     if (!response.ok) {
@@ -32,7 +27,7 @@ export async function POST(request: Request) {
       // Filter transaksi yang sesuai
       const incomingTransactions = data.result.filter((transaction: any) => {
         if (transaction.status !== 'IN') return false;
-
+        
         const transactionDate = parseTransactionDate(transaction.tanggal);
         const transactionDateStr = formatDateForComparison(transactionDate);
         
@@ -60,6 +55,7 @@ export async function POST(request: Request) {
       success: false,
       message: 'No matching transaction found'
     });
+
   } catch (error) {
     console.error('Check mutation error:', error);
     return NextResponse.json(
@@ -73,7 +69,7 @@ function parseTransactionDate(dateStr: string): Date {
   const [datePart, timePart] = dateStr.split(' ');
   const [day, month, year] = datePart.split('/');
   const [hour, minute] = timePart.split(':');
-
+  
   return new Date(
     parseInt(year),
     parseInt(month) - 1,
