@@ -101,7 +101,7 @@ Selalu siap sedia untuk membantu jika ada pertanyaan seputar JKT48Connect API!`;
     const fullPrompt = `${systemPrompt}\n\nUser: ${lastUserMessage.content}`;
 
     // Panggil API JKT48Connect
-    const apiUrl = `https://api.jkt48connect.my.id/api/ai/microsoft?text=${encodeURIComponent(fullPrompt)}&api_key=JKTCONNECT`;
+    const apiUrl = `https://api.jkt48connect.com/api/ai/microsoft?text=${encodeURIComponent(fullPrompt)}&api_key=JKTCONNECT`;
     
     const response = await fetch(apiUrl);
     const data = await response.json();
