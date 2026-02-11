@@ -415,20 +415,34 @@ export function AISearchTrigger() {
     <Context value={contextValue}>
       <style>
         {`
-        @keyframes ask-ai-open {
-          from {
-            translate: 100% 0;
-          }
-        }
-        
-        @keyframes ask-ai-close {
-          to {
-            translate: 100% 0;
-            opacity: 0;
-          }
-        }
-        
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,100..1000&display=swap');
+        
+        /* Glassmorphism Modal Styles */
+        .glass-modal {
+          --c-glass: #bbbbbc;
+          --c-light: #fff;
+          --c-dark: #000;
+          --glass-reflex-dark: 1;
+          --glass-reflex-light: 1;
+          --saturation: 150%;
+          
+          font-family: "DM Sans", sans-serif;
+          font-optical-sizing: auto;
+          background-color: color-mix(in srgb, var(--c-glass) 12%, transparent) !important;
+          backdrop-filter: blur(12px) saturate(var(--saturation));
+          -webkit-backdrop-filter: blur(12px) saturate(var(--saturation));
+          box-shadow: 
+            inset 0 0 0 1px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 10%), transparent),
+            inset 1.8px 3px 0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 90%), transparent), 
+            inset -2px -2px 0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 80%), transparent), 
+            inset -3px -8px 1px -6px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 60%), transparent), 
+            inset -0.3px -1px 4px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 12%), transparent), 
+            inset -1.5px 2.5px 0px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 20%), transparent), 
+            inset 0px 3px 4px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 20%), transparent), 
+            inset 2px -6.5px 1px -4px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 10%), transparent), 
+            0px 1px 5px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 10%), transparent), 
+            0px 6px 16px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 8%), transparent);
+        }
         
         /* Glassmorphism Button Styles */
         .glass-button {
@@ -462,6 +476,7 @@ export function AISearchTrigger() {
         
         /* Dark mode support */
         @media (prefers-color-scheme: dark) {
+          .glass-modal,
           .glass-button {
             --c-glass: #bbbbbc;
             --c-light: #fff;
@@ -474,13 +489,15 @@ export function AISearchTrigger() {
         `}
       </style>
       <Presence present={open}>
-        <div
-          className={cn(
-            'fixed flex flex-col inset-y-2 p-2 bg-fd-popover text-fd-popover-foreground border rounded-2xl shadow-lg z-30 sm:w-[460px] sm:end-2 max-sm:inset-x-2',
-            open
-              ? 'animate-[ask-ai-open_300ms]'
-              : 'animate-[ask-ai-close_300ms]',
-          )}
+        <motion.div
+          className="glass-modal fixed flex flex-col inset-y-2 p-2 text-fd-popover-foreground border rounded-2xl shadow-lg z-30 sm:w-[460px] sm:end-2 max-sm:inset-x-2"
+          initial={{ opacity: 0, scale: 0.8, x: 100 }}
+          animate={{ opacity: 1, scale: 1, x: 0 }}
+          exit={{ opacity: 0, scale: 0.8, x: 100 }}
+          transition={{
+            duration: 0.3,
+            scale: { type: "spring", visualDuration: 0.3, bounce: 0.25 },
+          }}
         >
           <Header />
           <List
@@ -508,7 +525,7 @@ export function AISearchTrigger() {
               <SearchAIActions />
             </div>
           </div>
-        </div>
+        </motion.div>
       </Presence>
       <motion.button
         className="glass-button fixed flex items-center justify-center gap-2 bottom-4 right-4 px-4 h-12 text-sm font-medium rounded-full z-20 transition-[translate,opacity]"
