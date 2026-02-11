@@ -405,49 +405,66 @@ export default function ConfirmPage() {
 
               {/* Submit Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                <div className="sm:flex-1">
-                  <LiquidGlass
-                    displacementScale={50}
-                    blurAmount={0.08}
-                    saturation={120}
-                    aberrationIntensity={1.5}
-                    elasticity={0.3}
-                    cornerRadius={12}
-                    onClick={() => !isSubmitting && router.push('/pricing')}
-                  >
-                    <div className="flex items-center justify-center gap-2 px-8 py-4 font-semibold text-fd-foreground w-full">
-                      <ArrowLeft className="w-5 h-5" />
-                      <span>Kembali</span>
-                    </div>
-                  </LiquidGlass>
-                </div>
+                <LiquidGlass
+                  displacementScale={50}
+                  blurAmount={0.08}
+                  saturation={120}
+                  aberrationIntensity={1.5}
+                  elasticity={0.3}
+                  cornerRadius={12}
+                  style={{ flex: 1 }}
+                  onClick={() => !isSubmitting && router.push('/pricing')}
+                >
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '16px 32px',
+                    fontWeight: 600,
+                    width: '100%',
+                    minHeight: '56px'
+                  }}>
+                    <ArrowLeft className="w-5 h-5" />
+                    <span>Kembali</span>
+                  </div>
+                </LiquidGlass>
 
-                <div className="sm:flex-1">
-                  <LiquidGlass
-                    displacementScale={64}
-                    blurAmount={0.1}
-                    saturation={130}
-                    aberrationIntensity={2}
-                    elasticity={0.35}
-                    cornerRadius={12}
-                    onClick={!isSubmitting ? handleSubmit : undefined}
-                    className={isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}
-                  >
-                    <div className="flex items-center justify-center gap-2 px-8 py-4 font-semibold text-white w-full" style={{ background: 'hsl(var(--primary))' }}>
-                      {isSubmitting ? (
-                        <>
-                          <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                          <span>Memproses...</span>
-                        </>
-                      ) : (
-                        <>
-                          <span>Lanjut ke Pembayaran</span>
-                          <ArrowRight className="w-5 h-5" />
-                        </>
-                      )}
-                    </div>
-                  </LiquidGlass>
-                </div>
+                <LiquidGlass
+                  displacementScale={64}
+                  blurAmount={0.1}
+                  saturation={130}
+                  aberrationIntensity={2}
+                  elasticity={0.35}
+                  cornerRadius={12}
+                  style={{ flex: 1, opacity: isSubmitting ? 0.5 : 1, cursor: isSubmitting ? 'not-allowed' : 'pointer' }}
+                  onClick={!isSubmitting ? handleSubmit : undefined}
+                >
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    padding: '16px 32px',
+                    fontWeight: 600,
+                    color: 'white',
+                    background: 'linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--primary) / 0.9) 100%)',
+                    width: '100%',
+                    minHeight: '56px'
+                  }}>
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                        <span>Memproses...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>Lanjut ke Pembayaran</span>
+                        <ArrowRight className="w-5 h-5" />
+                      </>
+                    )}
+                  </div>
+                </LiquidGlass>
               </div>
             </div>
           </div>
