@@ -436,9 +436,9 @@ export function AISearchTrigger() {
           --glass-reflex-light: 1;
           --saturation: 150%;
           
-          background-color: color-mix(in srgb, var(--c-glass) 12%, transparent);
-          backdrop-filter: blur(0.5px) saturate(var(--saturation));
-          -webkit-backdrop-filter: blur(0.5px) saturate(var(--saturation));
+          background-color: color-mix(in srgb, var(--c-glass) 20%, transparent);
+          backdrop-filter: blur(8px) saturate(var(--saturation));
+          -webkit-backdrop-filter: blur(8px) saturate(var(--saturation));
           box-shadow: 
             inset 0 0 0 1px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 10%), transparent),
             inset 1.8px 3px 0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 90%), transparent), 
