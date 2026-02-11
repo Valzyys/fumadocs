@@ -427,6 +427,8 @@ export function AISearchTrigger() {
           }
         }
         
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,100..1000&display=swap');
+        
         /* Glassmorphism Button Styles */
         .glass-button {
           --c-glass: #bbbbbc;
@@ -436,7 +438,9 @@ export function AISearchTrigger() {
           --glass-reflex-light: 1;
           --saturation: 150%;
           
-          background-color: color-mix(in srgb, var(--c-glass) 20%, transparent);
+          font-family: "DM Sans", sans-serif;
+          font-optical-sizing: auto;
+          background-color: color-mix(in srgb, var(--c-glass) 12%, transparent);
           backdrop-filter: blur(8px) saturate(var(--saturation));
           -webkit-backdrop-filter: blur(8px) saturate(var(--saturation));
           box-shadow: 
@@ -450,7 +454,10 @@ export function AISearchTrigger() {
             inset 2px -6.5px 1px -4px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 10%), transparent), 
             0px 1px 5px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 10%), transparent), 
             0px 6px 16px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 8%), transparent);
-          transition: all 400ms cubic-bezier(1, 0.0, 0.4, 1);
+          transition: 
+            background-color 400ms cubic-bezier(1, 0.0, 0.4, 1),
+            box-shadow 400ms cubic-bezier(1, 0.0, 0.4, 1),
+            transform 400ms cubic-bezier(1, 0.0, 0.4, 1);
         }
         
         .glass-button:hover {
