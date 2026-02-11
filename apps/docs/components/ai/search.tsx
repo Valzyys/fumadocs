@@ -13,9 +13,8 @@ import { Loader2, MessageCircleIcon, RefreshCw, Send, X } from 'lucide-react';
 import { cn } from '@/lib/cn';
 import { buttonVariants } from 'fumadocs-ui/components/ui/button';
 import Link from 'fumadocs-core/link';
-import { Presence } from '@radix-ui/react-presence';
+import { AnimatePresence, motion } from 'motion/react';
 import { Markdown } from './markdown';
-import * as motion from "motion/react-client";
 
 interface Message {
   id: string;
@@ -57,7 +56,7 @@ function Header() {
           </a>
         </p>
       </div>
-      <button
+      <motion.button
         aria-label="Close"
         tabIndex={-1}
         className={cn(
@@ -67,12 +66,15 @@ function Header() {
             className: 'rounded-full',
           }),
         )}
+        whileHover={{ scale: 1.1, rotate: 90 }}
+        whileTap={{ scale: 0.9 }}
+        transition={{ duration: 0.2 }}
         onClick={() => {
           setOpen(false);
         }}
       >
         <X />
-      </button>
+      </motion.button>
     </div>
   );
 }
@@ -84,7 +86,7 @@ function SearchAIActions() {
 
   return (
     <>
-      <button
+      <motion.button
         type="button"
         className={cn(
           buttonVariants({
@@ -93,10 +95,13 @@ function SearchAIActions() {
             className: 'rounded-full',
           }),
         )}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        transition={{ duration: 0.2 }}
         onClick={clearMessages}
       >
         Clear Chat
-      </button>
+      </motion.button>
     </>
   );
 }
@@ -153,7 +158,7 @@ function SearchAIInput(props: ComponentProps<'form'>) {
           }
         }}
       />
-      <button
+      <motion.button
         key="bn"
         type="submit"
         className={cn(
@@ -162,6 +167,9 @@ function SearchAIInput(props: ComponentProps<'form'>) {
             className: 'transition-all rounded-full mt-2',
           }),
         )}
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        transition={{ duration: 0.2 }}
         disabled={input.length === 0 || isLoading}
       >
         {isLoading ? (
@@ -169,7 +177,7 @@ function SearchAIInput(props: ComponentProps<'form'>) {
         ) : (
           <Send className="size-4" />
         )}
-      </button>
+      </motion.button>
     </form>
   );
 }
@@ -488,17 +496,21 @@ export function AISearchTrigger() {
         }
         `}
       </style>
-      <Presence present={open}>
-        <motion.div
-          className="glass-modal fixed flex flex-col inset-y-2 p-2 text-fd-popover-foreground border rounded-2xl shadow-lg z-30 sm:w-[460px] sm:end-2 max-sm:inset-x-2"
-          initial={{ opacity: 0, scale: 0.8, x: 100 }}
-          animate={{ opacity: 1, scale: 1, x: 0 }}
-          exit={{ opacity: 0, scale: 0.8, x: 100 }}
-          transition={{
-            duration: 0.3,
-            scale: { type: "spring", visualDuration: 0.3, bounce: 0.25 },
-          }}
-        >
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div
+            key="modal"
+            className="glass-modal fixed flex flex-col inset-y-2 p-2 text-fd-popover-foreground border rounded-2xl shadow-lg z-30 sm:w-[460px] sm:end-2 max-sm:inset-x-2"
+            initial={{ opacity: 0, scale: 0 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0 }}
+            transition={{
+              duration: 0.3,
+              type: "spring",
+              stiffness: 260,
+              damping: 20,
+            }}
+          >
           <Header />
           <List
             className="px-3 py-4 flex-1 overscroll-contain"
@@ -526,7 +538,8 @@ export function AISearchTrigger() {
             </div>
           </div>
         </motion.div>
-      </Presence>
+        )}
+      </AnimatePresence>
       <motion.button
         className="glass-button fixed flex items-center justify-center gap-2 bottom-4 right-4 px-4 h-12 text-sm font-medium rounded-full z-20 transition-[translate,opacity]"
         style={{
