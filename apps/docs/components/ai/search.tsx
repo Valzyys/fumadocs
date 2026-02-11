@@ -15,6 +15,7 @@ import { buttonVariants } from 'fumadocs-ui/components/ui/button';
 import Link from 'fumadocs-core/link';
 import { Presence } from '@radix-ui/react-presence';
 import { Markdown } from './markdown';
+import * as motion from "motion/react-client";
 
 interface Message {
   id: string;
@@ -456,12 +457,7 @@ export function AISearchTrigger() {
             0px 6px 16px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 8%), transparent);
           transition: 
             background-color 400ms cubic-bezier(1, 0.0, 0.4, 1),
-            box-shadow 400ms cubic-bezier(1, 0.0, 0.4, 1),
-            transform 400ms cubic-bezier(1, 0.0, 0.4, 1);
-        }
-        
-        .glass-button:hover {
-          transform: scale(1.05);
+            box-shadow 400ms cubic-bezier(1, 0.0, 0.4, 1);
         }
         
         /* Dark mode support */
@@ -514,19 +510,21 @@ export function AISearchTrigger() {
           </div>
         </div>
       </Presence>
-      <button
+      <motion.button
         className="glass-button fixed flex items-center justify-center gap-2 bottom-4 right-4 px-4 h-12 text-sm font-medium rounded-full z-20 transition-[translate,opacity]"
         style={{
           opacity: open ? 0 : 1,
           transform: open ? 'translateY(2.5rem)' : 'translateY(0)',
         }}
+        whileHover={{ scale: 1.2 }}
+        whileTap={{ scale: 0.8 }}
         onClick={() => {
           setOpen(true);
         }}
       >
         <MessageCircleIcon className="size-4.5" />
         Ask AI
-      </button>
+      </motion.button>
     </Context>
   );
 }
