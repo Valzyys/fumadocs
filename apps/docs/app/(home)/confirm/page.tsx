@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, AlertCircle, ShieldCheck, Mail, User, Key, ArrowLeft, ArrowRight, Package, CreditCard } from 'lucide-react';
 import { cn } from '@/lib/cn';
-import { buttonVariants } from '@/components/ui/button';
+import LiquidGlass from 'liquid-glass-react';
 
 interface PurchaseData {
   id: string;
@@ -407,40 +407,49 @@ export default function ConfirmPage() {
 
               {/* Submit Buttons */}
               <div className="flex flex-col sm:flex-row gap-4 pt-2">
-                <button
-                  type="button"
-                  onClick={() => router.push('/pricing')}
-                  className={cn(
-                    "flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold border-2 border-fd-border bg-fd-card hover:bg-fd-accent transition-all",
-                    "sm:flex-1"
-                  )}
-                  disabled={isSubmitting}
+                <LiquidGlass
+                  displacementScale={50}
+                  blurAmount={0.08}
+                  saturation={120}
+                  aberrationIntensity={1.5}
+                  elasticity={0.3}
+                  cornerRadius={12}
+                  className="sm:flex-1"
+                  onClick={() => !isSubmitting && router.push('/pricing')}
                 >
-                  <ArrowLeft className="w-5 h-5" />
-                  Kembali
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSubmit}
+                  <div className="flex items-center justify-center gap-2 px-8 py-4 font-semibold text-fd-foreground">
+                    <ArrowLeft className="w-5 h-5" />
+                    Kembali
+                  </div>
+                </LiquidGlass>
+
+                <LiquidGlass
+                  displacementScale={64}
+                  blurAmount={0.1}
+                  saturation={130}
+                  aberrationIntensity={2}
+                  elasticity={0.35}
+                  cornerRadius={12}
                   className={cn(
-                    "flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold bg-fd-primary text-white hover:bg-fd-primary/90 transition-all shadow-lg shadow-fd-primary/30",
                     "sm:flex-1",
                     isSubmitting && 'opacity-50 cursor-not-allowed'
                   )}
-                  disabled={isSubmitting}
+                  onClick={!isSubmitting ? handleSubmit : undefined}
                 >
-                  {isSubmitting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
-                      Memproses...
-                    </>
-                  ) : (
-                    <>
-                      Lanjut ke Pembayaran
-                      <ArrowRight className="w-5 h-5" />
-                    </>
-                  )}
-                </button>
+                  <div className="flex items-center justify-center gap-2 px-8 py-4 font-semibold text-white bg-fd-primary/90">
+                    {isSubmitting ? (
+                      <>
+                        <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                        Memproses...
+                      </>
+                    ) : (
+                      <>
+                        Lanjut ke Pembayaran
+                        <ArrowRight className="w-5 h-5" />
+                      </>
+                    )}
+                  </div>
+                </LiquidGlass>
               </div>
             </div>
           </div>
