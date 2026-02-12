@@ -449,15 +449,14 @@ export function AISearchTrigger() {
 
   // LiquidGlass style configuration - memoized untuk prevent re-renders
   const glassStyle = useMemo(() => ({
-    depth: 0.5,
-    segments: 32,
-    radius: 0.2,
-    roughness: 0.1,
-    transmission: 1,
-    reflectivity: 0.5,
-    ior: 1.5,
-    dispersion: 0.1,
-    thickness: 0.5
+    depth: 20,
+  segments: 86,
+  radius: 20,
+  tint: null,
+  reflectivity: 0.9,
+  thickness: 50,
+  dispersion: 6.4,
+  roughness: 0.34,
   }), []);
 
   return (
