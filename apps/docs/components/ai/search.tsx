@@ -15,7 +15,6 @@ import { buttonVariants } from 'fumadocs-ui/components/ui/button';
 import Link from 'fumadocs-core/link';
 import { AnimatePresence, motion } from 'motion/react';
 import { Markdown } from './markdown';
-import { LiquidGlass } from '@specy/liquid-glass-react';
 
 interface Message {
   id: string;
@@ -447,18 +446,6 @@ export function AISearchTrigger() {
     [open, messages, isLoading],
   );
 
-  // LiquidGlass style configuration - memoized untuk prevent re-renders
-  const glassStyle = useMemo(() => ({
-    depth: 20,
-  segments: 86,
-  radius: 20,
-  tint: null,
-  reflectivity: 0.9,
-  thickness: 50,
-  dispersion: 6.4,
-  roughness: 0.34,
-  }), []);
-
   return (
     <Context.Provider value={contextValue}>
       <style>
@@ -492,9 +479,40 @@ export function AISearchTrigger() {
             0px 6px 16px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 8%), transparent);
         }
         
+        /* Glassmorphism Button Styles */
+        .glass-button {
+          --c-glass: #bbbbbc;
+          --c-light: #fff;
+          --c-dark: #000;
+          --glass-reflex-dark: 1;
+          --glass-reflex-light: 1;
+          --saturation: 150%;
+          
+          font-family: "DM Sans", sans-serif;
+          font-optical-sizing: auto;
+          background-color: color-mix(in srgb, var(--c-glass) 12%, transparent);
+          backdrop-filter: blur(8px) saturate(var(--saturation));
+          -webkit-backdrop-filter: blur(8px) saturate(var(--saturation));
+          box-shadow: 
+            inset 0 0 0 1px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 10%), transparent),
+            inset 1.8px 3px 0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 90%), transparent), 
+            inset -2px -2px 0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 80%), transparent), 
+            inset -3px -8px 1px -6px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 60%), transparent), 
+            inset -0.3px -1px 4px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 12%), transparent), 
+            inset -1.5px 2.5px 0px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 20%), transparent), 
+            inset 0px 3px 4px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 20%), transparent), 
+            inset 2px -6.5px 1px -4px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 10%), transparent), 
+            0px 1px 5px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 10%), transparent), 
+            0px 6px 16px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 8%), transparent);
+          transition: 
+            background-color 400ms cubic-bezier(1, 0.0, 0.4, 1),
+            box-shadow 400ms cubic-bezier(1, 0.0, 0.4, 1);
+        }
+        
         /* Dark mode support */
         @media (prefers-color-scheme: dark) {
-          .glass-modal {
+          .glass-modal,
+          .glass-button {
             --c-glass: #bbbbbc;
             --c-light: #fff;
             --c-dark: #000;
@@ -581,36 +599,21 @@ export function AISearchTrigger() {
         </>
         )}
       </AnimatePresence>
-      <LiquidGlass
-        glassStyle={glassStyle}
-        wrapperStyle={{
-          position: 'fixed',
-          bottom: '1rem',
-          right: '1rem',
-          zIndex: 20,
+      <motion.button
+        className="glass-button fixed flex items-center justify-center gap-2 bottom-4 right-4 px-4 h-12 text-sm font-medium rounded-full z-20 transition-[translate,opacity]"
+        style={{
           opacity: open ? 0 : 1,
           transform: open ? 'translateY(2.5rem)' : 'translateY(0)',
-          transition: 'opacity 0.3s, transform 0.3s',
-          pointerEvents: open ? 'none' : 'auto',
         }}
-        style={{
-          padding: '0.75rem 1rem',
-          borderRadius: '9999px',
-          cursor: 'pointer',
+        whileHover={{ scale: 1.2 }}
+        whileTap={{ scale: 0.8 }}
+        onClick={() => {
+          setOpen(true);
         }}
       >
-        <motion.div
-          className="flex items-center justify-center gap-2 text-sm font-medium"
-          whileHover={{ scale: 1.2 }}
-          whileTap={{ scale: 0.8 }}
-          onClick={() => {
-            setOpen(true);
-          }}
-        >
-          <MessageCircleIcon className="size-4.5" />
-          Ask AI
-        </motion.div>
-      </LiquidGlass>
+        <MessageCircleIcon className="size-4.5" />
+        Ask AI
+      </motion.button>
     </Context.Provider>
   );
 }
