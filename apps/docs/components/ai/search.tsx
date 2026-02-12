@@ -42,39 +42,41 @@ function Header() {
   const { setOpen } = useChatContext();
 
   return (
-    <div className="sticky top-0 flex items-start gap-2">
-      <div className="flex-1 p-3 border rounded-xl bg-fd-card text-fd-card-foreground">
-        <p className="text-sm font-medium mb-2">Ask AI</p>
-        <p className="text-xs text-fd-muted-foreground">
-          Powered by{' '}
-          <a
-            href="https://docs.jkt48connect.com"
-            target="_blank"
-            rel="noreferrer noopener"
-          >
-            JKT48Connect AI
-          </a>
-        </p>
+    <div className="sticky top-0 max-sm:p-4 sm:p-0">
+      <div className="flex items-start justify-between p-3 border rounded-xl bg-fd-card text-fd-card-foreground">
+        <div className="flex-1">
+          <p className="text-sm font-medium mb-2">Ask AI</p>
+          <p className="text-xs text-fd-muted-foreground">
+            Powered by{' '}
+            <a
+              href="https://docs.jkt48connect.com"
+              target="_blank"
+              rel="noreferrer noopener"
+            >
+              JKT48Connect AI
+            </a>
+          </p>
+        </div>
+        <motion.button
+          aria-label="Close"
+          tabIndex={-1}
+          className={cn(
+            buttonVariants({
+              size: 'icon-sm',
+              color: 'secondary',
+              className: 'rounded-full',
+            }),
+          )}
+          whileHover={{ scale: 1.1, rotate: 90 }}
+          whileTap={{ scale: 0.9 }}
+          transition={{ duration: 0.2 }}
+          onClick={() => {
+            setOpen(false);
+          }}
+        >
+          <X />
+        </motion.button>
       </div>
-      <motion.button
-        aria-label="Close"
-        tabIndex={-1}
-        className={cn(
-          buttonVariants({
-            size: 'icon-sm',
-            color: 'secondary',
-            className: 'rounded-full',
-          }),
-        )}
-        whileHover={{ scale: 1.1, rotate: 90 }}
-        whileTap={{ scale: 0.9 }}
-        transition={{ duration: 0.2 }}
-        onClick={() => {
-          setOpen(false);
-        }}
-      >
-        <X />
-      </motion.button>
     </div>
   );
 }
@@ -498,22 +500,42 @@ export function AISearchTrigger() {
       </style>
       <AnimatePresence initial={false}>
         {open && (
-          <motion.div
-            key="modal"
-            className="glass-modal fixed flex flex-col inset-y-2 p-2 text-fd-popover-foreground border rounded-2xl shadow-lg z-30 sm:w-[460px] sm:end-2 max-sm:inset-x-2"
-            initial={{ opacity: 0, scale: 0 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0 }}
-            transition={{
-              duration: 0.3,
-              type: "spring",
-              stiffness: 260,
-              damping: 20,
-            }}
-          >
+          <>
+            {/* Backdrop blur overlay - hanya untuk mobile */}
+            <motion.div
+              key="backdrop"
+              className="fixed inset-0 z-20 backdrop-blur-md bg-black/20 sm:hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={() => setOpen(false)}
+            />
+            
+            <motion.div
+              key="modal"
+              className="glass-modal fixed flex flex-col text-fd-popover-foreground border shadow-lg z-30 sm:inset-y-2 sm:w-[460px] sm:end-2 sm:p-2 sm:rounded-2xl max-sm:inset-x-0 max-sm:bottom-0 max-sm:rounded-t-3xl max-sm:rounded-b-none max-sm:border-b-0 max-sm:max-h-[50vh]"
+              initial={{ 
+                opacity: 0, 
+                scale: typeof window !== 'undefined' && window.innerWidth >= 640 ? 0 : 1,
+                y: typeof window !== 'undefined' && window.innerWidth < 640 ? 100 : 0
+              }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ 
+                opacity: 0,
+                scale: typeof window !== 'undefined' && window.innerWidth >= 640 ? 0 : 1,
+                y: typeof window !== 'undefined' && window.innerWidth < 640 ? 100 : 0
+              }}
+              transition={{
+                duration: 0.3,
+                type: "spring",
+                stiffness: 260,
+                damping: 20,
+              }}
+            >
           <Header />
           <List
-            className="px-3 py-4 flex-1 overscroll-contain"
+            className="px-3 py-4 flex-1 overscroll-contain max-sm:px-4"
             style={{
               maskImage:
                 'linear-gradient(to bottom, transparent, white 1rem, white calc(100% - 1rem), transparent 100%)',
@@ -531,13 +553,14 @@ export function AISearchTrigger() {
               )}
             </div>
           </List>
-          <div className="rounded-xl border bg-fd-card text-fd-card-foreground has-focus-visible:ring-2 has-focus-visible:ring-fd-ring">
+          <div className="rounded-xl border bg-fd-card text-fd-card-foreground has-focus-visible:ring-2 has-focus-visible:ring-fd-ring max-sm:mx-4 max-sm:mb-4">
             <SearchAIInput />
             <div className="flex items-center gap-1.5 p-1 empty:hidden">
               <SearchAIActions />
             </div>
           </div>
         </motion.div>
+        </>
         )}
       </AnimatePresence>
       <motion.button
