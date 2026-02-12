@@ -545,7 +545,7 @@ export function AISearchTrigger() {
                 "max-sm:inset-x-0 max-sm:border-x-0 max-sm:transition-all max-sm:duration-500",
                 modalHeight === 'half' 
                   ? "max-sm:top-0 max-sm:max-h-[50vh] max-sm:rounded-b-3xl max-sm:rounded-t-none max-sm:border-t-0"
-                  : "max-sm:inset-y-0 max-sm:max-h-screen max-sm:rounded-none max-sm:border-y-0"
+                  : "max-sm:top-0 max-sm:bottom-4 max-sm:rounded-b-3xl max-sm:rounded-t-none max-sm:border-t-0"
               )}
               initial={{ 
                 opacity: 0, 
