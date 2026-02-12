@@ -3,7 +3,7 @@ import {
   type ComponentProps,
   createContext,
   type SyntheticEvent,
-  useContext,
+  use,
   useEffect,
   useMemo,
   useRef,
@@ -15,6 +15,7 @@ import { buttonVariants } from 'fumadocs-ui/components/ui/button';
 import Link from 'fumadocs-core/link';
 import { AnimatePresence, motion } from 'motion/react';
 import { Markdown } from './markdown';
+import { LiquidGlass } from '@specy/liquid-glass-react';
 
 interface Message {
   id: string;
@@ -33,7 +34,7 @@ const Context = createContext<{
 } | null>(null);
 
 function useChatContext() {
-  const ctx = useContext(Context);
+  const ctx = use(Context);
   if (!ctx) throw new Error('useChatContext must be used within Context');
   return ctx;
 }
@@ -446,8 +447,21 @@ export function AISearchTrigger() {
     [open, messages, isLoading],
   );
 
+  // LiquidGlass style configuration - memoized untuk prevent re-renders
+  const glassStyle = useMemo(() => ({
+    depth: 0.5,
+    segments: 32,
+    radius: 0.2,
+    roughness: 0.1,
+    transmission: 1,
+    reflectivity: 0.5,
+    ior: 1.5,
+    dispersion: 0.1,
+    thickness: 0.5
+  }), []);
+
   return (
-    <Context.Provider value={contextValue}>
+    <Context value={contextValue}>
       <style>
         {`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,100..1000&display=swap');
@@ -479,40 +493,9 @@ export function AISearchTrigger() {
             0px 6px 16px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 8%), transparent);
         }
         
-        /* Glassmorphism Button Styles */
-        .glass-button {
-          --c-glass: #bbbbbc;
-          --c-light: #fff;
-          --c-dark: #000;
-          --glass-reflex-dark: 1;
-          --glass-reflex-light: 1;
-          --saturation: 150%;
-          
-          font-family: "DM Sans", sans-serif;
-          font-optical-sizing: auto;
-          background-color: color-mix(in srgb, var(--c-glass) 12%, transparent);
-          backdrop-filter: blur(8px) saturate(var(--saturation));
-          -webkit-backdrop-filter: blur(8px) saturate(var(--saturation));
-          box-shadow: 
-            inset 0 0 0 1px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 10%), transparent),
-            inset 1.8px 3px 0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 90%), transparent), 
-            inset -2px -2px 0px -2px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 80%), transparent), 
-            inset -3px -8px 1px -6px color-mix(in srgb, var(--c-light) calc(var(--glass-reflex-light) * 60%), transparent), 
-            inset -0.3px -1px 4px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 12%), transparent), 
-            inset -1.5px 2.5px 0px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 20%), transparent), 
-            inset 0px 3px 4px -2px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 20%), transparent), 
-            inset 2px -6.5px 1px -4px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 10%), transparent), 
-            0px 1px 5px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 10%), transparent), 
-            0px 6px 16px 0px color-mix(in srgb, var(--c-dark) calc(var(--glass-reflex-dark) * 8%), transparent);
-          transition: 
-            background-color 400ms cubic-bezier(1, 0.0, 0.4, 1),
-            box-shadow 400ms cubic-bezier(1, 0.0, 0.4, 1);
-        }
-        
         /* Dark mode support */
         @media (prefers-color-scheme: dark) {
-          .glass-modal,
-          .glass-button {
+          .glass-modal {
             --c-glass: #bbbbbc;
             --c-light: #fff;
             --c-dark: #000;
@@ -599,21 +582,36 @@ export function AISearchTrigger() {
         </>
         )}
       </AnimatePresence>
-      <motion.button
-        className="glass-button fixed flex items-center justify-center gap-2 bottom-4 right-4 px-4 h-12 text-sm font-medium rounded-full z-20 transition-[translate,opacity]"
-        style={{
+      <LiquidGlass
+        glassStyle={glassStyle}
+        wrapperStyle={{
+          position: 'fixed',
+          bottom: '1rem',
+          right: '1rem',
+          zIndex: 20,
           opacity: open ? 0 : 1,
           transform: open ? 'translateY(2.5rem)' : 'translateY(0)',
+          transition: 'opacity 0.3s, transform 0.3s',
+          pointerEvents: open ? 'none' : 'auto',
         }}
-        whileHover={{ scale: 1.2 }}
-        whileTap={{ scale: 0.8 }}
-        onClick={() => {
-          setOpen(true);
+        style={{
+          padding: '0.75rem 1rem',
+          borderRadius: '9999px',
+          cursor: 'pointer',
         }}
       >
-        <MessageCircleIcon className="size-4.5" />
-        Ask AI
-      </motion.button>
+        <motion.div
+          className="flex items-center justify-center gap-2 text-sm font-medium"
+          whileHover={{ scale: 1.2 }}
+          whileTap={{ scale: 0.8 }}
+          onClick={() => {
+            setOpen(true);
+          }}
+        >
+          <MessageCircleIcon className="size-4.5" />
+          Ask AI
+        </motion.div>
+      </LiquidGlass>
     </Context.Provider>
   );
 }
