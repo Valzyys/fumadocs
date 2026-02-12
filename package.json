@@ -40,6 +40,7 @@
     "node": ">= 18.17.0"
   },
   "dependencies": {
+    "@specy/liquid-glass-react": "^1.0.2",
     "liquid-glass-react": "^1.1.1",
     "motion": "^12.34.0",
     "qrcode": "^1.5.4"
