@@ -331,6 +331,7 @@ export function AISearchTrigger() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [modalHeight, setModalHeight] = useState<'half' | 'full'>('half');
 
   useEffect(() => {
     // Check if mobile on mount
@@ -343,6 +344,17 @@ export function AISearchTrigger() {
     
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Adjust modal height based on messages count
+  useEffect(() => {
+    if (!isMobile) return;
+    
+    if (messages.length === 0) {
+      setModalHeight('half');
+    } else if (messages.length >= 2) {
+      setModalHeight('full');
+    }
+  }, [messages.length, isMobile]);
 
   const sendMessage = async (text: string) => {
     const userMessage: Message = {
@@ -527,13 +539,24 @@ export function AISearchTrigger() {
             
             <motion.div
               key="modal"
-              className="glass-modal fixed flex flex-col text-fd-popover-foreground border shadow-lg z-30 sm:inset-y-2 sm:w-[460px] sm:end-2 sm:p-2 sm:rounded-2xl max-sm:inset-x-0 max-sm:top-0 max-sm:rounded-b-3xl max-sm:rounded-t-none max-sm:border-t-0 max-sm:max-h-[50vh]"
+              className={cn(
+                "glass-modal fixed flex flex-col text-fd-popover-foreground border shadow-lg z-30",
+                "sm:inset-y-2 sm:w-[460px] sm:end-2 sm:p-2 sm:rounded-2xl",
+                "max-sm:inset-x-0 max-sm:border-x-0 max-sm:transition-all max-sm:duration-500",
+                modalHeight === 'half' 
+                  ? "max-sm:top-0 max-sm:max-h-[50vh] max-sm:rounded-b-3xl max-sm:rounded-t-none max-sm:border-t-0"
+                  : "max-sm:inset-y-0 max-sm:max-h-screen max-sm:rounded-none max-sm:border-y-0"
+              )}
               initial={{ 
                 opacity: 0, 
                 scale: isMobile ? 1 : 0,
                 y: isMobile ? -100 : 0
               }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
+              animate={{ 
+                opacity: 1, 
+                scale: 1, 
+                y: 0
+              }}
               exit={{ 
                 opacity: 0,
                 scale: isMobile ? 1 : 0,
