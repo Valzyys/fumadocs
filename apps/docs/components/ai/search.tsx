@@ -514,17 +514,17 @@ export function AISearchTrigger() {
             
             <motion.div
               key="modal"
-              className="glass-modal fixed flex flex-col text-fd-popover-foreground border shadow-lg z-30 sm:inset-y-2 sm:w-[460px] sm:end-2 sm:p-2 sm:rounded-2xl max-sm:inset-x-0 max-sm:bottom-0 max-sm:rounded-t-3xl max-sm:rounded-b-none max-sm:border-b-0 max-sm:max-h-[50vh]"
+              className="glass-modal fixed flex flex-col text-fd-popover-foreground border shadow-lg z-30 sm:inset-y-2 sm:w-[460px] sm:end-2 sm:p-2 sm:rounded-2xl max-sm:inset-x-0 max-sm:top-0 max-sm:rounded-b-3xl max-sm:rounded-t-none max-sm:border-t-0 max-sm:max-h-[50vh]"
               initial={{ 
                 opacity: 0, 
                 scale: typeof window !== 'undefined' && window.innerWidth >= 640 ? 0 : 1,
-                y: typeof window !== 'undefined' && window.innerWidth < 640 ? 100 : 0
+                y: typeof window !== 'undefined' && window.innerWidth < 640 ? -100 : 0
               }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ 
                 opacity: 0,
                 scale: typeof window !== 'undefined' && window.innerWidth >= 640 ? 0 : 1,
-                y: typeof window !== 'undefined' && window.innerWidth < 640 ? 100 : 0
+                y: typeof window !== 'undefined' && window.innerWidth < 640 ? -100 : 0
               }}
               transition={{
                 duration: 0.3,
