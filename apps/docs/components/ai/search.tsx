@@ -3,7 +3,7 @@ import {
   type ComponentProps,
   createContext,
   type SyntheticEvent,
-  use,
+  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -33,7 +33,7 @@ const Context = createContext<{
 } | null>(null);
 
 function useChatContext() {
-  const ctx = use(Context);
+  const ctx = useContext(Context);
   if (!ctx) throw new Error('useChatContext must be used within Context');
   return ctx;
 }
@@ -447,7 +447,7 @@ export function AISearchTrigger() {
   );
 
   return (
-    <Context value={contextValue}>
+    <Context.Provider value={contextValue}>
       <style>
         {`
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,100..1000&display=swap');
@@ -614,6 +614,6 @@ export function AISearchTrigger() {
         <MessageCircleIcon className="size-4.5" />
         Ask AI
       </motion.button>
-    </Context>
+    </Context.Provider>
   );
 }
