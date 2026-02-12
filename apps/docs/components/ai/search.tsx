@@ -330,6 +330,19 @@ export function AISearchTrigger() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    // Check if mobile on mount
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const sendMessage = async (text: string) => {
     const userMessage: Message = {
@@ -517,14 +530,14 @@ export function AISearchTrigger() {
               className="glass-modal fixed flex flex-col text-fd-popover-foreground border shadow-lg z-30 sm:inset-y-2 sm:w-[460px] sm:end-2 sm:p-2 sm:rounded-2xl max-sm:inset-x-0 max-sm:top-0 max-sm:rounded-b-3xl max-sm:rounded-t-none max-sm:border-t-0 max-sm:max-h-[50vh]"
               initial={{ 
                 opacity: 0, 
-                scale: typeof window !== 'undefined' && window.innerWidth >= 640 ? 0 : 1,
-                y: typeof window !== 'undefined' && window.innerWidth < 640 ? -100 : 0
+                scale: isMobile ? 1 : 0,
+                y: isMobile ? -100 : 0
               }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ 
                 opacity: 0,
-                scale: typeof window !== 'undefined' && window.innerWidth >= 640 ? 0 : 1,
-                y: typeof window !== 'undefined' && window.innerWidth < 640 ? -100 : 0
+                scale: isMobile ? 1 : 0,
+                y: isMobile ? -100 : 0
               }}
               transition={{
                 duration: 0.3,
