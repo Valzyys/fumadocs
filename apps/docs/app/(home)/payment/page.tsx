@@ -223,7 +223,7 @@ export default function PaymentPage() {
     }
     @keyframes scanBeam {
       0%, 100% { transform: translateY(0px); opacity: 0.7; }
-      50% { transform: translateY(152px); opacity: 0.3; }
+      50% { transform: translateY(220px); opacity: 0.3; }
     }
     .fade-up { animation: fadeSlideUp 0.5s ease forwards; }
     .fade-up-2 { animation: fadeSlideUp 0.5s 0.15s ease both; }
@@ -432,7 +432,7 @@ export default function PaymentPage() {
               </div>
 
               {/* QRIS Body */}
-              <div className="p-6">
+              <div className="px-6 pt-6 pb-4">
                 {isLoading ? (
                   <div className="flex flex-col items-center justify-center py-16 gap-4">
                     <div className="relative w-12 h-12 flex items-center justify-center">
@@ -451,57 +451,55 @@ export default function PaymentPage() {
                     </button>
                   </div>
                 ) : qrisData ? (
-                  <div className="flex gap-5 items-start">
-                    {/* QR */}
-                    <div className="flex-shrink-0">
-                      <div className={`relative w-44 h-44 rounded-xl border-2 border-fd-border overflow-hidden bg-white ${isExpired ? 'opacity-50' : ''}`}>
-                        <img src={qrisData.qrImageUrl} alt="QRIS" className="w-full h-full object-contain p-2" />
+                  <div className="flex flex-col items-center gap-5">
+                    {/* QR — centered & large */}
+                    <div className="flex flex-col items-center">
+                      <div className={`relative rounded-2xl border-2 border-fd-border overflow-hidden bg-white ${isExpired ? 'opacity-40' : ''}`}
+                        style={{ width: '240px', height: '240px' }}>
+                        <img src={qrisData.qrImageUrl} alt="QRIS" className="w-full h-full object-contain p-3" />
                         {!isExpired && (
                           <div className="absolute inset-x-0 top-0 h-0.5 bg-fd-primary/80 scan-beam"
-                            style={{ boxShadow: '0 0 10px 3px var(--fd-primary)' }}></div>
+                            style={{ boxShadow: '0 0 12px 4px var(--fd-primary)' }}></div>
                         )}
                         {/* Corner marks */}
-                        {[['top-0 left-0', 'top-0', 'left-0'], ['top-0 right-0', 'top-0', 'right-0'], ['bottom-0 left-0', 'bottom-0', 'left-0'], ['bottom-0 right-0', 'bottom-0', 'right-0']].map(([pos, v, h], i) => (
-                          <div key={i} className={`absolute ${pos} w-5 h-5`}>
+                        {[['top-0 left-0','top-0','left-0'],['top-0 right-0','top-0','right-0'],['bottom-0 left-0','bottom-0','left-0'],['bottom-0 right-0','bottom-0','right-0']].map(([pos,v,h],i) => (
+                          <div key={i} className={`absolute ${pos} w-6 h-6`}>
                             <div className={`absolute w-full h-0.5 bg-fd-primary ${v}`}></div>
                             <div className={`absolute h-full w-0.5 bg-fd-primary ${h}`}></div>
                           </div>
                         ))}
                         {isExpired && (
                           <div className="absolute inset-0 bg-fd-background/80 flex items-center justify-center">
-                            <div style={{ border: '2px solid rgb(239 68 68)', borderRadius: '8px', padding: '4px 10px', transform: 'rotate(-10deg)' }}>
-                              <p className="ticket-font text-xs text-red-500 uppercase tracking-wider" style={{ fontWeight: 800 }}>EXPIRED</p>
+                            <div style={{ border: '2.5px solid rgb(239 68 68)', borderRadius: '8px', padding: '6px 14px', transform: 'rotate(-10deg)' }}>
+                              <p className="ticket-font text-sm text-red-500 uppercase tracking-wider" style={{ fontWeight: 800 }}>EXPIRED</p>
                             </div>
                           </div>
                         )}
                       </div>
-                      <p className="ticket-font text-[10px] text-fd-muted-foreground text-center mt-2">
+                      <p className="ticket-font text-[11px] text-fd-muted-foreground text-center mt-2.5">
                         {isExpired ? (
-                          <button onClick={handleRefreshQRIS} className="flex items-center gap-1 mx-auto text-fd-primary hover:underline">
+                          <button onClick={handleRefreshQRIS} className="flex items-center gap-1.5 mx-auto text-fd-primary hover:underline">
                             <RefreshCw className="w-3 h-3" /> Perbarui QR
                           </button>
-                        ) : 'Scan dengan e-wallet'}
+                        ) : 'Scan dengan e-wallet atau mobile banking'}
                       </p>
                     </div>
 
-                    {/* Details */}
-                    <div className="flex-1 min-w-0 space-y-3">
-                      <div className="space-y-2">
-                        {[
-                          { label: 'Harga Paket', value: `Rp ${orderData.price.toLocaleString('id-ID')}` },
-                          { label: 'Kode Unik', value: `+ Rp ${(orderData.uniqueAmount! - orderData.price).toLocaleString('id-ID')}` },
-                        ].map(({ label, value }) => (
-                          <div key={label} className="flex justify-between items-center py-1.5 border-b border-dashed border-fd-border/50">
-                            <p className="ticket-font text-[10px] text-fd-muted-foreground uppercase tracking-wider">{label}</p>
-                            <p className="mono-font text-xs text-fd-muted-foreground">{value}</p>
-                          </div>
-                        ))}
-                        <div className="flex justify-between items-center px-3 py-2 rounded-xl bg-fd-accent border border-fd-border">
-                          <p className="ticket-font text-xs font-700 uppercase tracking-wider text-fd-foreground">TOTAL</p>
-                          <p className="mono-font text-sm font-700 text-fd-foreground">Rp {orderData.uniqueAmount!.toLocaleString('id-ID')}</p>
-                        </div>
+                    {/* Amount breakdown — full width row */}
+                    <div className="w-full space-y-1.5">
+                      <div className="flex justify-between items-center py-2 border-b border-dashed border-fd-border/50">
+                        <p className="ticket-font text-xs text-fd-muted-foreground uppercase tracking-wider">Harga Paket</p>
+                        <p className="mono-font text-sm text-fd-foreground">Rp {orderData.price.toLocaleString('id-ID')}</p>
                       </div>
-                      <p className="ticket-font text-[10px] text-fd-muted-foreground leading-relaxed">
+                      <div className="flex justify-between items-center py-2 border-b border-dashed border-fd-border/50">
+                        <p className="ticket-font text-xs text-fd-muted-foreground uppercase tracking-wider">Kode Unik</p>
+                        <p className="mono-font text-sm text-fd-muted-foreground">+ Rp {(orderData.uniqueAmount! - orderData.price).toLocaleString('id-ID')}</p>
+                      </div>
+                      <div className="flex justify-between items-center px-4 py-3 rounded-xl bg-fd-accent border border-fd-border mt-1">
+                        <p className="ticket-font text-sm font-700 uppercase tracking-wider text-fd-foreground">Total</p>
+                        <p className="mono-font text-base font-700 text-fd-foreground">Rp {orderData.uniqueAmount!.toLocaleString('id-ID')}</p>
+                      </div>
+                      <p className="ticket-font text-[10px] text-fd-muted-foreground text-center pt-1">
                         Kode unik membantu sistem mengidentifikasi pembayaran Anda secara otomatis
                       </p>
                     </div>
@@ -518,18 +516,18 @@ export default function PaymentPage() {
               {/* Instruction Stub */}
               <div className="bg-fd-accent/20 px-6 py-4">
                 <p className="ticket-font text-[10px] text-fd-muted-foreground uppercase tracking-[0.25em] mb-3">Cara Pembayaran</p>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                <div className="flex flex-wrap gap-x-6 gap-y-2">
                   {[
                     'Buka aplikasi e-wallet atau mobile banking',
                     'Pilih menu scan QRIS',
                     'Scan kode QR di atas',
                     'Konfirmasi nominal & bayar',
                   ].map((step, i) => (
-                    <div key={i} className="flex items-start gap-2">
-                      <div className="w-4 h-4 rounded-full border border-fd-border bg-fd-card flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <div key={i} className="flex items-center gap-2 min-w-0">
+                      <div className="w-5 h-5 rounded-full border border-fd-border bg-fd-card flex items-center justify-center flex-shrink-0">
                         <span className="mono-font text-[9px] font-700 text-fd-muted-foreground">{i + 1}</span>
                       </div>
-                      <p className="ticket-font text-[11px] text-fd-muted-foreground leading-relaxed">{step}</p>
+                      <p className="ticket-font text-xs text-fd-muted-foreground whitespace-nowrap">{step}</p>
                     </div>
                   ))}
                 </div>
