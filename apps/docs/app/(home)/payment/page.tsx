@@ -1,75 +1,29 @@
 'use client';
-
 import { useState, useEffect } from 'react';
-import { 
-  QrCode, 
-  Clock, 
-  CheckCircle, 
-  AlertCircle,
-  ShieldCheck,
-  RefreshCw,
-  Loader,
-  Package,
-  User,
-  CreditCard,
-  Check,
-  Copy,
-  Mail,
-  Key,
-  Calendar,
-  Zap,
-  Download,
-  ArrowLeft
+import {
+  QrCode, Clock, CheckCircle, AlertCircle, ShieldCheck,
+  RefreshCw, Loader, Package, User, CreditCard, Check,
+  Copy, Mail, Key, Calendar, Zap, Download, ArrowLeft, Plane
 } from 'lucide-react';
 
 interface OrderData {
-  id: string;
-  planId: string;
-  planName: string;
-  price: number;
-  priceFormatted: string;
-  limit: number | string;
-  expireDays: number | null;
-  customerName: string;
-  customerEmail: string;
-  apiKey: string;
-  status: string;
-  createdAt: string;
-  uniqueAmount?: number;
+  id: string; planId: string; planName: string; price: number;
+  priceFormatted: string; limit: number | string; expireDays: number | null;
+  customerName: string; customerEmail: string; apiKey: string;
+  status: string; createdAt: string; uniqueAmount?: number;
 }
-
 interface QRISResponse {
-  author: string;
-  originalQRIS: string;
-  dynamicQRIS: string;
-  amount: string;
-  includeFee: boolean;
-  qrImageUrl: string;
+  author: string; originalQRIS: string; dynamicQRIS: string;
+  amount: string; includeFee: boolean; qrImageUrl: string;
 }
-
 interface MutationData {
-  id: number;
-  debet: string;
-  kredit: string;
-  saldo_akhir: string;
-  keterangan: string;
-  tanggal: string;
-  status: string;
-  fee: string;
-  brand: {
-    name: string;
-    logo: string;
-  };
+  id: number; debet: string; kredit: string; saldo_akhir: string;
+  keterangan: string; tanggal: string; status: string; fee: string;
+  brand: { name: string; logo: string; };
 }
-
 interface PaymentSuccess {
-  amount: string;
-  from: string;
-  logo: string;
-  description: string;
-  date: string;
-  originalAmount: number;
-  uniqueFee: number;
+  amount: string; from: string; logo: string; description: string;
+  date: string; originalAmount: number; uniqueFee: number;
 }
 
 export default function PaymentPage() {
@@ -84,98 +38,57 @@ export default function PaymentPage() {
   const [checkInterval, setCheckInterval] = useState<NodeJS.Timeout | null>(null);
   const [copiedApiKey, setCopiedApiKey] = useState(false);
 
-  const generateUniqueFee = (): number => {
-    return Math.floor(Math.random() * 999) + 1;
-  };
+  const generateUniqueFee = (): number => Math.floor(Math.random() * 999) + 1;
 
   useEffect(() => {
     const storedData = localStorage.getItem('orderData');
     if (storedData) {
       const data = JSON.parse(storedData);
-      
       if (!data.uniqueAmount) {
         const uniqueFee = generateUniqueFee();
         data.uniqueAmount = data.price + uniqueFee;
         localStorage.setItem('orderData', JSON.stringify(data));
       }
-      
       setOrderData(data);
       generateQRIS(data.uniqueAmount);
     }
   }, []);
 
   useEffect(() => {
-    if (timeLeft <= 0) {
-      setIsExpired(true);
-      if (checkInterval) {
-        clearInterval(checkInterval);
-      }
-      return;
-    }
-
-    const timer = setInterval(() => {
-      setTimeLeft(prev => prev - 1);
-    }, 1000);
-
+    if (timeLeft <= 0) { setIsExpired(true); if (checkInterval) clearInterval(checkInterval); return; }
+    const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
     return () => clearInterval(timer);
   }, [timeLeft, checkInterval]);
 
   useEffect(() => {
     if (orderData && !isExpired && !paymentSuccess) {
-      const interval = setInterval(() => {
-        checkPayment();
-      }, 10000);
-
+      const interval = setInterval(() => checkPayment(), 10000);
       setCheckInterval(interval);
-
       return () => clearInterval(interval);
     }
   }, [orderData, isExpired, paymentSuccess]);
 
   const generateQRIS = async (amount: number) => {
-    setIsLoading(true);
-    setError(null);
-
+    setIsLoading(true); setError(null);
     try {
       const response = await fetch('/api/payment/generate-qris', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount }),
       });
-
-      if (!response.ok) {
-        throw new Error('Gagal generate QRIS');
-      }
-
+      if (!response.ok) throw new Error('Gagal generate QRIS');
       const result = await response.json();
-      
-      // Extract data from the wrapper
-      if (result.status && result.data) {
-        setQrisData(result.data);
-      } else {
-        throw new Error(result.message || 'Gagal generate QRIS');
-      }
+      if (result.status && result.data) setQrisData(result.data);
+      else throw new Error(result.message || 'Gagal generate QRIS');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
-    } finally {
-      setIsLoading(false);
-    }
+    } finally { setIsLoading(false); }
   };
 
   const parseTransactionDate = (dateStr: string): Date => {
     const [datePart, timePart] = dateStr.split(' ');
     const [day, month, year] = datePart.split('/');
     const [hour, minute] = timePart.split(':');
-
-    return new Date(
-      parseInt(year),
-      parseInt(month) - 1,
-      parseInt(day),
-      parseInt(hour),
-      parseInt(minute)
-    );
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day), parseInt(hour), parseInt(minute));
   };
 
   const formatDateForComparison = (date: Date): string => {
@@ -183,104 +96,56 @@ export default function PaymentPage() {
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const year = date.getFullYear();
     const hour = String(date.getHours()).padStart(2, '0');
-    
     return `${day}/${month}/${year}-${hour}`;
   };
 
   const checkPayment = async () => {
     if (!orderData || isChecking) return;
-
     setIsChecking(true);
-
     try {
-      const response = await fetch('/api/payment/check-mutation', {
-        method: 'GET',
-      });
-
-      if (!response.ok) {
-        throw new Error('Gagal mengecek pembayaran');
-      }
-
+      const response = await fetch('/api/payment/check-mutation', { method: 'GET' });
+      if (!response.ok) throw new Error('Gagal mengecek pembayaran');
       const data = await response.json();
-
       if (data.status && data.result && Array.isArray(data.result)) {
         const now = new Date();
         const currentDate = formatDateForComparison(now);
-
         const incomingTransactions = data.result.filter((transaction: MutationData) => {
           if (transaction.status !== 'IN') return false;
-
           const transactionDate = parseTransactionDate(transaction.tanggal);
           const transactionDateStr = formatDateForComparison(transactionDate);
-
           const timeDiff = Math.abs(now.getTime() - transactionDate.getTime()) / 1000 / 60;
           return transactionDateStr === currentDate && timeDiff <= 30;
         });
-
         const matchedTransaction = incomingTransactions.find((transaction: MutationData) => {
           const amount = parseFloat(transaction.kredit.replace(/\./g, ''));
           return amount === orderData.uniqueAmount;
         });
-
-        if (matchedTransaction) {
-          await createAPIKey(matchedTransaction);
-        }
+        if (matchedTransaction) await createAPIKey(matchedTransaction);
       }
-    } catch (err) {
-      console.error('Error checking payment:', err);
-    } finally {
-      setIsChecking(false);
-    }
+    } catch (err) { console.error('Error checking payment:', err); }
+    finally { setIsChecking(false); }
   };
 
   const createAPIKey = async (transaction: MutationData) => {
     try {
       let planType = 'basic';
-      if (orderData?.planName.toLowerCase().includes('premium')) {
-        planType = 'premium';
-      } else if (orderData?.planName.toLowerCase().includes('enterprise')) {
-        planType = 'enterprise';
-      }
-
+      if (orderData?.planName.toLowerCase().includes('premium')) planType = 'premium';
+      else if (orderData?.planName.toLowerCase().includes('enterprise')) planType = 'enterprise';
       const response = await fetch('/api/payment/create-key', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          owner: orderData!.customerName,
-          email: orderData!.customerEmail,
-          type: planType,
-          apikey: orderData!.apiKey,
-        }),
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ owner: orderData!.customerName, email: orderData!.customerEmail, type: planType, apikey: orderData!.apiKey }),
       });
-
-      if (!response.ok) {
-        throw new Error('Gagal membuat API key');
-      }
-
+      if (!response.ok) throw new Error('Gagal membuat API key');
       const keyData = await response.json();
-
       if (keyData.status) {
-        if (checkInterval) {
-          clearInterval(checkInterval);
-        }
-
+        if (checkInterval) clearInterval(checkInterval);
         setPaymentSuccess({
-          amount: transaction.kredit,
-          from: transaction.brand.name,
-          logo: transaction.brand.logo,
-          description: transaction.keterangan,
-          date: transaction.tanggal,
-          originalAmount: orderData!.price,
+          amount: transaction.kredit, from: transaction.brand.name,
+          logo: transaction.brand.logo, description: transaction.keterangan,
+          date: transaction.tanggal, originalAmount: orderData!.price,
           uniqueFee: orderData!.uniqueAmount! - orderData!.price
         });
-
-        const updatedOrder = {
-          ...orderData!,
-          status: 'paid',
-          apiKeyData: keyData.data
-        };
+        const updatedOrder = { ...orderData!, status: 'paid', apiKeyData: keyData.data };
         localStorage.setItem('orderData', JSON.stringify(updatedOrder));
       }
     } catch (err) {
@@ -299,23 +164,12 @@ export default function PaymentPage() {
     if (orderData) {
       const newUniqueFee = generateUniqueFee();
       const newUniqueAmount = orderData.price + newUniqueFee;
-      
-      const updatedOrder = {
-        ...orderData,
-        uniqueAmount: newUniqueAmount
-      };
-      
+      const updatedOrder = { ...orderData, uniqueAmount: newUniqueAmount };
       setOrderData(updatedOrder);
       localStorage.setItem('orderData', JSON.stringify(updatedOrder));
-      
-      setIsExpired(false);
-      setTimeLeft(900);
+      setIsExpired(false); setTimeLeft(900);
       generateQRIS(newUniqueAmount);
     }
-  };
-
-  const handleConfirmPayment = async () => {
-    await checkPayment();
   };
 
   const handleCopyApiKey = () => {
@@ -326,555 +180,674 @@ export default function PaymentPage() {
     }
   };
 
-  const steps = [
-    { number: 1, label: 'Pilih Paket', icon: Package, status: 'completed' },
-    { number: 2, label: 'Konfirmasi', icon: User, status: 'completed' },
-    { number: 3, label: 'Pembayaran', icon: CreditCard, status: 'current' }
-  ];
-
-  // Success Page
+  // ─── SUCCESS PAGE ─────────────────────────────────────────────────────────
   if (paymentSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-fd-background via-fd-background to-fd-accent/20">
-        <main className="px-4 py-8 w-full max-w-[900px] mx-auto">
-          {/* Success Animation */}
-          <div className="text-center mb-8">
-            <div className="relative inline-block">
-              <div className="w-32 h-32 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-green-500/50 animate-pulse">
-                <CheckCircle className="w-20 h-20 text-white" strokeWidth={2.5} />
+      <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'var(--fd-background)' }}>
+        <style>{`
+          @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+          
+          :root {
+            --ticket-bg: var(--fd-card, #ffffff);
+            --ticket-border: var(--fd-border, #e2e8f0);
+            --ticket-muted: var(--fd-muted-foreground, #64748b);
+            --ticket-fg: var(--fd-foreground, #0f172a);
+            --ticket-accent: var(--fd-primary, #2563eb);
+            --ticket-success: #16a34a;
+          }
+
+          .ticket-font { font-family: 'Barlow Condensed', sans-serif; }
+          .mono-font { font-family: 'IBM Plex Mono', monospace; }
+
+          .boarding-pass {
+            background: var(--ticket-bg);
+            border: 1.5px solid var(--ticket-border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
+            position: relative;
+          }
+
+          .tear-line {
+            position: relative;
+            display: flex;
+            align-items: center;
+          }
+          .tear-line::before, .tear-line::after {
+            content: '';
+            width: 20px; height: 20px;
+            background: var(--fd-background, #f8fafc);
+            border-radius: 50%;
+            border: 1.5px solid var(--ticket-border);
+            flex-shrink: 0;
+            margin: 0 -10px;
+            position: relative;
+            z-index: 1;
+          }
+          .tear-line-inner {
+            flex: 1;
+            border-top: 2px dashed var(--ticket-border);
+            margin: 0 6px;
+          }
+
+          .barcode-lines {
+            display: flex; gap: 2px; align-items: center; justify-content: center;
+            height: 48px; padding: 0 8px;
+          }
+          .barcode-lines span {
+            display: block; background: var(--ticket-fg); border-radius: 1px;
+          }
+
+          .success-stamp {
+            position: absolute; top: 24px; right: 24px;
+            width: 80px; height: 80px;
+            border: 3px solid var(--ticket-success);
+            border-radius: 50%;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transform: rotate(12deg);
+            opacity: 0.85;
+          }
+
+          .pulse-ring {
+            animation: pulse-ring 1.5s ease-out infinite;
+          }
+          @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.4); }
+            70% { transform: scale(1); box-shadow: 0 0 0 16px rgba(22, 163, 74, 0); }
+            100% { transform: scale(0.95); }
+          }
+
+          .slide-up {
+            animation: slideUp 0.5s ease-out both;
+          }
+          @keyframes slideUp {
+            from { opacity: 0; transform: translateY(24px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+
+          .delay-1 { animation-delay: 0.1s; }
+          .delay-2 { animation-delay: 0.2s; }
+          .delay-3 { animation-delay: 0.3s; }
+        `}</style>
+
+        <div className="w-full max-w-md">
+          {/* BOARDING PASS - SUCCESS */}
+          <div className="boarding-pass slide-up">
+            {/* Header strip */}
+            <div className="px-6 pt-6 pb-4" style={{ borderBottom: '1px solid var(--ticket-border)' }}>
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="ticket-font text-xs tracking-[0.2em] uppercase mb-1" style={{ color: 'var(--ticket-muted)' }}>E-TICKET</div>
+                  <div className="ticket-font font-black text-2xl leading-none" style={{ color: 'var(--ticket-fg)' }}>BOARDING PASS</div>
+                  <div className="ticket-font text-sm mt-1" style={{ color: 'var(--ticket-muted)' }}>API ACCESS CONFIRMED</div>
+                </div>
+                {/* Stamp */}
+                <div className="success-stamp pulse-ring">
+                  <Check size={20} strokeWidth={3} style={{ color: 'var(--ticket-success)' }} />
+                  <span className="ticket-font font-bold text-xs leading-none mt-0.5" style={{ color: 'var(--ticket-success)' }}>PAID</span>
+                </div>
               </div>
-              <div className="absolute inset-0 w-32 h-32 bg-green-400/30 rounded-full animate-ping mx-auto"></div>
             </div>
-            <h1 className="text-4xl sm:text-5xl font-bold mb-3 bg-gradient-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
-              Pembayaran Berhasil!
-            </h1>
-            <p className="text-fd-muted-foreground text-lg">
-              Terima kasih, transaksi Anda telah berhasil dikonfirmasi
-            </p>
-          </div>
 
-          <div className="grid gap-6">
-            {/* Transaction Details */}
-            <div className="bg-gradient-to-br from-fd-card to-fd-accent/20 backdrop-blur-sm border border-fd-border rounded-2xl p-8 shadow-xl">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center">
-                  <CheckCircle className="w-6 h-6 text-green-600" />
+            {/* Route section */}
+            <div className="px-6 py-5">
+              <div className="flex items-center gap-3">
+                <div className="text-center">
+                  <div className="ticket-font font-black text-3xl" style={{ color: 'var(--ticket-fg)' }}>IDR</div>
+                  <div className="ticket-font text-xs tracking-widest" style={{ color: 'var(--ticket-muted)' }}>DARI</div>
                 </div>
-                <h2 className="text-2xl font-bold">Detail Transaksi</h2>
+                <div className="flex-1 flex items-center gap-1">
+                  <div className="flex-1 border-t border-dashed" style={{ borderColor: 'var(--ticket-border)' }}></div>
+                  <Plane size={18} style={{ color: 'var(--ticket-accent)' }} />
+                  <div className="flex-1 border-t border-dashed" style={{ borderColor: 'var(--ticket-border)' }}></div>
+                </div>
+                <div className="text-center">
+                  <div className="ticket-font font-black text-3xl" style={{ color: 'var(--ticket-accent)' }}>API</div>
+                  <div className="ticket-font text-xs tracking-widest" style={{ color: 'var(--ticket-muted)' }}>ACCESS</div>
+                </div>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-fd-background/50 rounded-xl border border-fd-border/50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-lg bg-fd-primary/10 flex items-center justify-center">
-                      <CreditCard className="w-5 h-5 text-fd-primary" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-fd-muted-foreground mb-0.5">Dibayar dari</p>
-                      <p className="font-semibold text-lg">{paymentSuccess.from}</p>
-                    </div>
-                  </div>
+              <div className="flex items-center gap-3 mt-1">
+                <div className="text-left flex-1">
+                  <div className="ticket-font text-xs" style={{ color: 'var(--ticket-muted)' }}>{paymentSuccess.from}</div>
                 </div>
-
-                <div className="flex items-center justify-between p-4 bg-fd-background/50 rounded-xl border border-fd-border/50">
-                  <div>
-                    <p className="text-xs text-fd-muted-foreground mb-1">Keterangan</p>
-                    <p className="font-medium">{paymentSuccess.description}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-4 bg-fd-background/50 rounded-xl border border-fd-border/50">
-                  <div>
-                    <p className="text-xs text-fd-muted-foreground mb-1">Tanggal & Waktu</p>
-                    <p className="font-medium">{paymentSuccess.date}</p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-fd-background/50 rounded-xl border border-fd-border/50">
-                    <p className="text-xs text-fd-muted-foreground mb-1">Harga Paket</p>
-                    <p className="font-semibold text-lg">
-                      Rp {paymentSuccess.originalAmount.toLocaleString('id-ID')}
-                    </p>
-                  </div>
-
-                  <div className="p-4 bg-fd-primary/5 rounded-xl border border-fd-primary/30">
-                    <p className="text-xs text-fd-primary mb-1">Kode Unik</p>
-                    <p className="font-semibold text-lg text-fd-primary">
-                      Rp {paymentSuccess.uniqueFee.toLocaleString('id-ID')}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="p-6 bg-gradient-to-br from-fd-primary/10 to-fd-primary/5 rounded-xl border-2 border-fd-primary/30">
-                  <div className="flex items-center justify-between">
-                    <p className="text-fd-muted-foreground font-medium">Total Dibayar</p>
-                    <p className="font-bold text-4xl bg-gradient-to-r from-fd-primary to-fd-primary/70 bg-clip-text text-transparent">
-                      Rp {parseInt(paymentSuccess.amount.replace(/\./g, '')).toLocaleString('id-ID')}
-                    </p>
-                  </div>
+                <div className="text-right flex-1">
+                  <div className="ticket-font text-xs" style={{ color: 'var(--ticket-muted)' }}>{orderData?.planName}</div>
                 </div>
               </div>
             </div>
 
-            {/* Email Notification */}
-            <div className="bg-gradient-to-r from-blue-500/10 to-blue-600/10 border-2 border-blue-500/30 rounded-2xl p-6">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center shrink-0">
-                  <Mail className="w-6 h-6 text-blue-600" />
+            {/* Info grid */}
+            <div className="grid grid-cols-3 px-6 pb-4 gap-4">
+              {[
+                { label: 'PENUMPANG', value: orderData?.customerName || '—' },
+                { label: 'TANGGAL', value: paymentSuccess.date.split(' ')[0] },
+                { label: 'GATE', value: paymentSuccess.date.split(' ')[1] || '—' },
+              ].map((item) => (
+                <div key={item.label}>
+                  <div className="ticket-font text-xs tracking-widest mb-0.5" style={{ color: 'var(--ticket-muted)' }}>{item.label}</div>
+                  <div className="ticket-font font-bold text-sm leading-tight" style={{ color: 'var(--ticket-fg)' }}>{item.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tear line */}
+            <div className="tear-line px-2 py-1">
+              <div className="tear-line-inner"></div>
+            </div>
+
+            {/* Stub section */}
+            <div className="px-6 py-4">
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                  <div className="ticket-font text-xs tracking-widest mb-0.5" style={{ color: 'var(--ticket-muted)' }}>HARGA PAKET</div>
+                  <div className="ticket-font font-bold" style={{ color: 'var(--ticket-fg)' }}>Rp {paymentSuccess.originalAmount.toLocaleString('id-ID')}</div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg mb-2">API Key Terkirim!</h3>
-                  <p className="text-sm text-fd-muted-foreground mb-3">
-                    API Key Anda telah dikirim ke email:
-                  </p>
-                  <p className="font-mono text-sm bg-fd-background/50 px-4 py-2 rounded-lg border border-fd-border inline-block">
-                    {orderData?.customerEmail}
-                  </p>
+                  <div className="ticket-font text-xs tracking-widest mb-0.5" style={{ color: 'var(--ticket-muted)' }}>KODE UNIK</div>
+                  <div className="ticket-font font-bold" style={{ color: 'var(--ticket-fg)' }}>+ Rp {paymentSuccess.uniqueFee.toLocaleString('id-ID')}</div>
                 </div>
+                <div>
+                  <div className="ticket-font text-xs tracking-widest mb-0.5" style={{ color: 'var(--ticket-muted)' }}>TOTAL BAYAR</div>
+                  <div className="ticket-font font-black text-lg" style={{ color: 'var(--ticket-accent)' }}>
+                    Rp {parseInt(paymentSuccess.amount.replace(/\./g, '')).toLocaleString('id-ID')}
+                  </div>
+                </div>
+                <div>
+                  <div className="ticket-font text-xs tracking-widest mb-0.5" style={{ color: 'var(--ticket-muted)' }}>STATUS</div>
+                  <div className="flex items-center gap-1">
+                    <span className="inline-block w-2 h-2 rounded-full" style={{ background: 'var(--ticket-success)' }}></span>
+                    <span className="ticket-font font-bold text-sm" style={{ color: 'var(--ticket-success)' }}>LUNAS</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Email notice */}
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(37, 99, 235, 0.06)', border: '1px solid rgba(37, 99, 235, 0.15)' }}>
+                <Mail size={14} style={{ color: 'var(--ticket-accent)', flexShrink: 0 }} />
+                <span className="ticket-font text-sm" style={{ color: 'var(--ticket-accent)' }}>
+                  API Key dikirim ke <strong>{orderData?.customerEmail}</strong>
+                </span>
               </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="grid sm:grid-cols-2 gap-4">
-              <button className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold bg-fd-primary text-white hover:bg-fd-primary/90 transition-all shadow-lg shadow-fd-primary/30">
-                <Zap className="w-5 h-5" />
-                Ke Dashboard
-              </button>
-              <button className="flex items-center justify-center gap-2 px-8 py-4 rounded-xl font-semibold border-2 border-fd-border bg-fd-card hover:bg-fd-accent transition-all">
-                <Download className="w-5 h-5" />
-                Download Invoice
-              </button>
+            {/* Barcode */}
+            <div className="px-6 pb-5 flex flex-col items-center gap-2">
+              <div className="barcode-lines">
+                {Array.from({ length: 52 }, (_, i) => {
+                  const heights = [32, 48, 40, 32, 48, 36, 44, 48, 32, 40];
+                  const widths = [2, 1, 3, 2, 1, 2, 3, 1, 2, 1];
+                  return <span key={i} style={{ height: `${heights[i % 10]}px`, width: `${widths[i % 10]}px`, opacity: 0.6 + (i % 3) * 0.13 }} />;
+                })}
+              </div>
+              <div className="mono-font text-xs tracking-[0.3em]" style={{ color: 'var(--ticket-muted)' }}>
+                {orderData?.id.toUpperCase()}
+              </div>
             </div>
           </div>
-        </main>
+
+          {/* Action buttons */}
+          <div className="flex gap-3 mt-4 slide-up delay-2">
+            <button className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl ticket-font font-bold text-sm tracking-wide" style={{ background: 'var(--ticket-bg)', border: '1.5px solid var(--ticket-border)', color: 'var(--ticket-fg)' }}>
+              <ArrowLeft size={15} /> DASHBOARD
+            </button>
+            <button className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl ticket-font font-bold text-sm tracking-wide" style={{ background: 'var(--ticket-accent)', color: '#fff' }}>
+              <Download size={15} /> DOWNLOAD
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (!orderData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-fd-background via-fd-background to-fd-accent/20">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-fd-primary mx-auto mb-4"></div>
-          <p className="text-fd-muted-foreground">Memuat data...</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--fd-background)' }}>
+        <div className="flex flex-col items-center gap-3">
+          <Loader size={28} className="animate-spin" style={{ color: 'var(--fd-primary)' }} />
+          <span style={{ fontFamily: 'Barlow Condensed, sans-serif', color: 'var(--fd-muted-foreground)' }}>Memuat data...</span>
         </div>
       </div>
     );
   }
 
+  // ─── MAIN PAYMENT PAGE ────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-gradient-to-br from-fd-background via-fd-background to-fd-accent/20">
-      <main className="px-4 py-8 w-full max-w-[1400px] mx-auto">
-        {/* Progress Indicator */}
-        <div className="mb-12">
-          <div className="max-w-3xl mx-auto">
-            <div className="relative">
-              {/* Progress Line */}
-              <div className="absolute top-8 left-0 right-0 h-0.5 bg-fd-border/50" style={{ left: '5%', right: '5%' }}>
-                <div className="absolute inset-0 bg-fd-primary" style={{ width: '100%' }}></div>
-              </div>
+    <div className="min-h-screen" style={{ background: 'var(--fd-background)' }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
 
-              {/* Steps */}
-              <div className="relative flex justify-between items-start">
-                {steps.map((step) => {
-                  const Icon = step.icon;
-                  return (
-                    <div key={step.number} className="flex flex-col items-center" style={{ width: '33.33%' }}>
-                      <div
-                        className={`w-16 h-16 rounded-full flex items-center justify-center mb-3 transition-all duration-300 relative z-10 ${
-                          step.status === 'completed' 
-                            ? "bg-fd-primary text-white shadow-lg shadow-fd-primary/30" 
-                            : step.status === 'current'
-                            ? "bg-fd-primary text-white shadow-lg shadow-fd-primary/50 ring-4 ring-fd-primary/20"
-                            : "bg-fd-card border-2 border-fd-border text-fd-muted-foreground"
-                        }`}
-                      >
-                        {step.status === 'completed' ? (
-                          <Check className="w-7 h-7" strokeWidth={3} />
-                        ) : (
-                          <Icon className="w-7 h-7" />
-                        )}
-                      </div>
-                      <div className="text-center">
-                        <p className={`text-sm font-semibold mb-1 ${
-                          step.status === 'current' ? "text-fd-primary" : step.status === 'upcoming' ? "text-fd-muted-foreground" : ""
-                        }`}>
-                          Step {step.number}
-                        </p>
-                        <p className={`text-xs sm:text-sm font-medium ${
-                          step.status === 'current' ? "text-fd-foreground" : step.status === 'upcoming' ? "text-fd-muted-foreground" : ""
-                        }`}>
-                          {step.label}
-                        </p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
+        .ticket-font { font-family: 'Barlow Condensed', sans-serif; }
+        .mono-font { font-family: 'IBM Plex Mono', monospace; }
 
-        {/* Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-4xl sm:text-5xl font-bold mb-3 bg-gradient-to-r from-fd-foreground to-fd-foreground/70 bg-clip-text text-transparent">
-            Selesaikan Pembayaran
-          </h1>
-          <p className="text-fd-muted-foreground text-lg">
-            Scan QRIS dengan aplikasi e-wallet atau mobile banking Anda
-          </p>
-        </div>
+        .boarding-pass {
+          background: var(--fd-card);
+          border: 1.5px solid var(--fd-border);
+          border-radius: 16px;
+          overflow: hidden;
+          box-shadow: 0 20px 60px rgba(0,0,0,0.1), 0 4px 16px rgba(0,0,0,0.05);
+        }
 
-        <div className="grid gap-8 lg:grid-cols-12">
-          {/* Main Payment Section */}
-          <div className="lg:col-span-8 space-y-6">
-            {/* Timer Card */}
-            <div className={`relative overflow-hidden backdrop-blur-sm border-2 rounded-2xl p-6 shadow-xl transition-all ${
-              isExpired 
-                ? "bg-gradient-to-br from-red-500/10 to-red-600/10 border-red-500/50" 
-                : "bg-gradient-to-br from-fd-card to-fd-accent/20 border-fd-border"
-            }`}>
-              <div className="absolute top-0 right-0 w-40 h-40 bg-fd-primary/5 rounded-full blur-3xl"></div>
-              <div className="relative flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                  <div className={`w-14 h-14 rounded-xl flex items-center justify-center ${
-                    isExpired ? "bg-red-500/20" : "bg-fd-primary/10"
-                  }`}>
-                    <Clock className={`w-7 h-7 ${isExpired ? "text-red-500" : "text-fd-primary"}`} />
+        .tear-line {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+        .tear-line::before, .tear-line::after {
+          content: '';
+          width: 22px; height: 22px;
+          background: var(--fd-background);
+          border-radius: 50%;
+          border: 1.5px solid var(--fd-border);
+          flex-shrink: 0;
+          margin: 0 -11px;
+          position: relative;
+          z-index: 2;
+        }
+        .tear-line-inner {
+          flex: 1;
+          border-top: 2px dashed var(--fd-border);
+          margin: 0 8px;
+        }
+
+        .qr-wrapper {
+          position: relative;
+          display: inline-block;
+        }
+        .qr-corner {
+          position: absolute;
+          width: 18px; height: 18px;
+          border-color: var(--fd-primary);
+          border-style: solid;
+          border-radius: 2px;
+        }
+        .qr-corner-tl { top: -4px; left: -4px; border-width: 3px 0 0 3px; }
+        .qr-corner-tr { top: -4px; right: -4px; border-width: 3px 3px 0 0; }
+        .qr-corner-bl { bottom: -4px; left: -4px; border-width: 0 0 3px 3px; }
+        .qr-corner-br { bottom: -4px; right: -4px; border-width: 0 3px 3px 0; }
+
+        .step-connector {
+          flex: 1; height: 1.5px;
+          background: linear-gradient(90deg, var(--fd-primary) 0%, var(--fd-border) 100%);
+        }
+        .step-connector.inactive {
+          background: var(--fd-border);
+        }
+
+        .timer-digits {
+          font-family: 'IBM Plex Mono', monospace;
+          font-weight: 600;
+        }
+
+        .barcode-lines {
+          display: flex; gap: 1.5px; align-items: center; justify-content: center;
+          height: 40px;
+        }
+        .barcode-lines span {
+          display: block; background: var(--fd-foreground); border-radius: 1px;
+        }
+
+        .instruction-item {
+          display: flex; align-items: flex-start; gap: 10px; padding: 8px 0;
+          border-bottom: 1px dashed var(--fd-border);
+        }
+        .instruction-item:last-child { border-bottom: none; }
+
+        .price-tag {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 2px 10px; border-radius: 999px;
+          border: 1.5px solid var(--fd-border);
+          background: var(--fd-card);
+        }
+
+        .shimmer {
+          animation: shimmer 2s ease-in-out infinite;
+        }
+        @keyframes shimmer {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+
+        .stamp-expired {
+          position: absolute; inset: 0;
+          background: rgba(0,0,0,0.55);
+          display: flex; align-items: center; justify-content: center;
+          border-radius: 8px;
+        }
+        .stamp-expired-inner {
+          border: 3px solid #ef4444; border-radius: 8px;
+          padding: 6px 16px;
+          transform: rotate(-20deg);
+        }
+
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity:0; transform: translateY(8px); } to { opacity:1; transform: translateY(0); } }
+      `}</style>
+
+      <div className="max-w-5xl mx-auto px-4 py-8">
+
+        {/* ── PROGRESS BOARDING STEPS ── */}
+        <div className="flex items-center mb-8">
+          {[
+            { number: 1, label: 'PILIH PAKET', icon: Package },
+            { number: 2, label: 'KONFIRMASI', icon: User },
+            { number: 3, label: 'PEMBAYARAN', icon: CreditCard },
+          ].map((step, i) => {
+            const Icon = step.icon;
+            const done = i < 2;
+            const current = i === 2;
+            return (
+              <div key={step.number} className="flex items-center" style={{ flex: i < 2 ? '1' : 'none' }}>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center justify-center w-8 h-8 rounded-full ticket-font font-black text-sm"
+                    style={{
+                      background: done ? 'var(--fd-primary)' : current ? 'var(--fd-primary)' : 'var(--fd-card)',
+                      color: (done || current) ? '#fff' : 'var(--fd-muted-foreground)',
+                      border: (!done && !current) ? '1.5px solid var(--fd-border)' : 'none',
+                    }}>
+                    {done ? <Check size={14} strokeWidth={3} /> : step.number}
                   </div>
-                  <div>
-                    <p className="text-sm text-fd-muted-foreground mb-1">
-                      {isExpired ? "QRIS Expired" : "Waktu Pembayaran"}
-                    </p>
-                    <p className={`text-4xl font-bold font-mono ${
-                      isExpired ? "text-red-500" : "text-fd-primary"
-                    }`}>
-                      {isExpired ? "00:00" : formatTime(timeLeft)}
-                    </p>
+                  <span className="ticket-font font-bold text-xs tracking-widest hidden sm:block"
+                    style={{ color: current ? 'var(--fd-foreground)' : done ? 'var(--fd-primary)' : 'var(--fd-muted-foreground)' }}>
+                    {step.label}
+                  </span>
+                </div>
+                {i < 2 && <div className={`step-connector mx-3 ${!done ? 'inactive' : ''}`}></div>}
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+          {/* ── MAIN TICKET (3/5) ── */}
+          <div className="lg:col-span-3">
+            <div className="boarding-pass fade-in">
+
+              {/* Ticket header */}
+              <div className="flex items-stretch" style={{ borderBottom: '1.5px solid var(--fd-border)' }}>
+                <div className="px-6 py-5 flex-1">
+                  <div className="ticket-font text-xs tracking-[0.2em] uppercase mb-0.5" style={{ color: 'var(--fd-muted-foreground)' }}>
+                    E-PAYMENT TICKET
+                  </div>
+                  <div className="ticket-font font-black text-3xl leading-none" style={{ color: 'var(--fd-foreground)' }}>
+                    PEMBAYARAN
+                  </div>
+                  <div className="ticket-font text-sm mt-1" style={{ color: 'var(--fd-muted-foreground)' }}>
+                    {orderData.planName.toUpperCase()} · {orderData.id}
                   </div>
                 </div>
-                {isExpired && (
-                  <button
-                    onClick={handleRefreshQRIS}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold bg-fd-primary text-white hover:bg-fd-primary/90 transition-all shadow-lg"
-                  >
-                    <RefreshCw className="w-5 h-5" />
-                    Generate Ulang
+                {/* Timer section */}
+                <div className="px-5 py-4 flex flex-col items-center justify-center" style={{ borderLeft: '1.5px dashed var(--fd-border)', minWidth: 100 }}>
+                  <div className="ticket-font text-xs tracking-widest mb-1" style={{ color: 'var(--fd-muted-foreground)' }}>
+                    {isExpired ? 'EXPIRED' : 'BOARDING'}
+                  </div>
+                  <div className={`timer-digits text-2xl ${isExpired ? '' : timeLeft <= 120 ? 'shimmer' : ''}`}
+                    style={{ color: isExpired ? '#ef4444' : timeLeft <= 120 ? '#ef4444' : 'var(--fd-foreground)' }}>
+                    {isExpired ? '00:00' : formatTime(timeLeft)}
+                  </div>
+                  {isExpired && (
+                    <button onClick={handleRefreshQRIS}
+                      className="mt-2 flex items-center gap-1 ticket-font font-bold text-xs px-2 py-1 rounded"
+                      style={{ background: 'var(--fd-primary)', color: '#fff' }}>
+                      <RefreshCw size={11} /> REFRESH
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Flight info row */}
+              <div className="flex items-center gap-3 px-6 py-4" style={{ borderBottom: '1.5px solid var(--fd-border)' }}>
+                <div className="text-center">
+                  <div className="ticket-font font-black text-2xl" style={{ color: 'var(--fd-foreground)' }}>IDR</div>
+                  <div className="ticket-font text-xs tracking-widest" style={{ color: 'var(--fd-muted-foreground)' }}>WALLET</div>
+                </div>
+                <div className="flex-1 flex items-center gap-2">
+                  <div className="flex-1 border-t border-dashed" style={{ borderColor: 'var(--fd-border)' }}></div>
+                  <Plane size={16} style={{ color: 'var(--fd-primary)' }} />
+                  <div className="flex-1 border-t border-dashed" style={{ borderColor: 'var(--fd-border)' }}></div>
+                </div>
+                <div className="text-center">
+                  <div className="ticket-font font-black text-2xl" style={{ color: 'var(--fd-primary)' }}>API</div>
+                  <div className="ticket-font text-xs tracking-widest" style={{ color: 'var(--fd-muted-foreground)' }}>ACCESS</div>
+                </div>
+
+                <div className="ml-auto pl-3" style={{ borderLeft: '1.5px dashed var(--fd-border)' }}>
+                  <div className="ticket-font text-xs tracking-widest mb-0.5" style={{ color: 'var(--fd-muted-foreground)' }}>PENUMPANG</div>
+                  <div className="ticket-font font-bold text-sm" style={{ color: 'var(--fd-foreground)' }}>{orderData.customerName}</div>
+                </div>
+              </div>
+
+              {/* QR Code zone */}
+              <div className="px-6 py-6">
+                {isLoading ? (
+                  <div className="flex flex-col items-center gap-4 py-8">
+                    <Loader size={28} className="animate-spin" style={{ color: 'var(--fd-primary)' }} />
+                    <span className="ticket-font text-sm tracking-widest" style={{ color: 'var(--fd-muted-foreground)' }}>GENERATING QRIS...</span>
+                  </div>
+                ) : error ? (
+                  <div className="flex flex-col items-center gap-3 py-8">
+                    <AlertCircle size={28} style={{ color: '#ef4444' }} />
+                    <span className="ticket-font font-bold" style={{ color: '#ef4444' }}>{error}</span>
+                    <button onClick={() => generateQRIS(orderData.uniqueAmount || orderData.price)}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg ticket-font font-bold text-sm"
+                      style={{ border: '1.5px solid var(--fd-border)', color: 'var(--fd-foreground)' }}>
+                      <RefreshCw size={14} /> COBA LAGI
+                    </button>
+                  </div>
+                ) : qrisData ? (
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="ticket-font text-xs tracking-[0.2em] uppercase" style={{ color: 'var(--fd-muted-foreground)' }}>
+                      SCAN QRIS UNTUK MEMBAYAR
+                    </div>
+
+                    {/* QR with corner brackets */}
+                    <div className="qr-wrapper">
+                      <div className="qr-corner qr-corner-tl"></div>
+                      <div className="qr-corner qr-corner-tr"></div>
+                      <div className="qr-corner qr-corner-bl"></div>
+                      <div className="qr-corner qr-corner-br"></div>
+                      {isExpired && (
+                        <div className="stamp-expired">
+                          <div className="stamp-expired-inner">
+                            <span className="ticket-font font-black text-xl tracking-widest" style={{ color: '#ef4444' }}>EXPIRED</span>
+                          </div>
+                        </div>
+                      )}
+                      <img src={qrisData.qrImageUrl} alt="QRIS Code"
+                        className={`rounded-lg ${isExpired ? 'opacity-40' : ''}`}
+                        style={{ width: 200, height: 200, display: 'block' }} />
+                    </div>
+
+                    {/* Amount tags */}
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <div className="price-tag">
+                        <span className="ticket-font text-xs tracking-widest" style={{ color: 'var(--fd-muted-foreground)' }}>PAKET</span>
+                        <span className="ticket-font font-bold text-sm" style={{ color: 'var(--fd-foreground)' }}>Rp {orderData.price.toLocaleString('id-ID')}</span>
+                      </div>
+                      <span className="ticket-font text-sm" style={{ color: 'var(--fd-muted-foreground)' }}>+</span>
+                      <div className="price-tag">
+                        <span className="ticket-font text-xs tracking-widest" style={{ color: 'var(--fd-muted-foreground)' }}>UNIK</span>
+                        <span className="ticket-font font-bold text-sm" style={{ color: 'var(--fd-foreground)' }}>Rp {(orderData.uniqueAmount! - orderData.price).toLocaleString('id-ID')}</span>
+                      </div>
+                      <span className="ticket-font text-sm" style={{ color: 'var(--fd-muted-foreground)' }}>=</span>
+                      <div className="price-tag" style={{ borderColor: 'var(--fd-primary)', borderWidth: 2 }}>
+                        <span className="ticket-font font-black text-base" style={{ color: 'var(--fd-primary)' }}>Rp {orderData.uniqueAmount!.toLocaleString('id-ID')}</span>
+                      </div>
+                    </div>
+
+                    <p className="ticket-font text-xs text-center" style={{ color: 'var(--fd-muted-foreground)', maxWidth: 280 }}>
+                      Kode unik membantu sistem mengidentifikasi pembayaran Anda secara otomatis
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Tear line */}
+              <div className="tear-line px-2">
+                <div className="tear-line-inner"></div>
+              </div>
+
+              {/* Instructions stub */}
+              <div className="px-6 py-5">
+                <div className="ticket-font font-bold text-xs tracking-[0.15em] mb-3" style={{ color: 'var(--fd-muted-foreground)' }}>
+                  CARA PEMBAYARAN
+                </div>
+                {[
+                  'Buka e-wallet atau mobile banking Anda',
+                  'Pilih menu Scan QRIS atau QR Code',
+                  'Scan kode QR di atas dengan kamera',
+                  'Pastikan nominal sesuai total pembayaran',
+                  'Konfirmasi dan tunggu notifikasi',
+                ].map((step, i) => (
+                  <div key={i} className="instruction-item">
+                    <span className="ticket-font font-black text-xs w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center mt-0.5"
+                      style={{ background: 'var(--fd-primary)', color: '#fff' }}>
+                      {i + 1}
+                    </span>
+                    <span className="ticket-font text-sm" style={{ color: 'var(--fd-foreground)' }}>{step}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Barcode + confirm */}
+              <div className="px-6 pb-6 flex flex-col items-center gap-3">
+                <div className="barcode-lines w-full">
+                  {Array.from({ length: 60 }, (_, i) => {
+                    const heights = [32, 40, 36, 32, 40, 28, 40, 36, 32, 28];
+                    const widths = [2, 1, 3, 1, 2, 1, 3, 2, 1, 2];
+                    return <span key={i} style={{ height: `${heights[i % 10]}px`, width: `${widths[i % 10]}px`, opacity: 0.5 + (i % 4) * 0.12 }} />;
+                  })}
+                </div>
+                <div className="mono-font text-xs tracking-[0.25em]" style={{ color: 'var(--fd-muted-foreground)' }}>
+                  {orderData.id.toUpperCase()}
+                </div>
+
+                {isChecking && (
+                  <div className="flex items-center gap-2">
+                    <Loader size={13} className="animate-spin" style={{ color: 'var(--fd-primary)' }} />
+                    <span className="ticket-font text-xs tracking-widest" style={{ color: 'var(--fd-muted-foreground)' }}>MENGECEK PEMBAYARAN...</span>
+                  </div>
+                )}
+
+                <button onClick={() => checkPayment()} disabled={isChecking || isExpired}
+                  className="w-full py-3 rounded-xl ticket-font font-black text-base tracking-[0.1em] flex items-center justify-center gap-2 transition-all"
+                  style={{
+                    background: isExpired ? 'var(--fd-border)' : 'var(--fd-primary)',
+                    color: isExpired ? 'var(--fd-muted-foreground)' : '#fff',
+                    cursor: isExpired ? 'not-allowed' : 'pointer',
+                  }}>
+                  {isChecking ? <><Loader size={16} className="animate-spin" /> MENGECEK...</> : <><CheckCircle size={16} /> SAYA SUDAH BAYAR</>}
+                </button>
+                <p className="ticket-font text-xs text-center" style={{ color: 'var(--fd-muted-foreground)' }}>
+                  Sistem otomatis mengecek pembayaran setiap 10 detik
+                </p>
+              </div>
+            </div>
+
+            {/* Security notice */}
+            <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 mt-4 px-2">
+              {[
+                { icon: ShieldCheck, text: 'Enkripsi standar BI' },
+                { icon: Mail, text: 'API Key via email' },
+                { icon: Zap, text: 'Verifikasi real-time' },
+              ].map(({ icon: Icon, text }) => (
+                <div key={text} className="flex items-center gap-1.5">
+                  <Icon size={13} style={{ color: 'var(--fd-muted-foreground)' }} />
+                  <span className="ticket-font text-xs" style={{ color: 'var(--fd-muted-foreground)' }}>{text}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── SIDEBAR STUB (2/5) ── */}
+          <div className="lg:col-span-2 flex flex-col gap-4">
+
+            {/* Order stub card */}
+            <div className="boarding-pass fade-in">
+              <div className="px-5 pt-5 pb-4" style={{ borderBottom: '1.5px solid var(--fd-border)' }}>
+                <div className="ticket-font text-xs tracking-[0.2em] uppercase mb-0.5" style={{ color: 'var(--fd-muted-foreground)' }}>
+                  STUB / KUPON
+                </div>
+                <div className="ticket-font font-black text-xl" style={{ color: 'var(--fd-foreground)' }}>DETAIL PESANAN</div>
+              </div>
+
+              <div className="px-5 py-4 space-y-3">
+                {[
+                  { label: 'ORDER ID', value: orderData.id, mono: true },
+                  { label: 'PAKET', value: orderData.planName },
+                  { label: 'PELANGGAN', value: orderData.customerName },
+                  { label: 'EMAIL', value: orderData.customerEmail },
+                ].map(({ label, value, mono }) => (
+                  <div key={label} className="flex flex-col gap-0.5">
+                    <span className="ticket-font text-xs tracking-widest" style={{ color: 'var(--fd-muted-foreground)' }}>{label}</span>
+                    <span className={`${mono ? 'mono-font text-xs' : 'ticket-font font-bold text-sm'} truncate`} style={{ color: 'var(--fd-foreground)' }}>
+                      {value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Tear */}
+              <div className="tear-line px-2"><div className="tear-line-inner"></div></div>
+
+              {/* API Key */}
+              <div className="px-5 py-4">
+                <div className="ticket-font text-xs tracking-widest mb-2" style={{ color: 'var(--fd-muted-foreground)' }}>API KEY ANDA</div>
+                <div className="rounded-lg p-2 flex items-center gap-2" style={{ background: 'var(--fd-muted, rgba(0,0,0,0.04))', border: '1px solid var(--fd-border)' }}>
+                  <span className="mono-font text-xs flex-1 truncate" style={{ color: 'var(--fd-foreground)', fontSize: 10 }}>
+                    {orderData.apiKey}
+                  </span>
+                  <button onClick={handleCopyApiKey}
+                    className="flex-shrink-0 p-1.5 rounded"
+                    style={{ background: copiedApiKey ? 'var(--fd-primary)' : 'transparent', color: copiedApiKey ? '#fff' : 'var(--fd-muted-foreground)' }}>
+                    {copiedApiKey ? <Check size={12} /> : <Copy size={12} />}
                   </button>
+                </div>
+                {copiedApiKey && (
+                  <p className="ticket-font text-xs mt-1" style={{ color: 'var(--fd-primary)' }}>✓ Tersalin ke clipboard</p>
                 )}
               </div>
-              {isChecking && (
-                <div className="mt-4 flex items-center gap-3 p-3 bg-fd-primary/10 rounded-xl">
-                  <Loader className="w-5 h-5 text-fd-primary animate-spin" />
-                  <span className="text-sm font-medium text-fd-primary">Mengecek status pembayaran...</span>
-                </div>
-              )}
-            </div>
 
-            {/* QRIS Card */}
-            <div className="bg-gradient-to-br from-fd-card to-fd-accent/20 backdrop-blur-sm border border-fd-border rounded-2xl p-8 shadow-xl">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="w-12 h-12 rounded-xl bg-fd-primary/10 flex items-center justify-center">
-                  <QrCode className="w-6 h-6 text-fd-primary" />
-                </div>
-                <h2 className="text-2xl font-bold">Scan QRIS untuk Membayar</h2>
-              </div>
-
-              {isLoading ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <div className="relative">
-                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-fd-primary/20 border-t-fd-primary"></div>
-                    <QrCode className="w-8 h-8 text-fd-primary absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
+              {/* Stats row */}
+              <div className="px-5 pb-5 grid grid-cols-2 gap-3">
+                {[
+                  { label: 'LIMIT REQUEST', value: typeof orderData.limit === 'number' ? orderData.limit.toLocaleString() : orderData.limit },
+                  { label: 'DURASI', value: orderData.expireDays ? `${orderData.expireDays}h` : '∞' },
+                ].map(({ label, value }) => (
+                  <div key={label} className="rounded-lg px-3 py-2" style={{ border: '1px dashed var(--fd-border)' }}>
+                    <div className="ticket-font text-xs tracking-widest" style={{ color: 'var(--fd-muted-foreground)' }}>{label}</div>
+                    <div className="ticket-font font-black text-lg" style={{ color: 'var(--fd-foreground)' }}>{value}</div>
                   </div>
-                  <p className="text-fd-muted-foreground mt-6 font-medium">Generating QRIS Code...</p>
-                </div>
-              ) : error ? (
-                <div className="flex flex-col items-center justify-center py-16">
-                  <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mb-4">
-                    <AlertCircle className="w-8 h-8 text-red-500" />
-                  </div>
-                  <p className="text-red-500 mb-6 font-medium">{error}</p>
-                  <button
-                    onClick={() => generateQRIS(orderData.uniqueAmount || orderData.price)}
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold border-2 border-fd-border bg-fd-card hover:bg-fd-accent transition-all"
-                  >
-                    <RefreshCw className="w-5 h-5" />
-                    Coba Lagi
-                  </button>
-                </div>
-              ) : qrisData ? (
-                <div className="space-y-6">
-                  {/* QR Code */}
-                  <div className="flex justify-center">
-                    <div className="relative">
-                      <div className="absolute -inset-4 bg-gradient-to-r from-fd-primary/20 to-fd-primary/10 rounded-3xl blur-xl"></div>
-                      <div className="relative bg-white p-6 rounded-2xl shadow-2xl border-4 border-fd-primary/20">
-                        <img
-                          src={qrisData.qrImageUrl}
-                          alt="QRIS Code"
-                          className="w-72 h-72 object-contain"
-                        />
-                        {isExpired && (
-                          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm flex flex-col items-center justify-center rounded-2xl">
-                            <AlertCircle className="w-12 h-12 text-white mb-2" />
-                            <p className="text-white font-bold text-lg">EXPIRED</p>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Amount Breakdown */}
-                  <div className="bg-gradient-to-br from-fd-primary/5 to-fd-primary/10 border-2 border-fd-primary/30 rounded-xl p-6">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-fd-muted-foreground">Harga Paket</span>
-                        <span className="font-semibold text-lg">Rp {orderData.price.toLocaleString('id-ID')}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-fd-primary font-medium">Kode Unik</span>
-                        <span className="font-semibold text-lg text-fd-primary">
-                          Rp {(orderData.uniqueAmount! - orderData.price).toLocaleString('id-ID')}
-                        </span>
-                      </div>
-                      <div className="border-t-2 border-fd-primary/30 pt-3 flex justify-between items-center">
-                        <span className="font-bold text-lg">Total Pembayaran</span>
-                        <span className="font-bold text-3xl bg-gradient-to-r from-fd-primary to-fd-primary/70 bg-clip-text text-transparent">
-                          Rp {orderData.uniqueAmount!.toLocaleString('id-ID')}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="mt-4 p-3 bg-fd-background/50 rounded-lg">
-                      <p className="text-xs text-fd-muted-foreground flex items-center gap-2">
-                        <ShieldCheck className="w-4 h-4" />
-                        Kode unik membantu sistem mengidentifikasi pembayaran Anda secara otomatis
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Payment Instructions */}
-                  <div className="bg-fd-accent/30 rounded-xl p-6">
-                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-full bg-fd-primary/20 flex items-center justify-center">
-                        <span className="text-xs font-bold text-fd-primary">?</span>
-                      </div>
-                      Cara Pembayaran
-                    </h3>
-                    <div className="space-y-3">
-                      {[
-                        "Buka aplikasi e-wallet atau mobile banking Anda",
-                        "Pilih menu scan QRIS atau QR Code",
-                        "Scan kode QR di atas",
-                        "Pastikan nominal sesuai dengan total pembayaran",
-                        "Konfirmasi pembayaran dan tunggu notifikasi"
-                      ].map((step, index) => (
-                        <div key={index} className="flex items-start gap-3">
-                          <div className="w-7 h-7 rounded-lg bg-fd-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                            <span className="text-sm font-bold text-fd-primary">{index + 1}</span>
-                          </div>
-                          <p className="text-sm text-fd-muted-foreground pt-1">{step}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Confirm Button */}
-                  <button
-                    onClick={handleConfirmPayment}
-                    className={`w-full flex items-center justify-center gap-3 px-8 py-4 rounded-xl font-semibold transition-all shadow-lg ${
-                      isExpired || isChecking
-                        ? 'bg-fd-muted text-fd-muted-foreground cursor-not-allowed'
-                        : 'bg-fd-primary text-white hover:bg-fd-primary/90 shadow-fd-primary/30'
-                    }`}
-                    disabled={isExpired || isChecking}
-                  >
-                    {isChecking ? (
-                      <>
-                        <Loader className="w-5 h-5 animate-spin" />
-                        Mengecek Pembayaran...
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle className="w-5 h-5" />
-                        Saya Sudah Bayar
-                      </>
-                    )}
-                  </button>
-
-                  <p className="text-xs text-center text-fd-muted-foreground flex items-center justify-center gap-2">
-                    <Zap className="w-4 h-4" />
-                    Sistem akan otomatis mengecek pembayaran setiap 10 detik
-                  </p>
-                </div>
-              ) : null}
-            </div>
-
-            {/* Security Notice */}
-            <div className="relative overflow-hidden bg-gradient-to-br from-fd-primary/5 to-fd-primary/10 backdrop-blur-sm border-2 border-fd-primary/30 rounded-2xl p-6">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-fd-primary/5 rounded-full blur-3xl"></div>
-              <div className="relative flex items-start gap-4">
-                <div className="w-12 h-12 rounded-xl bg-fd-primary/10 flex items-center justify-center shrink-0">
-                  <ShieldCheck className="w-6 h-6 text-fd-primary" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg mb-2">Pembayaran Aman & Terpercaya</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-start gap-2.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-fd-primary mt-2"></div>
-                      <p className="text-sm text-fd-muted-foreground">
-                        QRIS dilindungi enkripsi standar Bank Indonesia
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-2.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-fd-primary mt-2"></div>
-                      <p className="text-sm text-fd-muted-foreground">
-                        API Key otomatis dikirim ke email setelah pembayaran terverifikasi
-                      </p>
-                    </div>
-                    <div className="flex items-start gap-2.5">
-                      <div className="w-1.5 h-1.5 rounded-full bg-fd-primary mt-2"></div>
-                      <p className="text-sm text-fd-muted-foreground">
-                        Verifikasi otomatis menggunakan sistem real-time
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
-          </div>
 
-          {/* Order Summary Sidebar */}
-          <div className="lg:col-span-4">
-            <div className="sticky top-8 space-y-6">
-              <div className="bg-gradient-to-br from-fd-card to-fd-accent/20 backdrop-blur-sm border border-fd-border rounded-2xl p-6 shadow-xl">
-                <div className="flex items-center gap-2 mb-6">
-                  <div className="w-10 h-10 rounded-lg bg-fd-primary/10 flex items-center justify-center">
-                    <Package className="w-5 h-5 text-fd-primary" />
-                  </div>
-                  <h2 className="text-xl font-bold">Detail Pesanan</h2>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="p-4 bg-fd-background/50 rounded-xl border border-fd-border/50">
-                    <p className="text-xs text-fd-muted-foreground mb-2 uppercase tracking-wide">Order ID</p>
-                    <p className="font-mono text-xs break-all">{orderData.id}</p>
-                  </div>
-
-                  <div className="p-4 bg-fd-background/50 rounded-xl border border-fd-border/50">
-                    <p className="text-xs text-fd-muted-foreground mb-2 uppercase tracking-wide">Paket</p>
-                    <p className="font-bold text-lg">{orderData.planName}</p>
-                  </div>
-
-                  <div className="p-4 bg-fd-background/50 rounded-xl border border-fd-border/50">
-                    <p className="text-xs text-fd-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5" />
-                      Nama Pelanggan
-                    </p>
-                    <p className="font-medium">{orderData.customerName}</p>
-                  </div>
-
-                  <div className="p-4 bg-fd-background/50 rounded-xl border border-fd-border/50">
-                    <p className="text-xs text-fd-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5" />
-                      Email
-                    </p>
-                    <p className="font-medium text-sm break-all">{orderData.customerEmail}</p>
-                  </div>
-
-                  <div className="p-4 bg-gradient-to-br from-fd-primary/10 to-fd-primary/5 rounded-xl border border-fd-primary/30">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-xs text-fd-primary uppercase tracking-wide flex items-center gap-1.5 font-semibold">
-                        <Key className="w-3.5 h-3.5" />
-                        API Key Anda
-                      </p>
-                      <button
-                        onClick={handleCopyApiKey}
-                        className="p-2 hover:bg-fd-primary/10 rounded-lg transition-colors group"
-                        title="Copy API Key"
-                      >
-                        {copiedApiKey ? (
-                          <CheckCircle className="w-4 h-4 text-green-600" />
-                        ) : (
-                          <Copy className="w-4 h-4 text-fd-primary group-hover:scale-110 transition-transform" />
-                        )}
-                      </button>
-                    </div>
-                    <p className="font-mono text-xs break-all bg-fd-background/50 px-3 py-2 rounded-lg border border-fd-border/50">
-                      {orderData.apiKey}
-                    </p>
-                    {copiedApiKey && (
-                      <p className="text-xs text-green-600 mt-2 flex items-center gap-1.5">
-                        <CheckCircle className="w-3.5 h-3.5" />
-                        Tersalin ke clipboard!
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="p-4 bg-fd-background/50 rounded-xl border border-fd-border/50">
-                      <p className="text-xs text-fd-muted-foreground mb-2 uppercase tracking-wide">Limit Request</p>
-                      <p className="font-semibold text-lg">
-                        {typeof orderData.limit === 'number' 
-                          ? orderData.limit.toLocaleString() 
-                          : orderData.limit}
-                      </p>
-                    </div>
-
-                    <div className="p-4 bg-fd-background/50 rounded-xl border border-fd-border/50">
-                      <p className="text-xs text-fd-muted-foreground mb-2 uppercase tracking-wide flex items-center gap-1">
-                        <Calendar className="w-3.5 h-3.5" />
-                        Durasi
-                      </p>
-                      <p className="font-semibold text-lg">
-                        {orderData.expireDays ? `${orderData.expireDays}h` : '∞'}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-fd-border/50">
-                    <p className="text-sm text-fd-muted-foreground mb-2">Total Pembayaran</p>
-                    <p className="font-bold text-4xl bg-gradient-to-r from-fd-primary to-fd-primary/70 bg-clip-text text-transparent">
-                      {orderData.priceFormatted}
-                    </p>
-                  </div>
+            {/* Benefits stub */}
+            <div className="boarding-pass fade-in">
+              <div className="px-5 pt-4 pb-3" style={{ borderBottom: '1.5px solid var(--fd-border)' }}>
+                <div className="ticket-font font-bold text-xs tracking-[0.15em]" style={{ color: 'var(--fd-muted-foreground)' }}>
+                  KEUNTUNGAN PAKET
                 </div>
               </div>
-
-              {/* Benefits */}
-              <div className="bg-gradient-to-br from-fd-card to-fd-accent/20 backdrop-blur-sm border border-fd-border rounded-2xl p-6 shadow-xl">
-                <h3 className="font-bold mb-4">Yang Anda Dapatkan</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center shrink-0">
-                      <CheckCircle className="w-4 h-4 text-green-600" strokeWidth={2.5} />
-                    </div>
-                    <p className="text-sm text-fd-muted-foreground">Aktivasi instan</p>
+              <div className="px-5 py-4 space-y-2">
+                {['Aktivasi instan', 'Support 24/7', 'Dokumentasi lengkap', '99.9% uptime guarantee'].map((benefit) => (
+                  <div key={benefit} className="flex items-center gap-2">
+                    <Check size={13} style={{ color: 'var(--fd-primary)', flexShrink: 0 }} />
+                    <span className="ticket-font text-sm" style={{ color: 'var(--fd-foreground)' }}>{benefit}</span>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center shrink-0">
-                      <CheckCircle className="w-4 h-4 text-green-600" strokeWidth={2.5} />
-                    </div>
-                    <p className="text-sm text-fd-muted-foreground">Support 24/7</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center shrink-0">
-                      <CheckCircle className="w-4 h-4 text-green-600" strokeWidth={2.5} />
-                    </div>
-                    <p className="text-sm text-fd-muted-foreground">Dokumentasi lengkap</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-green-500/20 flex items-center justify-center shrink-0">
-                      <CheckCircle className="w-4 h-4 text-green-600" strokeWidth={2.5} />
-                    </div>
-                    <p className="text-sm text-fd-muted-foreground">99.9% uptime guarantee</p>
-                  </div>
+                ))}
+              </div>
+              <div className="px-5 pb-5">
+                <div className="flex items-center justify-between py-3 rounded-lg px-3" style={{ background: 'var(--fd-muted, rgba(0,0,0,0.04))', border: '1px dashed var(--fd-border)' }}>
+                  <span className="ticket-font font-bold text-xs tracking-widest" style={{ color: 'var(--fd-muted-foreground)' }}>TOTAL BAYAR</span>
+                  <span className="ticket-font font-black text-lg" style={{ color: 'var(--fd-primary)' }}>{orderData.priceFormatted}</span>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
