@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
   QrCode, Clock, CheckCircle, AlertCircle, ShieldCheck, RefreshCw,
   Loader, Package, User, CreditCard, Check, Copy, Mail, Key,
@@ -35,11 +35,23 @@ export default function PaymentPage() {
   const [isExpired, setIsExpired] = useState(false);
   const [isChecking, setIsChecking] = useState(false);
   const [paymentSuccess, setPaymentSuccess] = useState<PaymentSuccess | null>(null);
-  const [checkInterval, setCheckInterval] = useState<NodeJS.Timeout | null>(null);
   const [copiedApiKey, setCopiedApiKey] = useState(false);
+
+  // Use refs to avoid stale closure issues in intervals
+  const orderDataRef = useRef<OrderData | null>(null);
+  const isCheckingRef = useRef(false);
+  const isExpiredRef = useRef(false);
+  const paymentSuccessRef = useRef<PaymentSuccess | null>(null);
+  const checkIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Keep refs in sync with state
+  useEffect(() => { orderDataRef.current = orderData; }, [orderData]);
+  useEffect(() => { isExpiredRef.current = isExpired; }, [isExpired]);
+  useEffect(() => { paymentSuccessRef.current = paymentSuccess; }, [paymentSuccess]);
 
   const generateUniqueFee = (): number => Math.floor(Math.random() * 999) + 1;
 
+  // Load order data from localStorage on mount
   useEffect(() => {
     const storedData = localStorage.getItem('orderData');
     if (storedData) {
@@ -51,29 +63,24 @@ export default function PaymentPage() {
       }
       setOrderData(data);
       generateQRIS(data.uniqueAmount);
+    } else {
+      setIsLoading(false);
     }
   }, []);
 
+  // Countdown timer
   useEffect(() => {
     if (timeLeft <= 0) {
       setIsExpired(true);
-      if (checkInterval) clearInterval(checkInterval);
       return;
     }
     const timer = setInterval(() => setTimeLeft(prev => prev - 1), 1000);
     return () => clearInterval(timer);
-  }, [timeLeft, checkInterval]);
-
-  useEffect(() => {
-    if (orderData && !isExpired && !paymentSuccess) {
-      const interval = setInterval(() => checkPayment(), 10000);
-      setCheckInterval(interval);
-      return () => clearInterval(interval);
-    }
-  }, [orderData, isExpired, paymentSuccess]);
+  }, [timeLeft]);
 
   const generateQRIS = async (amount: number) => {
-    setIsLoading(true); setError(null);
+    setIsLoading(true);
+    setError(null);
     try {
       const response = await fetch('/api/payment/generate-qris', {
         method: 'POST',
@@ -106,61 +113,45 @@ export default function PaymentPage() {
     return `${day}/${month}/${year}-${hour}`;
   };
 
-  const checkPayment = async () => {
-    if (!orderData || isChecking) return;
-    setIsChecking(true);
-    try {
-      const response = await fetch('/api/payment/check-mutation', { method: 'GET' });
-      if (!response.ok) throw new Error('Gagal mengecek pembayaran');
-      const data = await response.json();
-      if (data.status && data.result && Array.isArray(data.result)) {
-        const now = new Date();
-        const currentDate = formatDateForComparison(now);
-        const incomingTransactions = data.result.filter((transaction: MutationData) => {
-          if (transaction.status !== 'IN') return false;
-          const transactionDate = parseTransactionDate(transaction.tanggal);
-          const transactionDateStr = formatDateForComparison(transactionDate);
-          const timeDiff = Math.abs(now.getTime() - transactionDate.getTime()) / 1000 / 60;
-          return transactionDateStr === currentDate && timeDiff <= 30;
-        });
-        const matchedTransaction = incomingTransactions.find((transaction: MutationData) => {
-          const amount = parseFloat(transaction.kredit.replace(/\./g, ''));
-          return amount === orderData.uniqueAmount;
-        });
-        if (matchedTransaction) await createAPIKey(matchedTransaction);
-      }
-    } catch (err) {
-      console.error('Error checking payment:', err);
-    } finally {
-      setIsChecking(false);
-    }
-  };
-
+  // createAPIKey uses ref so it's always fresh inside the interval callback
   const createAPIKey = async (transaction: MutationData) => {
+    const order = orderDataRef.current;
+    if (!order) return;
     try {
       let planType = 'basic';
-      if (orderData?.planName.toLowerCase().includes('premium')) planType = 'premium';
-      else if (orderData?.planName.toLowerCase().includes('enterprise')) planType = 'enterprise';
+      if (order.planName.toLowerCase().includes('premium')) planType = 'premium';
+      else if (order.planName.toLowerCase().includes('enterprise')) planType = 'enterprise';
 
       const response = await fetch('/api/payment/create-key', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          owner: orderData!.customerName, email: orderData!.customerEmail,
-          type: planType, apikey: orderData!.apiKey,
+          owner: order.customerName,
+          email: order.customerEmail,
+          type: planType,
+          apikey: order.apiKey,
         }),
       });
       if (!response.ok) throw new Error('Gagal membuat API key');
       const keyData = await response.json();
       if (keyData.status) {
-        if (checkInterval) clearInterval(checkInterval);
-        setPaymentSuccess({
-          amount: transaction.kredit, from: transaction.brand.name,
-          logo: transaction.brand.logo, description: transaction.keterangan,
-          date: transaction.tanggal, originalAmount: orderData!.price,
-          uniqueFee: orderData!.uniqueAmount! - orderData!.price
-        });
-        const updatedOrder = { ...orderData!, status: 'paid', apiKeyData: keyData.data };
+        // Stop the auto-check interval
+        if (checkIntervalRef.current) {
+          clearInterval(checkIntervalRef.current);
+          checkIntervalRef.current = null;
+        }
+        const successData: PaymentSuccess = {
+          amount: transaction.kredit,
+          from: transaction.brand.name,
+          logo: transaction.brand.logo,
+          description: transaction.keterangan,
+          date: transaction.tanggal,
+          originalAmount: order.price,
+          uniqueFee: order.uniqueAmount! - order.price,
+        };
+        setPaymentSuccess(successData);
+        paymentSuccessRef.current = successData;
+        const updatedOrder = { ...order, status: 'paid', apiKeyData: keyData.data };
         localStorage.setItem('orderData', JSON.stringify(updatedOrder));
       }
     } catch (err) {
@@ -168,6 +159,80 @@ export default function PaymentPage() {
       alert('Pembayaran terdeteksi, namun terjadi kesalahan saat membuat API key. Silakan hubungi admin.');
     }
   };
+
+  // checkPayment reads from refs so it never has stale closure data
+  const checkPayment = useCallback(async () => {
+    const order = orderDataRef.current;
+    if (!order || isCheckingRef.current || isExpiredRef.current || paymentSuccessRef.current) return;
+
+    isCheckingRef.current = true;
+    setIsChecking(true);
+
+    try {
+      const response = await fetch('/api/payment/check-mutation', { method: 'GET' });
+      if (!response.ok) throw new Error('Gagal mengecek pembayaran');
+      const data = await response.json();
+
+      if (data.status && data.result && Array.isArray(data.result)) {
+        const now = new Date();
+        const currentDate = formatDateForComparison(now);
+
+        const incomingTransactions = data.result.filter((transaction: MutationData) => {
+          if (transaction.status !== 'IN') return false;
+          const transactionDate = parseTransactionDate(transaction.tanggal);
+          const transactionDateStr = formatDateForComparison(transactionDate);
+          const timeDiff = Math.abs(now.getTime() - transactionDate.getTime()) / 1000 / 60;
+          return transactionDateStr === currentDate && timeDiff <= 30;
+        });
+
+        const matchedTransaction = incomingTransactions.find((transaction: MutationData) => {
+          const amount = parseFloat(transaction.kredit.replace(/\./g, ''));
+          return amount === order.uniqueAmount;
+        });
+
+        if (matchedTransaction) {
+          await createAPIKey(matchedTransaction);
+        }
+      }
+    } catch (err) {
+      console.error('Error checking payment:', err);
+    } finally {
+      isCheckingRef.current = false;
+      setIsChecking(false);
+    }
+  }, []); // Empty deps — intentional, reads from refs
+
+  // Start auto-check interval once orderData is loaded
+  useEffect(() => {
+    if (!orderData) return;
+
+    // Clear any existing interval first
+    if (checkIntervalRef.current) {
+      clearInterval(checkIntervalRef.current);
+    }
+
+    const interval = setInterval(() => {
+      // Guard inside interval using refs — no stale closure
+      if (!isExpiredRef.current && !paymentSuccessRef.current) {
+        checkPayment();
+      }
+    }, 10000);
+
+    checkIntervalRef.current = interval;
+
+    return () => {
+      clearInterval(interval);
+      checkIntervalRef.current = null;
+    };
+  }, [orderData, checkPayment]);
+
+  // Stop interval when expired or payment succeeded
+  useEffect(() => {
+    if ((isExpired || paymentSuccess) && checkIntervalRef.current) {
+      clearInterval(checkIntervalRef.current);
+      checkIntervalRef.current = null;
+    }
+  }, [isExpired, paymentSuccess]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -182,12 +247,15 @@ export default function PaymentPage() {
       const updatedOrder = { ...orderData, uniqueAmount: newUniqueAmount };
       setOrderData(updatedOrder);
       localStorage.setItem('orderData', JSON.stringify(updatedOrder));
-      setIsExpired(false); setTimeLeft(900);
+      setIsExpired(false);
+      setTimeLeft(900);
       generateQRIS(newUniqueAmount);
     }
   };
 
-  const handleConfirmPayment = async () => await checkPayment();
+  const handleConfirmPayment = async () => {
+    await checkPayment();
+  };
 
   const handleCopyApiKey = () => {
     if (orderData?.apiKey) {
