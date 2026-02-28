@@ -28,7 +28,26 @@ const config: NextConfig = {
         hostname: 'avatars.githubusercontent.com',
         port: '',
       },
+      // ✅ Logo brand dari QRIS payment (Orderkuota, DANA, BCA, dll)
+      {
+        protocol: 'https',
+        hostname: 'app.orderkuota.com',
+        port: '',
+      },
     ],
+  },
+  async headers() {
+    return [
+      {
+        // Izinkan server-side fetch ke API payment gateway
+        source: '/api/payment/:path*',
+        headers: [
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, POST, OPTIONS' },
+          { key: 'Access-Control-Allow-Headers', value: 'Content-Type' },
+        ],
+      },
+    ];
   },
   async rewrites() {
     return [
@@ -55,5 +74,4 @@ const config: NextConfig = {
 };
 
 const withMDX = createMDX();
-
 export default withAnalyzer(withMDX(config));
