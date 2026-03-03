@@ -169,7 +169,7 @@ export default function VerifyEmailPage() {
   const [resending,setResending]= useState(false);
   const [resendOk, setResendOk] = useState(false);
 
-const tokenRef = useRef<HTMLTextAreaElement>(null);
+  const tokenRef = useRef<HTMLTextAreaElement>(null); // ✅ FIXED: was HTMLInputElement
 
   // Pre-fill from URL params (e.g. /verify-email?token=xxx&email=xxx)
   useEffect(() => {
