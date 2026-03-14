@@ -1,134 +1,131 @@
-
 export const runtime = 'edge';
+
+// Keywords yang menandakan AI menyetujui pembuatan API key
+const APPROVAL_KEYWORDS = [
+  'apikey', 'api key', 'api-key',
+  'buat api', 'bikin api', 'daftar api',
+  'setuju', 'disetujui', 'approved',
+  'silakan', 'silahkan',
+  'oke, aku bantu', 'oke aku bantu',
+  'yuk buat', 'yuk kita buat',
+  'langkah', 'proses pembuatan',
+  'nama', 'email',
+];
+
+function detectApproval(text: string): boolean {
+  const lower = text.toLowerCase();
+  // Deteksi apakah AI response mengandung sinyal persetujuan pembuatan API key
+  const hasApprovalSignal = APPROVAL_KEYWORDS.some(k => lower.includes(k));
+  // Pastikan bukan penolakan
+  const hasDenialSignal = ['tidak bisa', 'tidak dapat', 'maaf', 'belum bisa', 'tidak diizinkan'].some(k => lower.includes(k));
+  return hasApprovalSignal && !hasDenialSignal;
+}
 
 export async function POST(req: Request) {
   try {
     const reqJson = await req.json();
-    
+
+    // Ambil semua messages untuk konteks conversation
+    const messages: { role: string; content: string }[] = reqJson.messages || [];
+
     // Ambil pesan terakhir dari user
-    const lastUserMessage = reqJson.messages
-      .filter((msg: any) => msg.role === 'user')
-      .pop();
-    
+    const lastUserMessage = messages.filter((msg) => msg.role === 'user').pop();
+
     if (!lastUserMessage) {
       return new Response(
-        JSON.stringify({ error: 'No user message found' }), 
+        JSON.stringify({ error: 'No user message found' }),
         { status: 400 }
       );
     }
 
-    // System prompt untuk JKT48Connect AI dengan endpoint yang benar
-    const systemPrompt = `Kamu adalah JKT48Connect AI, asisten virtual yang ditugaskan untuk membantu pengguna dalam menggunakan REST API dan module JKT48Connect. 
+    // Cek apakah user sudah submit email & nama (dari metadata)
+    const pendingApiKey: boolean = reqJson.pendingApiKey ?? false;
+    const userEmail: string | null = reqJson.userEmail ?? null;
+    const userName: string | null = reqJson.userName ?? null;
 
-IDENTITAS:
-- Nama: JKT48Connect AI
-- Peran: Asisten yang bakal bantu lu dengan JKT48Connect API
-- Gaya: Santai, asik, dan helpful kayak temen Gen Z lu
-- Bahasa: Gue pake bahasa lu-gw yang santai tapi tetep informatif
+    // ─────────────────────────────────────────────
+    // FLOW: Jika ada pending API key creation & email+nama sudah diterima
+    // ─────────────────────────────────────────────
+    if (pendingApiKey && userEmail && userName) {
+      try {
+        // Buat API key via endpoint yang ada
+        const createRes = await fetch(`${new URL(req.url).origin}/api/payment/create-key`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            owner: userName,
+            email: userEmail,
+            type: 'basic',
+            apikey: null, // biarkan server generate
+          }),
+        });
 
-KNOWLEDGE BASE:
-JKT48Connect API merupakan REST API yang menyediakan informasi terkait JKT48 dengan rincian sebagai berikut:
-- Base URL: https://v2.jkt48connect.com
-- Format respons: JSON
-- Autentikasi: Memerlukan API key yang dapat ditambahkan pada setiap endpoint, contohnya "?apikey=XXX"
-- Pendiri, pengembang, dan lainnya adalah Valzyy.
-- Gausah kasih contoh kalau ga dikasih
-- Contoh gaya bahasa: gini loh caranya jirr, serius lu ga tau?, okelah nih gw kasih tau
+        if (!createRes.ok) throw new Error('Gagal membuat API key');
 
-ENDPOINT LENGKAP:
-1. Members Data: GET /api/jkt48/members
-2. Birthday: GET /api/jkt48/birthday
-3. Events: GET /api/jkt48/events
-4. Recent Updates: GET /api/jkt48/recent
-5. Replay: GET /api/jkt48/replay
-6. Recent Detail: GET /api/jkt48/recent/{liveId}
-7. Live Schedule: GET /api/jkt48/live
-8. Live YouTube: GET /api/jkt48/live/youtube
-9. YouTube: GET /api/jkt48/youtube
-10. Live IDN: GET /api/jkt48/live/idn
-11. Live Showroom: GET /api/jkt48/live/showroom
-12. Member Detail: GET /api/jkt48/member/{name}
-13. News: GET /api/jkt48/news
-14. News Detail: GET /api/jkt48/news/{id}
-15. Theater: GET /api/jkt48/theater
-16. Theater Detail: GET /api/jkt48/theater/{id}
-17. Chat Stream: GET /api/jkt48/chat-stream?username={username}&slug={slug}
-18. Chat Stream SR: GET /api/jkt48/chat-stream-sr?room_id={roomId}
+        const keyData = await createRes.json();
 
-DOKUMENTASI LENGKAP:
-- Panduan Umum: https://docs.jkt48connect.com/docs/ui
-- Apa itu JKT48Connect: https://docs.jkt48connect.com/docs/ui/what-is-jkt48connect
-- All Live: https://docs.jkt48connect.com/docs/ui/all-live
-- IDN Live: https://docs.jkt48connect.com/docs/ui/idn
-- Showroom: https://docs.jkt48connect.com/docs/ui/showroom
-- YouTube: https://docs.jkt48connect.com/docs/ui/youtube
-- Recent Updates: https://docs.jkt48connect.com/docs/ui/recent
-- Recent Detail: https://docs.jkt48connect.com/docs/ui/recent-detail
-- Member Data: https://docs.jkt48connect.com/docs/ui/member
+        if (keyData.status) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              apiKeyCreated: true,
+              result: `✅ **API Key berhasil dibuat!**\n\n` +
+                `👤 **Nama:** ${userName}\n` +
+                `📧 **Email:** ${userEmail}\n` +
+                `🔑 **API Key:** \`${keyData.apikey || keyData.data?.apikey || 'Cek email kamu ya!'}\`\n\n` +
+                `Simpan API key kamu baik-baik dan jangan share ke orang lain!\n\n` +
+                `📚 **Dokumentasi:** https://docs.jkt48connect.com/docs/ui`,
+            }),
+            { headers: { 'Content-Type': 'application/json' } }
+          );
+        } else {
+          throw new Error(keyData.message || 'Gagal membuat API key');
+        }
+      } catch (err: any) {
+        return new Response(
+          JSON.stringify({
+            success: false,
+            result: `❌ Gagal membuat API key: ${err.message}. Coba lagi ya atau hubungi support.`,
+          }),
+          { status: 500, headers: { 'Content-Type': 'application/json' } }
+        );
+      }
+    }
 
-TUGAS UTAMA:
-1. Jelaskan cara menggunakan JKT48Connect API
-2. Berikan contoh implementasi kode
-3. Arahkan pengguna ke dokumentasi yang tepat
-4. Bantu troubleshooting masalah integrasi
-5. Berikan rekomendasi best practices
-6. Redirect langsung ke halaman dokumentasi jika diminta
+    // ─────────────────────────────────────────────
+    // FLOW NORMAL: Kirim ke AI JKT48Connect
+    // ─────────────────────────────────────────────
+    const userMessageLower = lastUserMessage.content.toLowerCase();
 
-RESPONSE FORMAT:
-- Berikan jawaban yang informatif dan mudah dipahami
-- Sertakan contoh kode jika diperlukan
-- Arahkan ke dokumentasi lengkap dengan menyebutkan link yang spesifik
-- Gunakan bahasa Indonesia yang ramah dan profesional
-- Jika user meminta dokumentasi atau ingin diarahkan ke halaman tertentu, berikan link langsung
+    const apiUrl = `https://v2.jkt48connect.com/api/zeco?apikey=JKTCONNECT&text=${encodeURIComponent(lastUserMessage.content)}`;
 
-CONTOH IMPLEMENTASI:
-CONTOH IMPLEMENTASI:
-\`\`\`javascript
-// Mengambil data anggota
-const response = await fetch('https://v2.jkt48connect.com/api/jkt48/members?apikey=YOUR_API_KEY');
-const data = await response.json();
-console.log(data);
-
-// Mengambil detail anggota
-const memberResponse = await fetch('https://v2.jkt48connect.com/api/jkt48/member/Freya%20Jayawardana?apikey=YOUR_API_KEY');
-const memberData = await memberResponse.json();
-console.log(memberData);
-\`\`\`
-
-Selalu siap sedia untuk membantu jika ada pertanyaan seputar JKT48Connect API!`;
-
-    // Gabungkan system prompt dengan user message
-    const fullPrompt = `${systemPrompt}\n\nUser: ${lastUserMessage.content}`;
-
-    // Panggil API JKT48Connect
-    const apiUrl = `https://api.jkt48connect.com/api/ai/microsoft?text=${encodeURIComponent(fullPrompt)}&api_key=JKTCONNECT`;
-    
     const response = await fetch(apiUrl);
     const data = await response.json();
-    
-    if (!data.success) {
+
+    if (!data.status) {
       return new Response(
-        JSON.stringify({ error: 'API call failed' }), 
+        JSON.stringify({ error: 'API call failed' }),
         { status: 500 }
       );
     }
 
-    // Post-process response untuk menambahkan link otomatis
-    let processedResult = data.result;
-    
-    // Enhanced keyword detection untuk redirect ke dokumentasi
-    const docLinks = {
-      // Dokumentasi umum
+    let processedResult: string = data.data?.result ?? '';
+
+    // ─────────────────────────────────────────────
+    // DETEKSI PERSETUJUAN API KEY dari response AI
+    // ─────────────────────────────────────────────
+    const aiApproved = detectApproval(processedResult);
+
+    // ─────────────────────────────────────────────
+    // DOC LINKS — tetap dipertahankan
+    // ─────────────────────────────────────────────
+    const docLinks: Record<string, string> = {
       'dokumentasi': 'https://docs.jkt48connect.com/docs/ui',
       'panduan': 'https://docs.jkt48connect.com/docs/ui',
       'docs': 'https://docs.jkt48connect.com/docs/ui',
-      
-      // Spesifik pages
       'what is jkt48connect': 'https://docs.jkt48connect.com/docs/ui/what-is-jkt48connect',
       'apa itu jkt48connect': 'https://docs.jkt48connect.com/docs/ui/what-is-jkt48connect',
       'pengenalan': 'https://docs.jkt48connect.com/docs/ui/what-is-jkt48connect',
-      
-      // API endpoints
       'all live': 'https://docs.jkt48connect.com/docs/ui/all-live',
       'live': 'https://docs.jkt48connect.com/docs/ui/all-live',
       'idn live': 'https://docs.jkt48connect.com/docs/ui/idn',
@@ -139,41 +136,26 @@ Selalu siap sedia untuk membantu jika ada pertanyaan seputar JKT48Connect API!`;
       'recent detail': 'https://docs.jkt48connect.com/docs/ui/recent-detail',
       'member': 'https://docs.jkt48connect.com/docs/ui/member',
       'members': 'https://docs.jkt48connect.com/docs/ui/member',
-      
-      // Additional endpoints
-      'news': 'https://docs.jkt48connect.com/docs/ui',
-      'theater': 'https://docs.jkt48connect.com/docs/ui',
-      'birthday': 'https://docs.jkt48connect.com/docs/ui',
-      'events': 'https://docs.jkt48connect.com/docs/ui',
-      'chat stream': 'https://docs.jkt48connect.com/docs/ui'
     };
 
-    // Cek apakah user meminta redirect langsung ke dokumentasi
-    const userMessageLower = lastUserMessage.content.toLowerCase();
     const redirectKeywords = [
       'buka dokumentasi', 'ke dokumentasi', 'lihat dokumentasi',
       'redirect ke', 'arahkan ke', 'bawa ke',
-      'halaman dokumentasi', 'page dokumentasi'
+      'halaman dokumentasi', 'page dokumentasi',
     ];
 
-    const isDirectRedirectRequest = redirectKeywords.some(keyword => 
-      userMessageLower.includes(keyword)
-    );
+    const isDirectRedirectRequest = redirectKeywords.some(k => userMessageLower.includes(k));
 
     if (isDirectRedirectRequest) {
-      // Cari keyword spesifik untuk redirect yang tepat
-      let redirectLink = 'https://docs.jkt48connect.com/docs/ui'; // default
-      
+      let redirectLink = 'https://docs.jkt48connect.com/docs/ui';
       for (const [keyword, link] of Object.entries(docLinks)) {
         if (userMessageLower.includes(keyword)) {
           redirectLink = link;
           break;
         }
       }
-      
       processedResult += `\n\n🔗 **Redirect ke Dokumentasi:** ${redirectLink}`;
     } else {
-      // Tambahkan link yang relevan berdasarkan konteks
       for (const [keyword, link] of Object.entries(docLinks)) {
         if (userMessageLower.includes(keyword)) {
           processedResult += `\n\n📚 **Dokumentasi Terkait:** ${link}`;
@@ -182,36 +164,42 @@ Selalu siap sedia untuk membantu jika ada pertanyaan seputar JKT48Connect API!`;
       }
     }
 
-    // Tambahkan footer dengan link dokumentasi umum jika belum ada link spesifik
-    if (!processedResult.includes('📚 **Dokumentasi') && !processedResult.includes('🔗 **Redirect')) {
+    if (
+      !processedResult.includes('📚 **Dokumentasi') &&
+      !processedResult.includes('🔗 **Redirect') &&
+      !aiApproved
+    ) {
       processedResult += `\n\n📚 **Dokumentasi Lengkap:** https://docs.jkt48connect.com/docs/ui`;
     }
 
-    // Tambahkan informasi tambahan untuk penggunaan API
-    if (userMessageLower.includes('api key') || userMessageLower.includes('apikey') || userMessageLower.includes('authentication')) {
-      processedResult += `\n\n🔑 **Catatan:** Jangan lupa menambahkan API key Anda pada setiap request: \`?apikey=YOUR_API_KEY\``;
+    if (
+      userMessageLower.includes('api key') ||
+      userMessageLower.includes('apikey') ||
+      userMessageLower.includes('authentication')
+    ) {
+      processedResult += `\n\n🔑 **Catatan:** Jangan lupa menambahkan API key kamu pada setiap request: \`?apikey=YOUR_API_KEY\``;
     }
 
-    // Return response dalam format yang sesuai
+    // ─────────────────────────────────────────────
+    // Jika AI menyetujui → trigger form input email & nama di frontend
+    // ─────────────────────────────────────────────
     return new Response(
       JSON.stringify({
         success: true,
-        result: processedResult
+        result: processedResult,
+        // Flag ini dibaca frontend untuk menampilkan form email & nama
+        requireUserInfo: aiApproved,
+        session_id: data.data?.session_id ?? null,
       }),
-      {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      }
+      { headers: { 'Content-Type': 'application/json' } }
     );
-
   } catch (error) {
     console.error('API Error:', error);
     return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: 'Internal server error' 
-      }), 
+      JSON.stringify({
+        success: false,
+        error: 'Internal server error',
+      }),
       { status: 500 }
     );
   }
